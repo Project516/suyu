@@ -6118,8 +6118,13 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
         microProfileDialog->setVisible(show_debug);
     if (waitTreeWidget)
         waitTreeWidget->setVisible(show_debug);
-    if (controller_dialog)
-        controller_dialog->setVisible(show_debug);
+    // The controller view is hidden with the rest of the debug panes but never
+    // forced open with them. It covers a corner of the window and is only of
+    // use while actually testing input, and forcing it visible here overrode
+    // the user's own toggle - View -> Debugging -> Controller P1 - every time
+    // the layout was applied, which is on every launch into Hacker mode.
+    if (controller_dialog && !show_debug)
+        controller_dialog->setVisible(false);
 
     // Persist the active mode so it can be queried elsewhere
     ModeSelector::SaveMode(mode);
