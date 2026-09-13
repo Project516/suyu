@@ -136,7 +136,18 @@ static_assert(offsetof(GuestContextView, chain_budget) == 864);
 // on 512 KB fibers (common/fiber.cpp) and a block frame carrying SIMD locals is
 // not small, so this has to stay well under what that stack can hold. 256
 // overflowed it and crashed on boot.
-constexpr int kChainBudget = 32;
+// Overridable so the depth can be measured rather than guessed, but only
+// upwards from a value known to be safe, and only when the generated code was
+// built with -foptimize-sibling-calls - without real tail calls a large budget
+// is a stack overflow, which is exactly how 256 crashed on boot.
+const int kChainBudget = [] {
+    const char* e = std::getenv("SUYU_RECOMP_CHAIN_BUDGET");
+    if (!e) {
+        return 32;
+    }
+    const int v = std::atoi(e);
+    return (v >= 1 && v <= 8192) ? v : 32;
+}();
 static_assert(offsetof(GuestContextView, host_mem) == 832);
 static_assert(offsetof(GuestContextView, tpidrro_el0) == 840);
 static_assert(offsetof(GuestContextView, fpcr) == 848);
