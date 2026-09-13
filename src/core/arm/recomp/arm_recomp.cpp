@@ -194,7 +194,6 @@ std::atomic<RecompBaseFn> g_recomp_base_setter{nullptr};
 /// Only this decides whether the AOT path is worth anything, and only this can
 /// rank the missing opcodes by what actually executes.
 struct RecompCounters {
-    std::atomic<u64> static_blocks{0};
     std::atomic<u64> svc_calls{0};
     std::atomic<u64> fallback_from_miss{0};
     std::atomic<u64> fallback_from_unhandled{0};
@@ -237,6 +236,38 @@ struct RecompCounters {
 RecompCounters g_counters;
 std::atomic<int> g_live_instances{0};
 
+/// The block tally is incremented once per executed block by every guest
+/// thread. As one shared atomic that is a contended cache line on the hottest
+/// path there is: it was 23% of the dispatch loop's own cycles. Each thread
+/// counts into its own line instead, and the report sums them.
+struct alignas(64) ThreadBlocks {
+    std::atomic<u64> n{0};
+    char pad[64 - sizeof(std::atomic<u64>)];
+};
+std::mutex g_tally_lock;
+std::vector<ThreadBlocks*> g_tallies;
+std::atomic<u64> g_retired_blocks{0};
+
+struct ThreadBlockSlot {
+    ThreadBlocks* slot = new ThreadBlocks{};
+    ThreadBlockSlot() {
+        std::scoped_lock lk{g_tally_lock};
+        g_tallies.push_back(slot);
+    }
+    // The slot outlives the thread: the reporter may be summing while a guest
+    // thread exits, and the count still belongs in the total.
+};
+thread_local ThreadBlockSlot t_blocks;
+
+u64 TotalStaticBlocks() {
+    std::scoped_lock lk{g_tally_lock};
+    u64 sum = g_retired_blocks.load(std::memory_order_relaxed);
+    for (const ThreadBlocks* s : g_tallies) {
+        sum += s->n.load(std::memory_order_relaxed);
+    }
+    return sum;
+}
+
 template <typename Map>
 auto TopN(const Map& m, size_t n) {
     // Not Map::value_type: that has a const key and so is not assignable, which
@@ -259,7 +290,7 @@ auto TopN(const Map& m, size_t n) {
 /// run's measurement is lost with it. Writing periodically means a report
 /// always exists for the last completed interval however the process ends.
 std::string FormatRecompCoverage() {
-    const u64 blocks = g_counters.static_blocks.load();
+    const u64 blocks = TotalStaticBlocks();
     const u64 miss = g_counters.fallback_from_miss.load();
     const u64 unh = g_counters.fallback_from_unhandled.load();
     const u64 transitions = miss + unh;
@@ -1180,8 +1211,9 @@ HaltReason ArmRecomp::RunThread(Kernel::KThread* thread) {
         // Dump periodically: teardown is not guaranteed to run (the emulated
         // process can outlive shutdown), and a run with no report is a run with
         // no measurement. One compare per block against a power-of-two mask.
-        if ((g_counters.static_blocks.fetch_add(1, std::memory_order_relaxed) &
-             0x3FFFFULL) == 0x3FFFFULL) {
+        const u64 seen = t_blocks.slot->n.load(std::memory_order_relaxed) + 1;
+        t_blocks.slot->n.store(seen, std::memory_order_relaxed);
+        if ((seen & 0x3FFFFULL) == 0x3FFFFULL) {
             WriteRecompCoverageFile(FormatRecompCoverage());
         }
         // Generated code calls a direct branch's target itself rather than
@@ -1194,8 +1226,9 @@ HaltReason ArmRecomp::RunThread(Kernel::KThread* thread) {
         {
             const int spent = kChainBudget - impl->ctx.chain_budget;
             if (spent > 1) {
-                g_counters.static_blocks.fetch_add(static_cast<u64>(spent - 1),
-                                                   std::memory_order_relaxed);
+                t_blocks.slot->n.store(t_blocks.slot->n.load(std::memory_order_relaxed) +
+                                           static_cast<u64>(spent - 1),
+                                       std::memory_order_relaxed);
             }
         }
 
