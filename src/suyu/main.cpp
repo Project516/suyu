@@ -10,6 +10,9 @@
 #include <cstdio>
 #include <exception>
 #include <fstream>
+#include <map>
+#include <mutex>
+#include <set>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -6422,6 +6425,31 @@ namespace {
 std::vector<QLibrary*> loaded_images;
 std::vector<RecompImage> loaded_records;
 
+// Off unless asked for: this sits on the dispatch path, which runs tens of
+// millions of times a second.
+std::string miss_record_dir;
+std::mutex miss_mutex;
+std::map<std::string, std::set<u64>> recorded_misses;
+
+void RecordMiss(const std::string& module, u64 offset) {
+    std::scoped_lock lock{miss_mutex};
+    auto& set = recorded_misses[module];
+    if (set.size() >= 65536 || !set.insert(offset).second) {
+        return;
+    }
+    // Written out as each new address first appears rather than at exit: the
+    // process is stopped with a signal at the end of a benchmark, and an atexit
+    // handler is not guaranteed to see that.
+    QDir().mkpath(QString::fromStdString(miss_record_dir));
+    for (const auto& [name, offsets] : recorded_misses) {
+        std::ofstream out(miss_record_dir + "/" + name + ".roots");
+        for (u64 value : offsets) {
+            out << std::hex << value << "\n";
+        }
+    }
+    LOG_INFO(Frontend, "uncovered entry point {}+{:#x}", module, offset);
+}
+
 // A compact, sorted view of the records above. The dispatcher runs tens of
 // millions of times a second, and a RecompImage is ~56 bytes with a std::string
 // at the front, so walking the records themselves touches a cache line per
@@ -6722,6 +6750,9 @@ int GMainWindow::LoadRecompiledImagesFrom(const QString& dir) {
             // an ordinary uncovered-code miss and the JIT handles it. Saying "no
             // owning image" here, as this used to, sends you looking for a
             // module-mapping bug when there is none.
+            if (!miss_record_dir.empty()) {
+                RecordMiss(owner->name, pc - owner->base);
+            }
             LOG_DEBUG(Frontend,
                       "recomp dispatch: {} has no block at +{:#x} (pc={:#x}); using JIT",
                       owner->name, pc - owner->base, pc);
@@ -6745,6 +6776,9 @@ int GMainWindow::LoadRecompiledImagesFrom(const QString& dir) {
         }
         return nullptr;
     };
+    miss_record_dir = qEnvironmentVariable("SUYU_RECOMP_RECORD_MISSES").toStdString();
+    LOG_INFO(Frontend, "recomp miss recording: {}",
+             miss_record_dir.empty() ? std::string{"off"} : miss_record_dir);
     Core::SetRecompLookup(+chained);
     LOG_INFO(Frontend, "Loaded {} recompiled module image(s) from {}", loaded_images.size(),
              dir.toStdString());

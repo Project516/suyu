@@ -1487,6 +1487,9 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
     // only when explicitly asked for, by the same switch that gates the
     // per-block dumps.
     const bool dump_debug_artifacts = !qEnvironmentVariableIsEmpty("SUYU_AOT_DUMP_BLOCKS");
+
+    suyu::recomp::g_translate_all =
+        !qEnvironmentVariableIsEmpty("SUYU_AOT_TRANSLATE_ALL");
     const QString debug_root = cache_dir + QDir::separator() + QStringLiteral("debug");
     const QString blockmap_dir = debug_root + QDir::separator() + QStringLiteral("blockmaps");
     const QString code_dir = debug_root + QDir::separator() + QStringLiteral("code");
@@ -1688,6 +1691,24 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
             exported_roots.insert(exported_roots.end(), data_ptr_roots.begin(), data_ptr_roots.end());
             std::vector<u64> reloc_roots = ScanRelocationsForCodePointers(mod);
             exported_roots.insert(exported_roots.end(), reloc_roots.begin(), reloc_roots.end());
+            // Addresses a previous run reached but block discovery could not:
+            // see SUYU_RECOMP_RECORD_MISSES on the emulator side.
+            const QString roots_dir = qEnvironmentVariable("SUYU_AOT_EXTRA_ROOTS");
+            if (!roots_dir.isEmpty()) {
+                QFile f(roots_dir + QDir::separator() + mod.name + QStringLiteral(".roots"));
+                if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                    int n = 0;
+                    while (!f.atEnd()) {
+                        bool ok = false;
+                        const u64 off = f.readLine().trimmed().toULongLong(&ok, 16);
+                        if (ok) {
+                            exported_roots.push_back(mod.text_vaddr + off);
+                            ++n;
+                        }
+                    }
+                    LOG_INFO(Frontend, "module {}: {} recorded roots", mod.name.toStdString(), n);
+                }
+            }
             std::sort(exported_roots.begin(), exported_roots.end());
             exported_roots.erase(std::unique(exported_roots.begin(), exported_roots.end()),
                                  exported_roots.end());
