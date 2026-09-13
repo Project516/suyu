@@ -4181,7 +4181,14 @@ inline RecompileStats EmitProject(const std::string& mod, const u8* text, size_t
        << "  set_source_files_properties(${RECOMP_SOURCES} PROPERTIES COMPILE_OPTIONS "
           "\"${_recomp_msvc_opts}\")\n"
        << "else()\n"
-       << "  set_source_files_properties(${RECOMP_SOURCES} PROPERTIES COMPILE_OPTIONS \"-O1\")\n"
+       // Overridable: -O1 suits a hybrid image, where the SIMD-heavy blocks stay
+       // on the JIT anyway, but a JIT-free image owns those blocks and GCC does
+       // not vectorise at all below -O2.
+       << "  set(RECOMP_OPT_FLAGS \"-O1\" CACHE STRING\n"
+          "      \"optimisation flags for the generated block bodies\")\n"
+       << "  separate_arguments(_recomp_opt NATIVE_COMMAND \"${RECOMP_OPT_FLAGS}\")\n"
+       << "  set_source_files_properties(${RECOMP_SOURCES} PROPERTIES COMPILE_OPTIONS "
+          "\"${_recomp_opt}\")\n"
        << "endif()\n\n"
        << "if(NOT RECOMP_STATIC_ONLY)\n"
        << "add_executable(recompiled main.c recomp_runtime.c ${RECOMP_SOURCES})\n"
