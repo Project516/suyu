@@ -332,6 +332,27 @@ inline std::string ChainIndirect(const std::string& target) {
 // call - and the expression that replaces it is smaller than the call was,
 // which matters: the memory helpers were measured as *worse* inlined because
 // the instruction cache cost more than the call did.
+// NZCV, with the operation width and add/subtract resolved here. Same argument
+// as Cond: is_sub and is64 are literals at every site, and a call with six
+// arguments costs more to set up than the arithmetic it hides.
+inline std::string SetFlags(bool is_sub, const std::string& a, const std::string& b,
+                            const std::string& r, bool is64) {
+    const std::string ty = is64 ? "uint64_t" : "uint32_t";
+    const std::string cast = is64 ? "" : "(uint32_t)";
+    const char* top = is64 ? "63" : "31";
+    std::string s = "{ " + ty + " _fa=" + cast + "(" + a + "),_fb=" + cast + "(" + b +
+                    "),_fr=" + cast + "(" + r + "); ";
+    s += "c->z=(_fr==0); c->n=(int)((_fr>>" + std::string(top) + ")&1); ";
+    if (is_sub) {
+        s += "c->c=(_fa>=_fb); ";
+        s += "c->v=(int)((((_fa^_fb)&(_fa^_fr))>>" + std::string(top) + ")&1); }";
+    } else {
+        s += "c->c=(_fr<_fa); ";
+        s += "c->v=(int)((((" + ty + ")~(_fa^_fb)&(_fa^_fr))>>" + std::string(top) + ")&1); }";
+    }
+    return s;
+}
+
 inline std::string Cond(u32 cond) {
     switch (cond) {
     case 0:  return "(c->z)";
@@ -465,7 +486,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         // zero register - that encoding is CMP - so the result is dropped.
         // Without it, register 31 is SP and the write is real.
         if (!(rd == 31 && S)) s += "c->x[" + std::to_string(rd) + "]=_r; ";
-        if (S) s += "recomp_set_flags(c," + std::string(op ? "1" : "0") + ",_a,_b,_r," + (sf ? "1" : "0") + "); ";
+        if (S) s += SetFlags(op != 0, "_a", "_b", "_r", sf != 0) + " ";
         s += "}";
         // Register 31 is SP here, not the zero register, so a write to it is
         // real and must not be discarded: dropping it throws away every
@@ -522,7 +543,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         std::string s = "{ uint64_t _r = " + expr + "; ";
         if (!sf) s += "_r &= 0xFFFFFFFFULL; ";
         if (rd != 31) s += "c->x[" + std::to_string(rd) + "] = _r; ";
-        if (opc == 3) s += "recomp_set_flags(c,0,_r,0,_r," + std::string(sf ? "1" : "0") + "); ";
+        if (opc == 3) s += SetFlags(false, "_r", "0", "_r", sf != 0) + " ";
         s += "}";
         put(s);
         return true;
@@ -541,7 +562,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         snprintf(buf, sizeof buf, "{ uint64_t _a=%s,_b=%s,_r=%s; ", a.c_str(), rmv.c_str(), op ? "_a-_b" : "_a+_b");
         std::string s = buf; if (!sf) s += "_r&=0xFFFFFFFFULL; ";
         if (rd != 31) s += "c->x[" + std::to_string(rd) + "]=_r; ";
-        if (S) s += "recomp_set_flags(c," + std::string(op ? "1" : "0") + ",_a,_b,_r," + (sf ? "1" : "0") + "); ";
+        if (S) s += SetFlags(op != 0, "_a", "_b", "_r", sf != 0) + " ";
         s += "}"; put(s); return true;
     }
 
@@ -701,7 +722,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             // for ANDS (opc==3). Treating it as XZR everywhere silently
             // dropped every "and sp, xN, #imm" stack realignment.
             if (!(rd == 31 && opc == 3)) s += "c->x[" + std::to_string(rd) + "] = _r; ";
-            if (opc == 3) s += "recomp_set_flags(c,0,_r,0,_r," + std::string(sf ? "1" : "0") + "); ";
+            if (opc == 3) s += SetFlags(false, "_r", "0", "_r", sf != 0) + " ";
             s += "}";
             put(s);
             return true;
@@ -798,8 +819,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         s += "uint64_t _a=" + Xz(rn) + ", _b=" + b + ", _r=" +
              std::string(op ? "_a-_b" : "_a+_b") + "; ";
         if (!sf) s += "_r &= 0xFFFFFFFFULL; ";
-        s += "recomp_set_flags(c," + std::string(op ? "1" : "0") + ",_a,_b,_r," +
-             (sf ? "1" : "0") + "); ";
+        s += SetFlags(op != 0, "_a", "_b", "_r", sf != 0) + " ";
         s += "} else { ";
         s += "c->n=" + std::to_string((nzcv >> 3) & 1) + "; ";
         s += "c->z=" + std::to_string((nzcv >> 2) & 1) + "; ";
@@ -1059,8 +1079,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
                                 std::string(op ? "_a-_b" : "_a+_b") + "; ";
                 if (!sf) s += "_r &= 0xFFFFFFFFULL; ";
                 if (rd != 31 || !S) s += "c->x[" + std::to_string(rd) + "]=_r; ";
-                if (S) s += "recomp_set_flags(c," + std::string(op ? "1" : "0") +
-                            ",_a,_b,_r," + (sf ? "1" : "0") + "); ";
+                if (S) s += SetFlags(op != 0, "_a", "_b", "_r", sf != 0) + " ";
                 s += "}";
                 put(s);
                 return true;
