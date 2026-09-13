@@ -678,23 +678,22 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             // pre-index applies the offset before the access.
             const char* addr = (mode == 1) ? "_b" : "(_b+_o)";
             s += "int64_t _o=" + std::to_string((long long)off) + "; ";
+            const std::string w = std::to_string(sz * 8);
             if (is_load) {
-                // Rt/Rt2 == 31 is XZR here, so the loaded value is discarded -
-                // writing it would land on c->x[31], which is where SP lives.
-                if (rt != 31) {
-                    s += "c->x[" + std::to_string(rt) + "]=recomp_load" + std::to_string(sz * 8) +
-                         "(c," + addr + "); ";
-                }
-                if (rt2 != 31) {
-                    s += "c->x[" + std::to_string(rt2) + "]=recomp_load" + std::to_string(sz * 8) +
-                         "(c," + addr + "+" + std::to_string(sz) + "); ";
-                }
+                // Both words come back through temporaries. Rt/Rt2 == 31 is XZR
+                // here, so that half is simply not written back - writing it
+                // would land on c->x[31], which is where SP lives. The load
+                // itself still happens, which is what the architecture does.
+                s += "{ uint64_t _p0,_p1; recomp_ldp" + w + "(c," + addr + ",&_p0,&_p1); ";
+                if (rt != 31)  s += "c->x[" + std::to_string(rt) + "]=_p0; ";
+                if (rt2 != 31) s += "c->x[" + std::to_string(rt2) + "]=_p1; ";
+                s += "} ";
             } else {
-                s += "recomp_store" + std::to_string(sz * 8) + "(c," + addr + "," +
-                     (rt == 31 ? std::string("(uint64_t)0") : ("c->x[" + std::to_string(rt) + "]")) + "); ";
-                s += "recomp_store" + std::to_string(sz * 8) + "(c," + addr + "+" +
-                     std::to_string(sz) + "," +
-                     (rt2 == 31 ? std::string("(uint64_t)0") : ("c->x[" + std::to_string(rt2) + "]")) + "); ";
+                s += "recomp_stp" + w + "(c," + addr + "," +
+                     (rt == 31 ? std::string("(uint64_t)0") : ("c->x[" + std::to_string(rt) + "]")) +
+                     "," +
+                     (rt2 == 31 ? std::string("(uint64_t)0") : ("c->x[" + std::to_string(rt2) + "]")) +
+                     "); ";
             }
             if (mode == 1 || mode == 3) {
                 s += "c->x[" + std::to_string(rn) + "]=_b+_o; ";
@@ -3507,20 +3506,30 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             const std::string addr = (mode == 1) ? std::string("_b") : std::string("(_b+_o)");
             if (is_load) {
                 if (sz <= 8) {
-                    s += "{ uint64_t _v=recomp_load" + std::to_string(bits) + "(c," + addr + "); memcpy(&c->vreg[" + std::to_string(rt) + "][0],&_v," + std::to_string(sz) + "); c->vreg[" + std::to_string(rt) + "][1]=0; }";
-                    s += "{ uint64_t _v=recomp_load" + std::to_string(bits) + "(c," + addr + "+" + std::to_string(sz) + "); memcpy(&c->vreg[" + std::to_string(rt2) + "][0],&_v," + std::to_string(sz) + "); c->vreg[" + std::to_string(rt2) + "][1]=0; }";
+                    s += "{ uint64_t _p0,_p1; recomp_ldp" + std::to_string(bits) + "(c," + addr +
+                         ",&_p0,&_p1); ";
+                    s += "memcpy(&c->vreg[" + std::to_string(rt) + "][0],&_p0," +
+                         std::to_string(sz) + "); c->vreg[" + std::to_string(rt) + "][1]=0; ";
+                    s += "memcpy(&c->vreg[" + std::to_string(rt2) + "][0],&_p1," +
+                         std::to_string(sz) + "); c->vreg[" + std::to_string(rt2) + "][1]=0; }";
                 } else {
-                    // 128-bit: two 64-bit loads per register
-                    s += "{ c->vreg[" + std::to_string(rt) + "][0]=recomp_load64(c," + addr + "); c->vreg[" + std::to_string(rt) + "][1]=recomp_load64(c," + addr + "+8); }";
-                    s += "{ c->vreg[" + std::to_string(rt2) + "][0]=recomp_load64(c," + addr + "+16); c->vreg[" + std::to_string(rt2) + "][1]=recomp_load64(c," + addr + "+24); }";
+                    // 128-bit: one pair per register.
+                    s += "recomp_ldp64(c," + addr + ",&c->vreg[" + std::to_string(rt) +
+                         "][0],&c->vreg[" + std::to_string(rt) + "][1]); ";
+                    s += "recomp_ldp64(c," + addr + "+16,&c->vreg[" + std::to_string(rt2) +
+                         "][0],&c->vreg[" + std::to_string(rt2) + "][1]); ";
                 }
             } else {
                 if (sz <= 8) {
-                    s += "{ uint64_t _v=0; memcpy(&_v,&c->vreg[" + std::to_string(rt) + "][0]," + std::to_string(sz) + "); recomp_store" + std::to_string(bits) + "(c," + addr + ",_v); }";
-                    s += "{ uint64_t _v=0; memcpy(&_v,&c->vreg[" + std::to_string(rt2) + "][0]," + std::to_string(sz) + "); recomp_store" + std::to_string(bits) + "(c," + addr + "+" + std::to_string(sz) + ",_v); }";
+                    s += "{ uint64_t _p0=0,_p1=0; memcpy(&_p0,&c->vreg[" + std::to_string(rt) +
+                         "][0]," + std::to_string(sz) + "); memcpy(&_p1,&c->vreg[" +
+                         std::to_string(rt2) + "][0]," + std::to_string(sz) + "); ";
+                    s += "recomp_stp" + std::to_string(bits) + "(c," + addr + ",_p0,_p1); }";
                 } else {
-                    s += "{ recomp_store64(c," + addr + ",c->vreg[" + std::to_string(rt) + "][0]); recomp_store64(c," + addr + "+8,c->vreg[" + std::to_string(rt) + "][1]); }";
-                    s += "{ recomp_store64(c," + addr + "+16,c->vreg[" + std::to_string(rt2) + "][0]); recomp_store64(c," + addr + "+24,c->vreg[" + std::to_string(rt2) + "][1]); }";
+                    s += "recomp_stp64(c," + addr + ",c->vreg[" + std::to_string(rt) +
+                         "][0],c->vreg[" + std::to_string(rt) + "][1]); ";
+                    s += "recomp_stp64(c," + addr + "+16,c->vreg[" + std::to_string(rt2) +
+                         "][0],c->vreg[" + std::to_string(rt2) + "][1]); ";
                 }
             }
             if (mode == 1 || mode == 3) s += "c->x[" + std::to_string(rn) + "]=_b+_o; ";
@@ -3544,7 +3553,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         const std::string v1 = "c->vreg[" + std::to_string(rt) + "][1]";
         if (is_load) {
             if (nb == 16) {
-                return v0 + "=recomp_load64(c," + ea + "); " + v1 + "=recomp_load64(c,(" + ea + ")+8); ";
+                return "recomp_ldp64(c," + ea + ",&" + v0 + ",&" + v1 + "); ";
             }
             // Narrower loads zero the rest of the register, as the architecture
             // requires - the destination is written whole, not merged into.
@@ -3552,7 +3561,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
                    v0 + "=_v; " + v1 + "=0; } ";
         }
         if (nb == 16) {
-            return "recomp_store64(c," + ea + "," + v0 + "); recomp_store64(c,(" + ea + ")+8," + v1 + "); ";
+            return "recomp_stp64(c," + ea + "," + v0 + "," + v1 + "); ";
         }
         return "{ uint64_t _v=0; memcpy(&_v,&" + v0 + "," + std::to_string(nb) + "); recomp_store" +
                std::to_string(nb * 8) + "(c," + ea + ",_v); } ";
@@ -4645,6 +4654,11 @@ uint64_t recomp_load8(GuestContext*,uint64_t); uint64_t recomp_load16(GuestConte
 uint64_t recomp_load32(GuestContext*,uint64_t); uint64_t recomp_load64(GuestContext*,uint64_t);
 void recomp_store8(GuestContext*,uint64_t,uint64_t); void recomp_store16(GuestContext*,uint64_t,uint64_t);
 void recomp_store32(GuestContext*,uint64_t,uint64_t); void recomp_store64(GuestContext*,uint64_t,uint64_t);
+/* Pair forms, so LDP and STP resolve one address instead of two. */
+void recomp_ldp32(GuestContext*,uint64_t,uint64_t*,uint64_t*);
+void recomp_ldp64(GuestContext*,uint64_t,uint64_t*,uint64_t*);
+void recomp_stp32(GuestContext*,uint64_t,uint64_t,uint64_t);
+void recomp_stp64(GuestContext*,uint64_t,uint64_t,uint64_t);
 void recomp_svc(GuestContext*,unsigned); void recomp_unhandled(GuestContext*,uint32_t,uint64_t);
 void recomp_barrier(void);
 /* AES S-box, forward or inverse. Built on first call. */
@@ -4857,6 +4871,50 @@ void recomp_store32(GuestContext* c,uint64_t a,uint64_t v){
   unsigned char* p=recomp_host_ptr(c,a); if(p){uint32_t t=(uint32_t)v;memcpy(p,&t,4);return;} memstore(c,a,4,v);}
 void recomp_store64(GuestContext* c,uint64_t a,uint64_t v){
   unsigned char* p=recomp_host_ptr(c,a); if(p){memcpy(p,&v,8);return;} memstore(c,a,8,v);}
+
+/* Pair access. LDP and STP open and close every non-leaf function, which makes
+   them the most frequent guest memory operations there are, and as two separate
+   calls they walked the page table twice for one address. One walk covers both
+   words whenever the second does not cross out of the page; when it does, or
+   when the page is not plain backed memory, the single-word helpers answer
+   exactly as before - so nothing the emulator would have been told about an
+   access is skipped. */
+static int recomp_pair_same_page(const RecompHostMem* hm, uint64_t a, uint64_t bytes){
+  uint64_t psz;
+  if(!hm || !hm->page_entries) return 0;
+  psz = (uint64_t)1 << hm->page_bits;
+  return (a & (psz - 1)) + bytes <= psz;
+}
+void recomp_ldp64(GuestContext* c,uint64_t a,uint64_t* lo,uint64_t* hi){
+  if(recomp_pair_same_page(c->host_mem,a,16)){
+    unsigned char* p=recomp_host_ptr(c,a);
+    if(p){ memcpy(lo,p,8); memcpy(hi,p+8,8); return; }
+  }
+  *lo=recomp_load64(c,a); *hi=recomp_load64(c,a+8);
+}
+void recomp_stp64(GuestContext* c,uint64_t a,uint64_t v0,uint64_t v1){
+  if(recomp_pair_same_page(c->host_mem,a,16)){
+    unsigned char* p=recomp_host_ptr(c,a);
+    if(p){ memcpy(p,&v0,8); memcpy(p+8,&v1,8); return; }
+  }
+  recomp_store64(c,a,v0); recomp_store64(c,a+8,v1);
+}
+void recomp_ldp32(GuestContext* c,uint64_t a,uint64_t* lo,uint64_t* hi){
+  if(recomp_pair_same_page(c->host_mem,a,8)){
+    unsigned char* p=recomp_host_ptr(c,a);
+    if(p){ uint32_t x,y; memcpy(&x,p,4); memcpy(&y,p+4,4);
+           *lo=(uint64_t)x; *hi=(uint64_t)y; return; }
+  }
+  *lo=recomp_load32(c,a); *hi=recomp_load32(c,a+4);
+}
+void recomp_stp32(GuestContext* c,uint64_t a,uint64_t v0,uint64_t v1){
+  if(recomp_pair_same_page(c->host_mem,a,8)){
+    unsigned char* p=recomp_host_ptr(c,a);
+    if(p){ uint32_t x=(uint32_t)v0,y=(uint32_t)v1;
+           memcpy(p,&x,4); memcpy(p+4,&y,4); return; }
+  }
+  recomp_store32(c,a,v0); recomp_store32(c,a+4,v1);
+}
 
 #ifndef RECOMP_STATIC_HOST
 /* Owned by the runtime in the single-module shapes (standalone exe, loadable
