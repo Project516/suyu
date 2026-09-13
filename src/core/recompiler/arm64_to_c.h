@@ -2423,6 +2423,22 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         // thread pointer, while TPIDRRO_EL0 is written by the kernel and holds
         // the thread-local region whose first bytes are the IPC message
         // buffer. Folding them together corrupts both.
+        // NZCV. The flags live in the context as separate fields, so this is
+        // a pack and an unpack rather than a plain load and store.
+        constexpr u32 kNzcv = 0x5A10;
+        if (sysreg == kNzcv) {
+            if (is_read) {
+                if (rt != 31) {
+                    put("c->x[" + std::to_string(rt) +
+                        "] = ((uint64_t)(c->n&1)<<31)|((uint64_t)(c->z&1)<<30)|"
+                        "((uint64_t)(c->c&1)<<29)|((uint64_t)(c->v&1)<<28);");
+                }
+            } else {
+                put("{ uint64_t _f=" + Xz(rt) +
+                    "; c->n=(_f>>31)&1; c->z=(_f>>30)&1; c->c=(_f>>29)&1; c->v=(_f>>28)&1; }");
+            }
+            return true;
+        }
         constexpr u32 kTpidrEl0 = 0x5E82;
         constexpr u32 kTpidrroEl0 = 0x5E83;
         if (sysreg == kTpidrEl0) {
@@ -3068,6 +3084,84 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
                 put(s);
                 return true;
             }
+        }
+    }
+
+    // MUL / MLA / MLS by indexed element. Same shape as the floating-point
+    // group above, but size selects an integer width, and for 16-bit elements
+    // M is part of the lane index rather than the top bit of Rm.
+    {
+        const u32 idxop = (i >> 12) & 0xF;
+        const u32 U = (i >> 29) & 1;
+        const bool shaped = (idxop == 0x8 && !U) || ((idxop == 0x0 || idxop == 0x4) && U);
+        if (shaped && (i & 0x9F00F400) == 0x0F000000 + (idxop << 12)) {
+            const u32 Q = (i >> 30) & 1, size = (i >> 22) & 3;
+            const u32 rn = (i >> 5) & 31, rd = i & 31;
+            const u32 H = (i >> 11) & 1, L = (i >> 21) & 1, M = (i >> 20) & 1;
+            u32 rm = 0, index = 0;
+            bool ok = true;
+            if (size == 1) {
+                rm = (i >> 16) & 15;
+                index = (H << 2) | (L << 1) | M;
+            } else if (size == 2) {
+                rm = ((i >> 16) & 15) | (M << 4);
+                index = (H << 1) | L;
+            } else {
+                ok = false;
+            }
+            if (ok) {
+                const int esz = 1 << size;
+                const int bytes = Q ? 16 : 8;
+                const int lanes = bytes / esz;
+                const std::string uty = "uint" + std::to_string(esz * 8) + "_t";
+                std::string s = "{ " + uty + " _a[" + std::to_string(lanes) + "],_r[" +
+                                std::to_string(lanes) + "],_m; ";
+                s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) +
+                     "); ";
+                s += "memcpy(&_m,(const uint8_t*)c->vreg[" + std::to_string(rm) + "]+" +
+                     std::to_string(index * esz) + "," + std::to_string(esz) + "); ";
+                if (idxop == 0x8) {
+                    s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=(" + uty +
+                         ")(_a[_i]*_m); ";
+                } else {
+                    s += "memcpy(_r,c->vreg[" + std::to_string(rd) + "]," + std::to_string(bytes) +
+                         "); ";
+                    s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=(" + uty +
+                         ")(_r[_i]" + std::string(idxop == 0x0 ? "+" : "-") + "(" + uty +
+                         ")(_a[_i]*_m)); ";
+                }
+                s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                     "][1]=0; ";
+                s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) +
+                     "); }";
+                put(s);
+                return true;
+            }
+        }
+    }
+
+    // SADDLV / UADDLV: sum every lane into one element of twice the width.
+    if ((i & 0x9F3FFC00) == 0x0E303800) {
+        const u32 Q = (i >> 30) & 1, U = (i >> 29) & 1, size = (i >> 22) & 3;
+        const u32 rn = (i >> 5) & 31, rd = i & 31;
+        const int esz = 1 << size;
+        const int bytes = Q ? 16 : 8;
+        if (size < 3 && !(size == 2 && !Q)) {
+            const int lanes = bytes / esz;
+            const std::string sty =
+                std::string(U ? "uint" : "int") + std::to_string(esz * 8) + "_t";
+            const std::string dty =
+                std::string(U ? "uint" : "int") + std::to_string(esz * 16) + "_t";
+            std::string s = "{ " + sty + " _a[" + std::to_string(lanes) + "]; " + dty + " _s=0; ";
+            s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) + "); ";
+            s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _s=(" + dty + ")(_s+(" + dty +
+                 ")_a[_i]); ";
+            s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                 "][1]=0; ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],&_s," + std::to_string(esz * 2) +
+                 "); }";
+            put(s);
+            return true;
         }
     }
 
