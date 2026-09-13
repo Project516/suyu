@@ -327,6 +327,31 @@ inline std::string ChainIndirect(const std::string& target) {
            "if (_f && --c->chain_budget > 0) return _f(c); } return; }";
 }
 
+// The condition is a literal at every site, so the switch inside recomp_cond
+// is resolvable here rather than at run time. It was 2.1% of all cycles as a
+// call - and the expression that replaces it is smaller than the call was,
+// which matters: the memory helpers were measured as *worse* inlined because
+// the instruction cache cost more than the call did.
+inline std::string Cond(u32 cond) {
+    switch (cond) {
+    case 0:  return "(c->z)";
+    case 1:  return "(!c->z)";
+    case 2:  return "(c->c)";
+    case 3:  return "(!c->c)";
+    case 4:  return "(c->n)";
+    case 5:  return "(!c->n)";
+    case 6:  return "(c->v)";
+    case 7:  return "(!c->v)";
+    case 8:  return "(c->c && !c->z)";
+    case 9:  return "(!(c->c && !c->z))";
+    case 10: return "(c->n == c->v)";
+    case 11: return "(c->n != c->v)";
+    case 12: return "((c->n == c->v) && !c->z)";
+    case 13: return "(!((c->n == c->v) && !c->z))";
+    default: return "(1)";   // AL and the NV encoding, which also always passes
+    }
+}
+
 inline std::string Xz(u32 r) {
     return r == 31 ? std::string("(uint64_t)0") : ("c->x[" + std::to_string(r) + "]");
 }
@@ -607,7 +632,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
     if ((i & 0xFFFFFC1F) == 0xD65F0000) { put(ChainIndirect("c->x[30]") + " /* RET */"); return false; }
     if ((i & 0xFFFFFC1F) == 0xD61F0000) { u32 rn = (i >> 5) & 31; put(ChainIndirect("c->x[" + std::to_string(rn) + "]") + " /* BR */"); return false; }
     if ((i & 0xFFFFFC1F) == 0xD63F0000) { u32 rn = (i >> 5) & 31; snprintf(buf, sizeof buf, "c->x[30]=g_module_base+0x%llxULL;", (unsigned long long)next); put(std::string(buf) + " " + ChainIndirect("c->x[" + std::to_string(rn) + "]") + " /* BLR */"); return false; }
-    if ((i & 0xFF000010) == 0x54000000) { s64 off = ((s32)((i >> 5) << 13) >> 13); u64 tt = pc + off * 4; u32 cond = i & 15; snprintf(buf, sizeof buf, "if (recomp_cond(c,%u)) { c->pc=g_module_base+0x%llxULL; } else { c->pc=g_module_base+0x%llxULL; } return;", cond, (unsigned long long)tt, (unsigned long long)next); put(buf); return false; }
+    if ((i & 0xFF000010) == 0x54000000) { s64 off = ((s32)((i >> 5) << 13) >> 13); u64 tt = pc + off * 4; u32 cond = i & 15; snprintf(buf, sizeof buf, "if %s { c->pc=g_module_base+0x%llxULL; } else { c->pc=g_module_base+0x%llxULL; } return;", Cond(cond).c_str(), (unsigned long long)tt, (unsigned long long)next); put(buf); return false; }
     if ((i & 0x7E000000) == 0x34000000) { u32 sf = i >> 31; bool nz = (i >> 24) & 1; u32 rt = i & 31; s64 off = ((s32)(((i >> 5) & 0x7FFFF) << 13) >> 13); u64 tt = pc + off * 4; std::string v = sf ? Xz(rt) : Wz(rt); snprintf(buf, sizeof buf, "if ((%s)%s0) { c->pc=g_module_base+0x%llxULL; } else { c->pc=g_module_base+0x%llxULL; } return;", v.c_str(), nz ? "!=" : "==", (unsigned long long)tt, (unsigned long long)next); put(buf); return false; }
     if ((i & 0x7E000000) == 0x36000000) { bool nz = (i >> 24) & 1; u32 b = ((i >> 31) << 5) | ((i >> 19) & 31); u32 rt = i & 31; s64 off = ((s32)(((i >> 5) & 0x3FFF) << 18) >> 18); u64 tt = pc + off * 4; snprintf(buf, sizeof buf, "if (((%s>>%u)&1)%s0) { c->pc=g_module_base+0x%llxULL; } else { c->pc=g_module_base+0x%llxULL; } return;", Xz(rt).c_str(), b, nz ? "!=" : "==", (unsigned long long)tt, (unsigned long long)next); put(buf); return false; }
     if ((i & 0xFFE0001F) == 0xD4000001) { u32 imm = (i >> 5) & 0xFFFF; snprintf(buf, sizeof buf, "c->pc=g_module_base+0x%llxULL; c->pending_svc=%uULL; recomp_svc(c,%u); return;", (unsigned long long)next, imm, imm); put(buf); return false; }
@@ -769,7 +794,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         const bool is_imm = ((i >> 11) & 1) != 0;
         const u32 rn = (i >> 5) & 31, nzcv = i & 15;
         const std::string b = is_imm ? (std::to_string(imm_or_rm) + "ULL") : Xz(imm_or_rm);
-        std::string s = "{ if (recomp_cond(c," + std::to_string(cond) + ")) { ";
+        std::string s = "{ if " + Cond(cond) + " { ";
         s += "uint64_t _a=" + Xz(rn) + ", _b=" + b + ", _r=" +
              std::string(op ? "_a-_b" : "_a+_b") + "; ";
         if (!sf) s += "_r &= 0xFFFFFFFFULL; ";
@@ -796,7 +821,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             if (!op && o2) els = "(" + b + " + 1)";            // CSINC
             else if (op && !o2) els = "(~" + b + ")";           // CSINV
             else if (op && o2) els = "((uint64_t)(0 - " + b + "))"; // CSNEG
-            std::string s = "{ uint64_t _r = recomp_cond(c," + std::to_string(cond) + ") ? " +
+            std::string s = "{ uint64_t _r = " + Cond(cond) + " ? " +
                             a + " : " + els + "; ";
             if (!sf) s += "_r &= 0xFFFFFFFFULL; ";
             s += "c->x[" + std::to_string(rd) + "] = _r; }";
@@ -2329,7 +2354,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             const int fsz = (ftype == 1) ? 8 : 4;
             // Selecting whole register halves rather than reinterpreting the
             // value keeps this exact for NaN payloads too.
-            put("{ uint64_t _r = recomp_cond(c," + std::to_string(cond) + ") ? c->vreg[" +
+            put("{ uint64_t _r = " + Cond(cond) + " ? c->vreg[" +
                 std::to_string(rn) + "][0] : c->vreg[" + std::to_string(rm) + "][0]; " +
                 (fsz == 4 ? "_r &= 0xFFFFFFFFULL; " : "") + "c->vreg[" + std::to_string(rd) +
                 "][0]=_r; c->vreg[" + std::to_string(rd) + "][1]=0; }");
@@ -2692,7 +2717,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             // ordinary FCMP has 1000 in bits 13..10, so the two do not overlap.
             if (((i >> 10) & 3) == 1) {
                 const u32 cond = (i >> 12) & 15, nzcv = i & 15;
-                std::string s = "{ if (recomp_cond(c," + std::to_string(cond) + ")) ";
+                std::string s = "{ if " + Cond(cond) + " ";
                 s += ld_n + ld_m;
                 s += "if (_a != _a || _b != _b) { c->n=0; c->z=0; c->c=1; c->v=1; } ";
                 s += "else { c->n = (_a < _b); c->z = (_a == _b); "
