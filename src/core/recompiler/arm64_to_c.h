@@ -1069,6 +1069,210 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         }
     }
 
+    // SSHR / USHR / SHRN: shift right by an immediate. SSHR and USHR keep the
+    // element width; SHRN halves it and writes one half of the destination.
+    if ((i & 0x9F00FC00) == 0x0F000400 || (i & 0x9F00FC00) == 0x0F008400) {
+        const bool narrow = ((i >> 10) & 0x3F) == 0x21;
+        const u32 Q = (i >> 30) & 1, U = (i >> 29) & 1;
+        const u32 immh = (i >> 19) & 15, immb = (i >> 16) & 7;
+        const u32 rn = (i >> 5) & 31, rd = i & 31;
+        u32 size = 0;
+        bool shaped = true;
+        if (immh & 8)       size = 3;
+        else if (immh & 4)  size = 2;
+        else if (immh & 2)  size = 1;
+        else if (immh & 1)  size = 0;
+        else                shaped = false;
+        if (narrow && size == 3) shaped = false;   // no 128-bit source element
+        if (shaped) {
+            // The shift is relative to the *destination* element in both
+            // cases; for SHRN the source is twice that, which is the whole
+            // point of the instruction.
+            const int dbits = 8 << size;
+            const int sbits = narrow ? (dbits * 2) : dbits;
+            const u32 shift = (u32)(dbits * 2) - ((immh << 3) | immb);
+            if (shift >= 1 && shift <= (u32)dbits) {
+                const int ssz = sbits / 8;
+                if (narrow) {
+                    const int lanes = 8 / (ssz / 2);
+                    const std::string sty = "uint" + std::to_string(sbits) + "_t";
+                    const std::string dty = "uint" + std::to_string(sbits / 2) + "_t";
+                    std::string s = "{ " + sty + " _a[" + std::to_string(lanes) + "]; " + dty +
+                                    " _r[" + std::to_string(lanes) + "]; ";
+                    s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "],16); ";
+                    s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=(" + dty +
+                         ")(_a[_i]>>" + std::to_string(shift) + "); ";
+                    if (!Q) {
+                        s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" +
+                             std::to_string(rd) + "][1]=0; ";
+                    }
+                    s += "memcpy((uint8_t*)c->vreg[" + std::to_string(rd) + "]+" +
+                         std::to_string(Q ? 8 : 0) + ",_r,8); }";
+                    put(s);
+                    return true;
+                }
+                const int bytes = Q ? 16 : 8;
+                if (!(size == 3 && !Q)) {
+                    const int lanes = bytes / ssz;
+                    const std::string uty = "uint" + std::to_string(sbits) + "_t";
+                    const std::string ity = "int" + std::to_string(sbits) + "_t";
+                    // A shift of the full width is defined here and undefined in
+                    // C, so it is folded to the all-sign / all-zero result.
+                    const bool full = shift == (u32)sbits;
+                    std::string s = "{ " + uty + " _a[" + std::to_string(lanes) + "],_r[" +
+                                    std::to_string(lanes) + "]; ";
+                    s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) +
+                         "); ";
+                    s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=";
+                    if (U) {
+                        s += full ? ("(" + uty + ")0")
+                                  : ("(" + uty + ")(_a[_i]>>" + std::to_string(shift) + ")");
+                    } else {
+                        s += "(" + uty + ")((" + ity + ")_a[_i]>>" +
+                             std::to_string(full ? (u32)(sbits - 1) : shift) + ")";
+                    }
+                    s += "; ";
+                    s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" +
+                         std::to_string(rd) + "][1]=0; ";
+                    s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) +
+                         "); }";
+                    put(s);
+                    return true;
+                }
+            }
+        }
+    }
+
+    // SQADD / UQADD: add with saturation, and CMHI / CMHS: unsigned compares.
+    // All four are three-same ops separated by opcode and U.
+    if ((i & 0x9F20FC00) == 0x0E200C00 || (i & 0x9F20FC00) == 0x0E203400 ||
+        (i & 0x9F20FC00) == 0x0E203C00) {
+        const u32 Q = (i >> 30) & 1, U = (i >> 29) & 1;
+        const u32 size = (i >> 22) & 3, opcode = (i >> 11) & 0x1F;
+        const u32 rm = (i >> 16) & 31, rn = (i >> 5) & 31, rd = i & 31;
+        const int esz = 1 << size;
+        const int bytes = Q ? 16 : 8;
+        if (!(size == 3 && !Q)) {
+            const int lanes = bytes / esz;
+            const int bits = esz * 8;
+            const std::string uty = "uint" + std::to_string(bits) + "_t";
+            const std::string ity = "int" + std::to_string(bits) + "_t";
+            std::string body;
+            if (opcode == 0x01) {
+                if (U) {
+                    // Unsigned saturating add: the sum wrapping below an input
+                    // is exactly the overflow condition.
+                    body = "{ " + uty + " _s=(" + uty + ")(_a[_i]+_b[_i]); _r[_i]=(_s<_a[_i])?(" +
+                           uty + ")~(" + uty + ")0:_s; }";
+                } else {
+                    body = "{ " + ity + " _x=(" + ity + ")_a[_i], _y=(" + ity + ")_b[_i]; " + ity +
+                           " _s=(" + ity + ")((" + uty + ")_x+(" + uty + ")_y); " +
+                           "if(((_x^_s)&(_y^_s))<0) _r[_i]=(" + uty + ")(_x<0?(" + ity + ")((" +
+                           uty + ")1<<" + std::to_string(bits - 1) + "):(" + ity + ")(((" + uty +
+                           ")1<<" + std::to_string(bits - 1) + ")-1)); else _r[_i]=(" + uty +
+                           ")_s; }";
+                }
+            } else if (opcode == 0x06 || opcode == 0x07) {
+                // CMHI is >, CMHS is >=; both unsigned, both U=1.
+                if (!U) {
+                    body.clear();
+                } else {
+                    const char* op = (opcode == 0x06) ? ">" : ">=";
+                    body = "_r[_i]=(_a[_i]" + std::string(op) + "_b[_i])?(" + uty + ")~(" + uty +
+                           ")0:(" + uty + ")0;";
+                }
+            }
+            if (!body.empty()) {
+                std::string s = "{ " + uty + " _a[" + std::to_string(lanes) + "],_b[" +
+                                std::to_string(lanes) + "],_r[" + std::to_string(lanes) + "]; ";
+                s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) +
+                     "); ";
+                s += "memcpy(_b,c->vreg[" + std::to_string(rm) + "]," + std::to_string(bytes) +
+                     "); ";
+                s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) " + body + " ";
+                s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                     "][1]=0; ";
+                s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) +
+                     "); }";
+                put(s);
+                return true;
+            }
+        }
+    }
+
+    // FADDP, vector: add adjacent pairs across the two sources.
+    if ((i & 0xBF20FC00) == 0x2E20D400) {
+        const u32 Q = (i >> 30) & 1;
+        const bool dbl = ((i >> 22) & 1) != 0;
+        const u32 rm = (i >> 16) & 31, rn = (i >> 5) & 31, rd = i & 31;
+        const char* ct = dbl ? "double" : "float";
+        const int fsz = dbl ? 8 : 4;
+        const int bytes = Q ? 16 : 8;
+        const int lanes = bytes / fsz;
+        if (lanes >= 2) {
+            const int half = lanes / 2;
+            std::string s = "{ " + std::string(ct) + " _a[" + std::to_string(lanes) + "],_b[" +
+                            std::to_string(lanes) + "],_r[" + std::to_string(lanes) + "]; ";
+            s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) + "); ";
+            s += "memcpy(_b,c->vreg[" + std::to_string(rm) + "]," + std::to_string(bytes) + "); ";
+            s += "for(int _i=0;_i<" + std::to_string(half) + ";_i++){ _r[_i]=_a[2*_i]+_a[2*_i+1]; ";
+            s += "_r[" + std::to_string(half) + "+_i]=_b[2*_i]+_b[2*_i+1]; } ";
+            s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                 "][1]=0; ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) + "); }";
+            put(s);
+            return true;
+        }
+    }
+
+    // ADDV: sum every lane into the scalar destination. This is the
+    // across-lanes class - bits 21..17 are 11000, not the 10000 of the
+    // two-register-misc ops it otherwise resembles.
+    if ((i & 0x9F3FFC00) == 0x0E31B800) {
+        const u32 Q = (i >> 30) & 1;
+        const u32 size = (i >> 22) & 3;
+        const u32 rn = (i >> 5) & 31, rd = i & 31;
+        const int esz = 1 << size;
+        const int bytes = Q ? 16 : 8;
+        // 64-bit elements have no ADDV form, and 32-bit needs the full register.
+        if (size != 3 && !(size == 2 && !Q)) {
+            const int lanes = bytes / esz;
+            const std::string ty = "uint" + std::to_string(esz * 8) + "_t";
+            std::string s = "{ " + ty + " _a[" + std::to_string(lanes) + "],_s=0; ";
+            s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) + "); ";
+            s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _s=(" + ty + ")(_s+_a[_i]); ";
+            s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                 "][1]=0; ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],&_s," + std::to_string(esz) + "); }";
+            put(s);
+            return true;
+        }
+    }
+
+    // FRECPS: the Newton-Raphson step for reciprocal estimation, 2 - n*m.
+    if ((i & 0xBFA0FC00) == 0x0E20FC00) {
+        const u32 Q = (i >> 30) & 1;
+        const bool dbl = ((i >> 22) & 1) != 0;
+        const u32 rm = (i >> 16) & 31, rn = (i >> 5) & 31, rd = i & 31;
+        const char* ct = dbl ? "double" : "float";
+        const int fsz = dbl ? 8 : 4;
+        const int bytes = Q ? 16 : 8;
+        const int lanes = bytes / fsz;
+        if (!(dbl && !Q)) {
+            std::string s = "{ " + std::string(ct) + " _a[" + std::to_string(lanes) + "],_b[" +
+                            std::to_string(lanes) + "],_r[" + std::to_string(lanes) + "]; ";
+            s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) + "); ";
+            s += "memcpy(_b,c->vreg[" + std::to_string(rm) + "]," + std::to_string(bytes) + "); ";
+            s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=(" +
+                 std::string(ct) + ")2.0-_a[_i]*_b[_i]; ";
+            s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                 "][1]=0; ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) + "); }";
+            put(s);
+            return true;
+        }
+    }
+
     // SHA256SU0: the sigma0 half of the message schedule update.
     //   W[t] = W[t-16] + s0(W[t-15]) + W[t-7] + s1(W[t-2])
     // This instruction contributes the first two terms; SHA256SU1 adds the
@@ -2445,6 +2649,34 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
                      "); }";
                 put(s);
                 return true;
+            }
+
+            // REV16 / REV32 / REV64: reverse bytes within each container.
+            // opcode 0 is REV64, 1 is REV16, and REV32 is opcode 0 with U set;
+            // size gives the element width being reversed inside.
+            if ((opcode == 0 || opcode == 1) && !scl_misc) {
+                const u32 size = (i >> 22) & 3;
+                const int esz = 1 << size;                 // byte width of an element
+                const int container = (opcode == 1) ? 2 : (U ? 4 : 8);
+                if (esz < container) {
+                    const int bytes = Q ? 16 : 8;
+                    std::string s = "{ uint8_t _a[" + std::to_string(bytes) + "],_r[" +
+                                    std::to_string(bytes) + "]; ";
+                    s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," +
+                         std::to_string(bytes) + "); ";
+                    s += "for(int _i=0;_i<" + std::to_string(bytes) + ";_i++){ ";
+                    s += "int _base=_i-(_i%" + std::to_string(container) + "); ";
+                    s += "int _off=_i-_base; ";
+                    s += "_r[_i]=_a[_base+(" + std::to_string(container) + "-" +
+                         std::to_string(esz) + "-(_off-(_off%" + std::to_string(esz) +
+                         ")))+(_off%" + std::to_string(esz) + ")]; } ";
+                    s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" +
+                         std::to_string(rd) + "][1]=0; ";
+                    s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," +
+                         std::to_string(bytes) + "); }";
+                    put(s);
+                    return true;
+                }
             }
 
             // CNT: set bits per byte. Defined for byte elements only.
@@ -4038,6 +4270,42 @@ inline const char* RuntimeC() {
 #define PATH_SEP '/'
 #endif
 
+/* AES S-box, built once on first use.
+   S(x) = affine(x^-1), and x^-1 is x^254 because x^255 == 1 for non-zero x.
+   Generated rather than tabulated: two 256-byte tables written out as source
+   would be 512 bytes of literal in a runtime already split to stay under
+   MSVC's 16380-byte cap. Checked against FIPS 197 and for round-trip. */
+static uint8_t recomp_gmul(uint8_t a, uint8_t b){
+  uint8_t p=0;
+  while(b){ if(b&1) p^=a; a=(uint8_t)((a<<1)^((a>>7)*0x1B)); b=(uint8_t)(b>>1); }
+  return p;
+}
+static uint8_t recomp_ginv(uint8_t x){
+  uint8_t p=1; int b;
+  if(!x) return 0;
+  for(b=7;b>=0;b--){ p=recomp_gmul(p,p); if((254>>b)&1) p=recomp_gmul(p,x); }
+  return p;
+}
+static uint8_t recomp_rotl8(uint8_t x,int n){ return (uint8_t)((x<<n)|(x>>(8-n))); }
+const uint8_t* recomp_aes_sbox(int inverse){
+  static uint8_t fwd[256], inv[256];
+  static int built = 0;
+  if(!built){
+    int i;
+    for(i=0;i<256;i++){
+      uint8_t b = recomp_ginv((uint8_t)i);
+      fwd[i] = (uint8_t)(b ^ recomp_rotl8(b,1) ^ recomp_rotl8(b,2) ^ recomp_rotl8(b,3)
+                           ^ recomp_rotl8(b,4) ^ 0x63);
+    }
+    for(i=0;i<256;i++){
+      uint8_t b = (uint8_t)(recomp_rotl8((uint8_t)i,1) ^ recomp_rotl8((uint8_t)i,3)
+                            ^ recomp_rotl8((uint8_t)i,6) ^ 0x05);
+      inv[i] = recomp_ginv(b);
+    }
+    built = 1;
+  }
+  return inverse ? inv : fwd;
+}
 static uint8_t* memptr(GuestContext* c, uint64_t va, uint64_t sz){
   uint64_t off=va-c->mem_base_vaddr;
   if(off+sz>c->mem_size) return 0;
@@ -4227,44 +4495,7 @@ int recomp_save_write(GuestContext* c, const char* name, const void* data, uint6
   /* Ensure parent dirs exist */
   char parent[1024]; snprintf(parent,sizeof parent,"%s",path);
   char* sl=strrchr(parent,PATH_SEP); if(!sl) sl=strrchr(parent,'/'); if(sl)*sl=0;
-)RT") + R"RT(
-/* AES S-box, built once on first use.
-   S(x) = affine(x^-1), and x^-1 is x^254 because x^255 == 1 for non-zero x.
-   Generated rather than tabulated: two 256-byte tables written out as source
-   would be 512 bytes of literal in a runtime already split to stay under
-   MSVC's 16380-byte cap. Checked against FIPS 197 and for round-trip. */
-static uint8_t recomp_gmul(uint8_t a, uint8_t b){
-  uint8_t p=0;
-  while(b){ if(b&1) p^=a; a=(uint8_t)((a<<1)^((a>>7)*0x1B)); b=(uint8_t)(b>>1); }
-  return p;
-}
-static uint8_t recomp_ginv(uint8_t x){
-  uint8_t p=1; int b;
-  if(!x) return 0;
-  for(b=7;b>=0;b--){ p=recomp_gmul(p,p); if((254>>b)&1) p=recomp_gmul(p,x); }
-  return p;
-}
-static uint8_t recomp_rotl8(uint8_t x,int n){ return (uint8_t)((x<<n)|(x>>(8-n))); }
-const uint8_t* recomp_aes_sbox(int inverse){
-  static uint8_t fwd[256], inv[256];
-  static int built = 0;
-  if(!built){
-    int i;
-    for(i=0;i<256;i++){
-      uint8_t b = recomp_ginv((uint8_t)i);
-      fwd[i] = (uint8_t)(b ^ recomp_rotl8(b,1) ^ recomp_rotl8(b,2) ^ recomp_rotl8(b,3)
-                           ^ recomp_rotl8(b,4) ^ 0x63);
-    }
-    for(i=0;i<256;i++){
-      uint8_t b = (uint8_t)(recomp_rotl8((uint8_t)i,1) ^ recomp_rotl8((uint8_t)i,3)
-                            ^ recomp_rotl8((uint8_t)i,6) ^ 0x05);
-      inv[i] = recomp_ginv(b);
-    }
-    built = 1;
-  }
-  return inverse ? inv : fwd;
-}
-)RT" + R"RT(  mkpath(parent);
+)RT") + R"RT(  mkpath(parent);
   FILE* f=fopen(path,"wb");
   if(!f){fprintf(stderr,"[recomp] save write failed: %s\n",path); return 0;}
   fwrite(data,1,(size_t)size,f); fclose(f);
