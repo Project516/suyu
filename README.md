@@ -14,6 +14,7 @@ Nintendo Switch emulator and native recompiler — based on <a href="https://git
 
 <p align="center">
   <a href="#status">Status</a> |
+  <a href="#static-recompilation">Static recompilation</a> |
   <a href="#changes-in-v005">Changes in v0.0.5</a> |
   <a href="#building">Building</a> |
   <a href="#license">License</a>
@@ -76,6 +77,58 @@ resolved only where CPM had fetched boost.
 
 [bld]: https://github.com/dougchansan/mk8-recomp/blob/main/scripts/build-suyu.sh
 
+## Static recompilation
+
+The recompiler translates a title's AArch64 code to C ahead of time, compiles it
+to native shared objects, and loads them in place of running that code on the
+JIT. As of v0.0.5 it does not need the JIT behind it at all.
+
+Measured on one title with a recorded 10,692-frame input replay, timed to
+completion at unlimited speed so both engines do identical guest work. Four
+reps, the three configurations interleaved within each rep, every rep taken with
+the machine idle:
+
+| CPU | ms/frame | relative |
+|---|---|---|
+| dynarmic (JIT only) | 2.812 | 1.00x |
+| static images + JIT for what they miss | 1.650 | **1.70x faster** |
+| static images only, no JIT | 1.816 | **1.55x faster** |
+
+The middle row is faster than the bottom one because two instruction families
+are deliberately left untranslated there: the JIT compiles those particular
+blocks better than the emitter does, so paying a transition to stay on it beats
+owning them. A build with no JIT has no such option.
+
+"No JIT" is meant literally. Built with `-DSUYU_NO_JIT=ON`, dynarmic is not
+linked into any target and `libdynarmic.a` is never built — the resulting binary
+has zero `Dynarmic::` symbols and still completes the same replay, executing 1.7
+billion blocks of statically recompiled code with nothing to fall back to.
+
+```sh
+cmake -S . -B build-nojit -G Ninja -DCMAKE_BUILD_TYPE=Release -DSUYU_NO_JIT=ON
+```
+
+Three things go with dynarmic, by design:
+
+- a title without a complete static image has no engine that can run it
+- AArch32 titles cannot run at all
+- the guest-facing `jit:u` plugin service is not registered, so a title that
+  asks for it is told there is no such service rather than given a wrong answer
+
+Keep an ordinary build around. It is the one that can tell you *what* is missing
+when something is; a build with no JIT can only tell you that something was.
+
+Two pieces make the JIT unnecessary rather than merely unused. Block discovery
+follows branches it can see, so a block only ever reached through a computed
+target is invisible to it — the dispatcher can record every address it fails to
+resolve (`SUYU_RECOMP_RECORD_MISSES`) and the exporter seeds discovery with them
+(`SUYU_AOT_EXTRA_ROOTS`), which converges in a few rounds. And
+`SUYU_RECOMP_STRICT=1` refuses the fallback outright, turning an uncovered
+address from a silent transition into a failure that names it.
+
+The export procedure, and the measurements behind the table, are in
+[mk8-recomp](https://github.com/dougchansan/mk8-recomp).
+
 ## Changes in v0.0.5
 
 Five of these are defects in suyu itself rather than recompiler work, and affect
@@ -123,6 +176,13 @@ ordinary emulation. Each is one commit.
   emulator's own sources so the two engines cannot disagree across a transition.
   Plus EXTR/ROR, ADC/SBC, LDPSW, exclusive pair forms, PRFM, and the DC
   cache-maintenance family.
+
+- **A build with no dynamic recompiler in it.** `-DSUYU_NO_JIT=ON` drops
+  dynarmic from every target. The exclusive monitor, which every process builds
+  regardless of engine and which dynarmic previously owned the only
+  implementation of, now has a standalone one; `ArmRecomp` holds the
+  `Core::ExclusiveMonitor` interface rather than dynarmic's implementation of
+  it. See [Static recompilation](#static-recompilation).
 
 - **Static and runtime coverage instrumentation** — per-module JSON of
   emitted/unhandled counts, and runtime histograms of blocks executed,
