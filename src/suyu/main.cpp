@@ -1236,8 +1236,15 @@ void GMainWindow::InitializeWidgets() {
         tr("Time taken to emulate a Switch frame, not counting framelimiting or v-sync. For "
            "full-speed emulation this should be at most 16.67 ms."));
 
+    cpu_backend_label = new QLabel();
+    cpu_backend_label->setToolTip(
+        tr("Which CPU is running the game. STATIC means execution is coming from statically "
+           "recompiled native code rather than the dynamic recompiler. The number is how many "
+           "times execution has had to leave the recompiled image and run on the JIT instead - "
+           "zero means it never has."));
+
     for (auto& label : {shader_building_label, res_scale_label, emu_speed_label, game_fps_label,
-                        emu_frametime_label}) {
+                        emu_frametime_label, cpu_backend_label}) {
         label->setVisible(false);
         label->setFrameStyle(QFrame::NoFrame);
         label->setContentsMargins(4, 0, 4, 0);
@@ -7441,6 +7448,33 @@ void GMainWindow::UpdateStatusBar() {
         tas_label->setText(GetTasStateDescription());
     } else {
         tas_label->clear();
+    }
+
+    // Which CPU is actually executing, live. Without this the only evidence is
+    // a coverage file written after the fact, which is no use to someone
+    // watching the game run.
+    {
+        const auto cpu = Core::GetRecompLiveStats();
+        if (!cpu.backend_active) {
+            cpu_backend_label->setVisible(false);
+        } else {
+            const bool clean = cpu.jit_transitions == 0;
+            QString text;
+            if (!cpu.jit_available) {
+                // Built with no dynamic recompiler at all, so there is nothing
+                // to fall back to and nothing to count.
+                text = tr("STATIC · NO JIT");
+            } else if (clean) {
+                text = tr("STATIC · JIT 0");
+            } else {
+                text = tr("STATIC · JIT %1").arg(cpu.jit_transitions);
+            }
+            cpu_backend_label->setText(text);
+            cpu_backend_label->setStyleSheet(
+                clean ? QStringLiteral("color: #2e9e5b; font-weight: bold;")
+                      : QStringLiteral("color: #c8801a; font-weight: bold;"));
+            cpu_backend_label->setVisible(true);
+        }
     }
 
     auto results = system->GetAndResetPerfStats();

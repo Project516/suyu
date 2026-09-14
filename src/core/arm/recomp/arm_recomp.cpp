@@ -426,6 +426,20 @@ void SetRecompBaseSetter(RecompBaseFn setter) {
     g_recomp_base_setter.store(setter, std::memory_order_release);
 }
 
+RecompLiveStats GetRecompLiveStats() {
+    return RecompLiveStats{
+        TotalStaticBlocks(),
+        g_counters.fallback_from_miss.load(std::memory_order_relaxed) +
+            g_counters.fallback_from_unhandled.load(std::memory_order_relaxed),
+        g_live_instances.load(std::memory_order_relaxed) > 0,
+#ifdef SUYU_NO_JIT
+        false,
+#else
+        true,
+#endif
+    };
+}
+
 RecompLookupFn GetRecompLookup() {
     return g_recomp_lookup.load(std::memory_order_acquire);
 }
