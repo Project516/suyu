@@ -6973,9 +6973,9 @@ void GMainWindow::OnLoadLibretroCore() {
 #ifdef _WIN32
                                      tr("Libretro Core (*.dll)")
 #elif defined(__APPLE__)
-                                      tr("Libretro Core (*.dylib)")
+                                     tr("Libretro Core (*.dylib)")
 #else
-                                      tr("Libretro Core (*.so)")
+                                     tr("Libretro Core (*.so)")
 #endif
         );
     if (core_path.isEmpty()) {

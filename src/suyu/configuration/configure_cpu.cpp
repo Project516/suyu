@@ -171,7 +171,7 @@ void ConfigureCpu::UpdateAvailabilityUi() {
 #ifdef HAS_NCE
                      true,
 #else
-                      false,
+                     false,
 #endif
                      nce_unavailable);
 
