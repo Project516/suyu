@@ -1,0 +1,185 @@
+name: Release
+
+# Releases are cut from a tag, never on a timer.
+#
+# The version tag is the whole point: the release, the binaries and the source
+# attached to it all describe the same commit. The previous version of this
+# file ran on a cron, deleted the tag and recreated it against whatever was on
+# the branch that morning, so the tag drifted off the commit it was supposed to
+# name and the release stopped corresponding to any particular source.
+#
+# workflow_dispatch builds everything but publishes nothing, so the pipeline
+# can be exercised without cutting a release.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Linux
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          # X11/Wayland headers are not optional: SDL3 aborts configure without
+          # one of them. glslang-tools supplies glslangValidator, which the host
+          # shader step requires by name.
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config ninja-build nasm autoconf \
+            qt6-base-dev qt6-base-private-dev libqt6svg6-dev libqt6charts6-dev \
+            qt6-multimedia-dev libqt6opengl6-dev glslang-tools \
+            libboost-dev libboost-filesystem-dev libboost-context-dev \
+            libusb-1.0-0-dev libssl-dev \
+            libavcodec-dev libavformat-dev libavutil-dev libavfilter-dev \
+            libswscale-dev libswresample-dev \
+            libzstd-dev liblz4-dev libgl1-mesa-dev \
+            libasound2-dev libpulse-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
+            libxfixes-dev libxkbcommon-dev libxss-dev libxtst-dev \
+            libwayland-dev libwayland-egl1 wayland-protocols libdecor-0-dev \
+            libegl-dev libdrm-dev libgbm-dev libvulkan-dev
+      - name: Install CMake 3.31
+        # CMakeModules/CPMUtil.cmake requires 3.31; ubuntu-24.04 ships 3.28.
+        run: |
+          V=3.31.6
+          curl -fsSL -o /tmp/cmake.tar.gz \
+            "https://github.com/Kitware/CMake/releases/download/v${V}/cmake-${V}-linux-x86_64.tar.gz"
+          sudo mkdir -p /opt/cmake
+          sudo tar xzf /tmp/cmake.tar.gz -C /opt/cmake --strip-components=1
+          echo /opt/cmake/bin >> "$GITHUB_PATH"
+      - name: Configure
+        # fmt_FORCE_BUNDLED: the system fmt 9 has no format_string::get(), and
+        # suyu only forces the bundled copy inside a branch that does not apply
+        # to an ordinary Linux build.
+        run: |
+          cmake --version
+          cmake -B build -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF \
+            -DYUZU_TESTS=OFF -DENABLE_WEB_SERVICE=OFF \
+            -Dfmt_FORCE_BUNDLED=ON
+      - name: Build
+        run: cmake --build build --target suyu suyu-cmd
+      - name: Package
+        run: |
+          mkdir -p _pkg
+          cp build/bin/suyu build/bin/suyu-cmd _pkg/
+          cp LICENSE.txt _pkg/
+          tar -czf suyu-linux-x86_64.tar.gz -C _pkg .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: suyu-linux-x86_64.tar.gz
+
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.9.3'
+          arch: win64_msvc2022_64
+          modules: qtcharts qtmultimedia
+      - name: Install Vulkan SDK
+        # Supplies glslangValidator. Vulkan headers themselves come from
+        # externals/Vulkan-Headers, so nothing else here needs the SDK.
+        shell: pwsh
+        run: |
+          choco install vulkan-sdk -y --no-progress
+          $sdk = Get-ChildItem C:\VulkanSDK -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          "VULKAN_SDK=$($sdk.FullName)" >> $env:GITHUB_ENV
+          "$($sdk.FullName)\Bin" >> $env:GITHUB_PATH
+      - name: Configure
+        shell: bash
+        run: |
+          cmake --version
+          cmake -B build -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF \
+            -DYUZU_TESTS=OFF -DENABLE_WEB_SERVICE=OFF
+      - name: Build
+        shell: bash
+        run: cmake --build build --target suyu suyu-cmd
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force _pkg | Out-Null
+          Copy-Item build\bin\suyu.exe, build\bin\suyu-cmd.exe _pkg\
+          Get-ChildItem build\bin -Filter *.dll | Copy-Item -Destination _pkg\
+          if (Test-Path build\bin\plugins) { Copy-Item build\bin\plugins _pkg\ -Recurse }
+          windeployqt --release --no-translations _pkg\suyu.exe
+          Copy-Item LICENSE.txt _pkg\
+          Compress-Archive -Path _pkg\* -DestinationPath suyu-windows-x86_64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: suyu-windows-x86_64.zip
+
+  source:
+    name: Source archive
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Archive the complete source, submodules included
+        # GitHub's own "Source code" links exclude submodules, so on their own
+        # they are not the corresponding source for these binaries. This one is
+        # the tree the release was actually built from.
+        run: |
+          NAME="suyu-${GITHUB_REF_NAME:-manual}-source"
+          git ls-files --recurse-submodules -z \
+            | tar --null -T - -czf "${NAME}.tar.gz" --transform "s,^,${NAME}/,"
+          ls -la "${NAME}.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source
+          path: '*.tar.gz'
+
+  publish:
+    name: Publish
+    # Only for a tag, and only when every build succeeded. The previous version
+    # used `if: always()`, so a release could go out with a platform missing or
+    # a failed build silently omitted.
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-linux, build-windows, source]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Collect
+        run: |
+          mkdir -p out
+          find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' \) -exec mv {} out/ \;
+          ls -la out
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "suyu $TAG" \
+            --notes "Built from \`$TAG\` (\`${GITHUB_SHA}\`) by GitHub Actions.
+
+          \`suyu-$TAG-source.tar.gz\` is the complete source this was built from, submodules included. GitHub's own source links above exclude submodules.
+
+          No game data, keys or firmware are included here or fetched by anything in it. You supply your own." \
+            out/*
