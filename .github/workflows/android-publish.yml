@@ -19,7 +19,7 @@ jobs:
     if: github.repository == 'suyu-emu/SuyuEclipse' && (github.event_name != 'workflow_dispatch' || github.event.inputs.android != 'false')
     steps:
       # this checkout is required to make sure the GitHub Actions scripts are available
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         name: Pre-checkout
         with:
           submodules: false
@@ -41,7 +41,7 @@ jobs:
           else
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         id: check-changes
         name: 'Check for new changes'
         if: steps.validate-token.outputs.has_token == 'true'
@@ -56,7 +56,7 @@ jobs:
             return checkAndroidChanges(github);
       - run: npm install execa@5
         if: steps.check-changes.outputs.result == 'true' && steps.validate-token.outputs.has_token == 'true'
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         name: Checkout
         if: steps.check-changes.outputs.result == 'true' && steps.validate-token.outputs.has_token == 'true'
         with:
@@ -64,7 +64,7 @@ jobs:
           fetch-depth: 0
           submodules: true
           token: ${{ secrets.ALT_GITHUB_TOKEN }}
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         name: 'Check and merge Android changes'
         if: steps.check-changes.outputs.result == 'true' && steps.validate-token.outputs.has_token == 'true'
         env:

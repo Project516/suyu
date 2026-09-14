@@ -16,5 +16,5 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'suyu-emu/SuyuEclipse' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: fsfe/reuse-action@v1
+      - uses: actions/checkout@v7
+      - uses: fsfe/reuse-action@v6
