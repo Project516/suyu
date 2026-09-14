@@ -304,7 +304,7 @@ inline std::string ChainTo(u64 t) {
         // bound the depth rather than assume it stays at one frame.
         snprintf(b, sizeof b,
                  "{ void %s(GuestContext*); if (--c->chain_budget <= 0) "
-                 "{ c->pc=g_module_base+0x%llxULL; return; } return %s(c); }",
+                 "{ c->pc=g_module_base+0x%llxULL; return; } %s(c); return; }",
                  nm, (unsigned long long)t, nm);
     } else {
         snprintf(b, sizeof b, "{ c->pc=g_module_base+0x%llxULL; return; }",
@@ -324,7 +324,7 @@ inline std::string ChainTo(u64 t) {
 inline std::string ChainIndirect(const std::string& target) {
     return "{ c->pc=" + target +
            "; { BlockFn _f=recomp_lookup(c->pc-g_module_base); "
-           "if (_f && --c->chain_budget > 0) return _f(c); } return; }";
+           "if (_f && --c->chain_budget > 0) { _f(c); return; } } return; }";
 }
 
 // The condition is a literal at every site, so the switch inside recomp_cond
