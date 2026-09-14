@@ -40,6 +40,10 @@
 #include "core/hle/service/am/applet_manager.h"
 #include "core/hle/service/am/service/library_applet_creator.h"
 #include "core/hle/service/filesystem/filesystem.h"
+#include <map>
+#include "common/lz4_compression.h"
+#include "core/loader/nso.h"
+#include "core/recompiler/arm64_to_c.h"
 #include "core/loader/loader.h"
 #include "frontend_common/config.h"
 #include "input_common/main.h"
@@ -381,6 +385,197 @@ static int ProbeIsaList(const std::string& list_path, const std::string& out_pat
     return 0;
 }
 
+
+// Decode coverage for a whole library, without exporting anything.
+//
+// Whether a title can run without a JIT has two halves: does the emitter
+// understand every instruction in its image, and is every block that executes
+// actually emitted. The second needs the title to run. This answers the first,
+// which gates the second, and needs no boot, no input and no disk - the .text is
+// decompressed in memory and every word is run through the emitter.
+//
+// Zero unhandled instructions makes a title a candidate for a JIT-free build.
+// Any at all rules it out, and the signature says what is missing.
+static int ProbeDecodeList(const std::string& list_path, const std::string& out_path) {
+    std::ifstream list{list_path};
+    std::ofstream out{out_path, std::ios::trunc};
+    if (!list || !out) {
+        return 1;
+    }
+
+    // The configuration a JIT-free export uses. Two instruction families are off
+    // by default because the JIT runs those blocks faster; a build with no JIT
+    // has nothing to hand them to, so asking the default question would report a
+    // gap in every title that is not a gap for the case being measured.
+    suyu::recomp::g_translate_all = true;
+
+    static const auto vfs = std::make_shared<FileSys::RealVfsFilesystem>();
+
+    const auto exefs_from_nsp =
+        [](const std::shared_ptr<FileSys::NSP>& nsp) -> FileSys::VirtualDir {
+        if (!nsp || nsp->GetStatus() != Loader::ResultStatus::Success) {
+            return nullptr;
+        }
+        if (auto pre_extracted = nsp->GetExeFS()) {
+            return pre_extracted;
+        }
+        const auto tid = nsp->GetProgramTitleID();
+        if (const auto nca = nsp->GetNCA(tid, FileSys::ContentRecordType::Program)) {
+            if (auto exefs = nca->GetExeFS()) {
+                return exefs;
+            }
+        }
+        if (const auto nca = nsp->GetNCA(tid, FileSys::ContentRecordType::Program,
+                                         FileSys::TitleType::Update)) {
+            return nca->GetExeFS();
+        }
+        return nullptr;
+    };
+
+    std::string rom_path;
+    while (std::getline(list, rom_path)) {
+        while (!rom_path.empty() && (rom_path.back() == '\r' || rom_path.back() == '\n')) {
+            rom_path.pop_back();
+        }
+        if (rom_path.empty()) {
+            continue;
+        }
+
+        const auto emit = [&out, &rom_path](std::string_view status, u64 tid, u64 total,
+                                            u64 unhandled, std::string_view note) {
+            out << status << '\t' << fmt::format("{:016X}", tid) << '\t' << total << '\t'
+                << unhandled << '\t' << note << '\t' << rom_path << '\n';
+            out.flush();
+        };
+
+        FileSys::VirtualDir exefs;
+        u64 title_id = 0;
+        try {
+            auto file = vfs->OpenFile(rom_path, FileSys::OpenMode::Read);
+            if (!file) {
+                emit("ERROR", 0, 0, 0, "open failed");
+                continue;
+            }
+            std::string name = file->GetName();
+            std::string ext;
+            if (const auto pos = name.rfind('.'); pos != std::string::npos) {
+                ext = name.substr(pos);
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            }
+            if (ext == ".nsp") {
+                auto nsp = std::make_shared<FileSys::NSP>(file);
+                title_id = nsp->GetProgramTitleID();
+                exefs = exefs_from_nsp(nsp);
+            } else if (ext == ".xci") {
+                auto xci = std::make_shared<FileSys::XCI>(file);
+                if (xci->GetStatus() != Loader::ResultStatus::Success) {
+                    emit("ERROR", 0, 0, 0, "xci header");
+                    continue;
+                }
+                auto secure = xci->GetSecurePartitionNSP();
+                if (secure) {
+                    title_id = secure->GetProgramTitleID();
+                    exefs = exefs_from_nsp(secure);
+                }
+            }
+        } catch (const std::exception& e) {
+            emit("ERROR", title_id, 0, 0, fmt::format("exception: {}", e.what()));
+            continue;
+        }
+
+        if (!exefs) {
+            emit("ERROR", title_id, 0, 0, "no exefs");
+            continue;
+        }
+        if (const auto npdm_file = exefs->GetFile("main.npdm")) {
+            FileSys::ProgramMetadata metadata;
+            if (metadata.Load(npdm_file) == Loader::ResultStatus::Success &&
+                !metadata.Is64BitProgram()) {
+                emit("ARM32", title_id, 0, 0, "not translatable");
+                continue;
+            }
+        }
+
+        u64 total = 0;
+        u64 unhandled_count = 0;
+        std::map<u32, u64> unhandled_sig;
+        try {
+            for (const auto& nso_file : exefs->GetFiles()) {
+                if (!nso_file || nso_file->GetSize() < sizeof(Loader::NSOHeader)) {
+                    continue;
+                }
+                Loader::NSOHeader header{};
+                if (nso_file->ReadObject(&header) != sizeof(Loader::NSOHeader)) {
+                    continue;
+                }
+                if (header.magic != Common::MakeMagic('N', 'S', 'O', '0')) {
+                    continue;   // main.npdm and friends live here too
+                }
+                std::vector<u8> text = nso_file->ReadBytes(header.segments_compressed_size[0],
+                                                           header.segments[0].offset);
+                if (text.empty()) {
+                    continue;
+                }
+                if (header.IsSegmentCompressed(0)) {
+                    text = Common::Compression::DecompressDataLZ4(text, header.segments[0].size);
+                    if (text.empty()) {
+                        continue;
+                    }
+                }
+                // Discovered blocks, not a linear sweep of .text. A linear
+                // sweep also decodes literal pools and alignment padding, which
+                // are not instructions and never will be - it would report a gap
+                // in every binary ever built. This is the same denominator the
+                // exporter uses, so the number is comparable to its coverage.
+                const u64 base = header.segments[0].location;
+                const auto blocks = suyu::recomp::DiscoverBlocks(text.data(), text.size(), base);
+                std::string sink;
+                for (const auto& block : blocks) {
+                    for (u32 k = 0; k < block.count; ++k) {
+                        const u64 pc = block.vaddr + static_cast<u64>(k) * 4;
+                        const size_t off = static_cast<size_t>(pc - base);
+                        if (off + 4 > text.size()) {
+                            break;
+                        }
+                        u32 insn = 0;
+                        std::memcpy(&insn, text.data() + off, sizeof(insn));
+                        sink.clear();
+                        bool miss = false;
+                        suyu::recomp::Translate(insn, pc, sink, &miss);
+                        ++total;
+                        if (miss) {
+                            ++unhandled_count;
+                            ++unhandled_sig[insn & 0xFFC00000u];
+                        }
+                    }
+                }
+            }
+        } catch (const std::exception& e) {
+            emit("ERROR", title_id, total, unhandled_count, fmt::format("decode: {}", e.what()));
+            continue;
+        }
+
+        if (total == 0) {
+            emit("ERROR", title_id, 0, 0, "no nso text");
+            continue;
+        }
+
+        // Ranked, so the note says what is missing and not only how much.
+        std::vector<std::pair<u32, u64>> ranked{unhandled_sig.begin(), unhandled_sig.end()};
+        std::sort(ranked.begin(), ranked.end(),
+                  [](const auto& a, const auto& b) { return a.second > b.second; });
+        std::string note;
+        for (size_t i = 0; i < ranked.size() && i < 4; ++i) {
+            note += fmt::format("{}{:08X}:{}", i ? " " : "", ranked[i].first, ranked[i].second);
+        }
+        if (note.empty()) {
+            note = "-";
+        }
+        emit(unhandled_count == 0 ? "CLEAN" : "GAPS", title_id, total, unhandled_count, note);
+    }
+    return 0;
+}
+
 int main(int argc, char** argv) {
 #ifdef _WIN32
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
@@ -454,6 +649,9 @@ int main(int argc, char** argv) {
     for (int i = 1; i + 2 < argc; ++i) {
         if (std::string_view{argv[i]} == "--probe-isa-list") {
             return ProbeIsaList(argv[i + 1], argv[i + 2]);
+        }
+        if (std::string_view{argv[i]} == "--probe-decode-list") {
+            return ProbeDecodeList(argv[i + 1], argv[i + 2]);
         }
     }
 
