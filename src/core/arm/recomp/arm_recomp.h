@@ -16,6 +16,7 @@ namespace Core {
 
 class System;
 class DynarmicExclusiveMonitor;
+class ExclusiveMonitor;
 
 /**
  * Signature of a recompiled block produced by suyu::recomp::EmitProject.
@@ -91,7 +92,7 @@ public:
     /// debugger that is not attached and the game hangs on a black screen with
     /// no forward progress.
     explicit ArmRecomp(System& system, bool uses_wall_clock, RecompLookupFn lookup,
-                       Kernel::KProcess* process, DynarmicExclusiveMonitor* exclusive_monitor,
+                       Kernel::KProcess* process, ExclusiveMonitor* exclusive_monitor,
                        std::size_t core_index);
     ~ArmRecomp() override;
 

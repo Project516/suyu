@@ -227,6 +227,12 @@ cmake_dependent_option(ENABLE_OPENGL "Enable OpenGL" ON "NOT (WIN32 AND ARCHITEC
 mark_as_advanced(FORCE ENABLE_OPENGL)
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
+# A build with no dynamic recompiler in it at all. The CPU then comes
+# entirely from statically recompiled images, and an address none of them
+# covers is a hard failure rather than a fallback - which is the point.
+# Titles without a complete static image, and AArch32 titles, cannot run in
+# such a build. The guest-facing jit:u service goes with it.
+option(SUYU_NO_JIT "Build without dynarmic: statically recompiled code only" OFF)
 option(SUYU_BUILD_LIBRETRO_CORE "Build suyu as a libretro core (suyu_libretro.dll)" OFF)
 if (SUYU_BUILD_LIBRETRO_CORE)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)

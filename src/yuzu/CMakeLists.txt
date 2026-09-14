@@ -431,7 +431,9 @@ if (WIN32 AND NOT YUZU_USE_BUNDLED_QT)
 endif()
 
 if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
+    if (NOT SUYU_NO_JIT)
     target_link_libraries(yuzu PRIVATE dynarmic::dynarmic)
+endif()
 endif()
 
 if (YUZU_ROOM)

@@ -13,6 +13,8 @@ add_library(core STATIC
     arm/debug.h
     arm/exclusive_monitor.cpp
     arm/exclusive_monitor.h
+    arm/standalone_exclusive_monitor.cpp
+    arm/standalone_exclusive_monitor.h
     arm/symbols.cpp
     arm/symbols.h
     constants.cpp
@@ -1255,7 +1257,8 @@ if (HAS_NCE)
     target_link_libraries(core PRIVATE merry::oaknut)
 endif()
 
-if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64 OR ARCHITECTURE_riscv64 OR ARCHITECTURE_loongarch64)
+if ((ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64 OR ARCHITECTURE_riscv64 OR ARCHITECTURE_loongarch64)
+    AND NOT SUYU_NO_JIT)
     target_sources(core PRIVATE
         arm/dynarmic/arm_dynarmic.h
         arm/dynarmic/arm_dynarmic_64.cpp
@@ -1273,6 +1276,10 @@ if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64 OR ARCHITECTURE_riscv64 OR ARCHITE
         hle/service/jit/jit.cpp
         hle/service/jit/jit.h)
     target_link_libraries(core PRIVATE dynarmic::dynarmic)
+endif()
+
+if (SUYU_NO_JIT)
+    target_compile_definitions(core PUBLIC SUYU_NO_JIT)
 endif()
 
 target_sources(core PRIVATE hle/service/ssl/ssl_backend_openssl.cpp)

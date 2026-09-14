@@ -20,8 +20,11 @@
 #include "core/core_timing.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/arm/debug.h"
+#ifndef SUYU_NO_JIT
 #include "core/arm/dynarmic/arm_dynarmic_64.h"
 #include "core/arm/dynarmic/dynarmic_exclusive_monitor.h"
+#endif
+#include "core/arm/exclusive_monitor.h"
 #include "core/memory.h"
 
 namespace Core {
@@ -925,16 +928,21 @@ struct ArmRecomp::Impl {
     // first miss rather than up front: most runs never need it, and a JIT per
     // core costs a code cache each.
     Kernel::KProcess* owner_process{};
-    DynarmicExclusiveMonitor* exclusive_monitor{};
+    // The base interface, not dynarmic's implementation of it: the recompiled
+    // path only ever calls the virtual methods, and holding the concrete type
+    // here is what forced the library into a build that never runs a JIT.
+    ExclusiveMonitor* exclusive_monitor{};
     std::size_t core_index{};
     bool uses_wall_clock{};
+#ifndef SUYU_NO_JIT
     std::unique_ptr<ArmDynarmic64> fallback{};
+#endif
     bool in_fallback{false};
     bool fallback_unavailable{false};
 };
 
 ArmRecomp::ArmRecomp(System& system, bool uses_wall_clock, RecompLookupFn lookup,
-                     Kernel::KProcess* process, DynarmicExclusiveMonitor* exclusive_monitor,
+                     Kernel::KProcess* process, ExclusiveMonitor* exclusive_monitor,
                      std::size_t core_index)
     : ArmInterface{uses_wall_clock}, impl{std::make_unique<Impl>(system, lookup)} {
     impl->owner_process = process;
@@ -968,21 +976,35 @@ bool ArmRecomp::EnterFallback() {
         LOG_CRITICAL(Core_ARM, "recomp: strict mode - refusing to fall back to the JIT");
         return false;
     }
+#ifdef SUYU_NO_JIT
+    // Built without a dynamic recompiler at all. There is nothing to fall back
+    // to, by construction rather than by configuration.
+    impl->fallback_unavailable = true;
+    LOG_CRITICAL(Core_ARM, "recomp: built without a JIT; uncovered code cannot run");
+    return false;
+#else
     if (!impl->fallback) {
         if (!impl->owner_process || !impl->exclusive_monitor) {
             impl->fallback_unavailable = true;
             return false;
         }
-        impl->fallback = std::make_unique<ArmDynarmic64>(impl->system, impl->uses_wall_clock,
-                                                         impl->owner_process, *impl->exclusive_monitor,
-                                                         impl->core_index);
+        impl->fallback = std::make_unique<ArmDynarmic64>(
+            impl->system, impl->uses_wall_clock, impl->owner_process,
+            static_cast<DynarmicExclusiveMonitor&>(*impl->exclusive_monitor), impl->core_index);
         LOG_WARNING(Core_ARM, "recomp: created JIT fallback for uncovered code");
     }
     impl->in_fallback = true;
     return true;
+#endif
 }
 
 HaltReason ArmRecomp::RunFallback(Kernel::KThread* thread) {
+#ifdef SUYU_NO_JIT
+    // Unreachable: EnterFallback never succeeds in this build. Kept so the one
+    // call site needs no guard of its own.
+    (void)thread;
+    return HaltReason::PrefetchAbort;
+#else
     // The recompiled context is the single source of truth; the JIT is loaded
     // from it on the way in and drained back on the way out, so every accessor
     // on this interface (SVC arguments, thread context save/restore) keeps
@@ -1015,6 +1037,7 @@ HaltReason ArmRecomp::RunFallback(Kernel::KThread* thread) {
         g_counters.jit_to_static.fetch_add(1, std::memory_order_relaxed);
     }
     return hr;
+#endif
 }
 
 HaltReason ArmRecomp::RunThread(Kernel::KThread* thread) {
@@ -1396,9 +1419,13 @@ void ArmRecomp::SignalInterrupt(Kernel::KThread* thread) {
     impl->interrupted.store(true, std::memory_order_relaxed);
     // While the JIT is running this thread it is the one that has to be woken;
     // the flag above is only read by the recompiled dispatch loop.
+#ifndef SUYU_NO_JIT
     if (impl->fallback) {
         impl->fallback->SignalInterrupt(thread);
     }
+#else
+    (void)thread;
+#endif
 }
 
 const Kernel::DebugWatchpoint* ArmRecomp::HaltedWatchpoint() const {

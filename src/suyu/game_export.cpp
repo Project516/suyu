@@ -41,10 +41,12 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#ifndef SUYU_NO_JIT
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 #include "dynarmic/frontend/A64/translate/a64_translate.h"
 #include "dynarmic/ir/basic_block.h"
+#endif
 
 #include "common/common_types.h"
 #include "common/fs/path_util.h"
@@ -1182,6 +1184,9 @@ static FileSys::VirtualFile ExtractRomFsFromRom(const std::string& rom_path) {
     return nullptr;
 }
 
+// Only the IR dump below reads instructions here, so this goes with it rather
+// than sitting unused and tripping -Werror=unused-function.
+#ifndef SUYU_NO_JIT
 static std::optional<u32> ReadArm64InstructionAt(std::span<const u8> text, u32 text_vaddr,
                                                  u64 vaddr) {
     if (vaddr < text_vaddr) {
@@ -1197,7 +1202,18 @@ static std::optional<u32> ReadArm64InstructionAt(std::span<const u8> text, u32 t
     std::memcpy(&instruction, text.data() + offset, sizeof(instruction));
     return instruction;
 }
+#endif
 
+// Writes a Dynarmic IR dump per block, for eyeballing what the JIT would have
+// made of code the emitter is being asked about. Debug material only - nothing
+// in the export pipeline reads it - and the only reason this file needs
+// dynarmic at all, so it goes when dynarmic does.
+#ifdef SUYU_NO_JIT
+static bool SerializeTranslatedBlocks(const NsoAnalysisResult&, const QString&, const QString&,
+                                      u32*, u32*) {
+    return false;
+}
+#else
 static bool SerializeTranslatedBlocks(const NsoAnalysisResult& mod, const QString& ir_root,
                                       const QString& code_root, u32* serialized_blocks,
                                       u32* failed_blocks) {
@@ -1286,6 +1302,7 @@ static bool SerializeTranslatedBlocks(const NsoAnalysisResult& mod, const QStrin
 
     return true;
 }
+#endif
 
 #ifdef _WIN32
 // Every Visual Studio installation that carries the x64 C++ toolset, newest
