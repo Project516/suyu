@@ -14,6 +14,8 @@ Nintendo Switch emulator and native recompiler — based on <a href="https://git
 
 <p align="center">
   <a href="#status">Status</a> |
+  <a href="#static-recompilation">Static recompilation</a> |
+  <a href="#changes-in-v005">Changes in v0.0.5</a> |
   <a href="#building">Building</a> |
   <a href="#license">License</a>
 </p>
@@ -43,7 +45,156 @@ Based on [Eden](https://git.eden-emu.dev/eden-emu/eden), with suyu's own improve
 
 Final version: **v0.04**. Automated builds are published to the [releases page](../../releases) by GitHub Actions (Windows, Linux, Android).
 
-Platforms: Windows, Linux, Android. macOS/iOS not included in this release.
+Upstream was inconsistent about its own version — the repository is named
+`suyu-v0.0.4`, the tag reads `v0.04-latest`, and `BUILD_FULLNAME` was hardcoded
+to `v0.04`. This fork normalises to the three-part form. Read literally, `v0.04`
+means 0.4, which was evidently not the intent.
+
+Platforms: Windows and Linux both build and run. Android is inherited from
+upstream and untested since the fork; macOS/iOS are not included.
+
+Linux needs five things Windows does not, all handled by
+[`scripts/build-suyu.sh`][bld] in the consuming project:
+
+- CMake 3.31 (`CMakeModules/CPMUtil.cmake` requires it; Ubuntu 24.04 ships 3.28)
+- `-Dfmt_FORCE_BUNDLED=ON` — the system fmt 9 has no `format_string::get()`, and
+  suyu only forces the bundled one inside a branch that does not apply here
+- Qt6 Charts, which Ubuntu packages separately
+- system Boost
+- skipping the `externals/ownfoil` submodule, whose own nested submodule no
+  longer resolves; nothing in suyu's CMake references it
+
+Building on Linux found two defects that MSVC had silently accepted: literal
+carriage returns inside string literals, and a boost forwarding header that
+resolved only where CPM had fetched boost.
+
+[bld]: https://github.com/dougchansan/mk8-recomp/blob/main/scripts/build-suyu.sh
+
+## Static recompilation
+
+The recompiler translates a title's AArch64 code to C ahead of time, compiles it
+to native shared objects, and loads them in place of running that code on the
+JIT. As of v0.0.5 it does not need the JIT behind it at all.
+
+Measured on one title with a recorded 10,692-frame input replay, timed to
+completion at unlimited speed so both engines do identical guest work. Four
+reps, the three configurations interleaved within each rep, every rep taken with
+the machine idle:
+
+| CPU | ms/frame | relative |
+|---|---|---|
+| dynarmic (JIT only) | 2.812 | 1.00x |
+| static images + JIT for what they miss | 1.650 | **1.70x faster** |
+| static images only, no JIT | 1.816 | **1.55x faster** |
+
+The middle row is faster than the bottom one because two instruction families
+are deliberately left untranslated there: the JIT compiles those particular
+blocks better than the emitter does, so paying a transition to stay on it beats
+owning them. A build with no JIT has no such option.
+
+"No JIT" is meant literally. Built with `-DSUYU_NO_JIT=ON`, dynarmic is not
+linked into any target and `libdynarmic.a` is never built — the resulting binary
+has zero `Dynarmic::` symbols and still completes the same replay, executing 1.7
+billion blocks of statically recompiled code with nothing to fall back to.
+
+```sh
+cmake -S . -B build-nojit -G Ninja -DCMAKE_BUILD_TYPE=Release -DSUYU_NO_JIT=ON
+```
+
+Three things go with dynarmic, by design:
+
+- a title without a complete static image has no engine that can run it
+- AArch32 titles cannot run at all
+- the guest-facing `jit:u` plugin service is not registered, so a title that
+  asks for it is told there is no such service rather than given a wrong answer
+
+Keep an ordinary build around. It is the one that can tell you *what* is missing
+when something is; a build with no JIT can only tell you that something was.
+
+Two pieces make the JIT unnecessary rather than merely unused. Block discovery
+follows branches it can see, so a block only ever reached through a computed
+target is invisible to it — the dispatcher can record every address it fails to
+resolve (`SUYU_RECOMP_RECORD_MISSES`) and the exporter seeds discovery with them
+(`SUYU_AOT_EXTRA_ROOTS`), which converges in a few rounds. And
+`SUYU_RECOMP_STRICT=1` refuses the fallback outright, turning an uncovered
+address from a silent transition into a failure that names it.
+
+The export procedure, and the measurements behind the table, are in
+[mk8-recomp](https://github.com/dougchansan/mk8-recomp).
+
+## Changes in v0.0.5
+
+Five of these are defects in suyu itself rather than recompiler work, and affect
+ordinary emulation. Each is one commit.
+
+### Fixes
+
+- **Installed updates and DLC in NAND were never indexed.** `GetFileAtID` tried
+  eight storage-layout variants but skipped every odd index except 7, so the
+  `.cnmt.nca` suffix was only ever looked for at the cache root — never inside a
+  `000000XX/` directory, which is exactly where meta NCAs are stored and what
+  `InstallEntry` writes. Every meta NCA in NAND was therefore unreachable and no
+  installed update or DLC ever entered the cache, silently: a miss is
+  indistinguishable from nothing being installed, which is why the frontend's
+  installed-title listing reported zero. A second defect behind it let an older
+  update overwrite a newer one, because the metadata map is keyed by title id
+  with no version comparison — now the higher `GetTitleVersion()` wins.
+
+- **Service handler registration dropped most commands.** A
+  `FunctionInfoTyped<T>` array was walked through a `FunctionInfoBase*` with a
+  different member layout. `sizeof()` agrees, so a size assertion passes and
+  tells you nothing, but every element after the first was read from the wrong
+  offset. `IpcController` registered 2 of its 6 handlers;
+  `QueryPointerBufferSize` was among the lost, and it is part of CMIF session
+  setup — so titles stalled in early service initialisation.
+
+- **RomFS registration was silently dropped.** `emplace` where
+  `insert_or_assign` was meant, so re-registration kept the stale entry and the
+  title panicked on boot.
+
+- **AOT image dispatch resolved every PC to the wrong module.** Double base
+  subtraction made every lookup underflow, and a four-entry module table
+  mismapped any title with more than one subsdk.
+
+- **The AOT exporter read the base ExeFS, not the update's.** `PatchManager`
+  replaces the ExeFS wholesale when an update is present, so the exported image
+  diverged from live execution on any updated title.
+
+### Additions
+
+- **AArch64 → C recompiler work.** Exclusives now route through
+  `Core::ExclusiveMonitor` (previously a plain load/store with `STXR` always
+  reporting success, which makes every compare-and-swap non-atomic under real
+  threads); FPCR/FPSR are modelled; the counter and `CTR_EL0` are read from the
+  emulator's own sources so the two engines cannot disagree across a transition.
+  Plus EXTR/ROR, ADC/SBC, LDPSW, exclusive pair forms, PRFM, and the DC
+  cache-maintenance family.
+
+- **A build with no dynamic recompiler in it.** `-DSUYU_NO_JIT=ON` drops
+  dynarmic from every target. The exclusive monitor, which every process builds
+  regardless of engine and which dynarmic previously owned the only
+  implementation of, now has a standalone one; `ArmRecomp` holds the
+  `Core::ExclusiveMonitor` interface rather than dynarmic's implementation of
+  it. See [Static recompilation](#static-recompilation).
+
+- **Static and runtime coverage instrumentation** — per-module JSON of
+  emitted/unhandled counts, and runtime histograms of blocks executed,
+  transitions by cause, unimplemented opcodes and SVCs.
+
+- **`suyu-cmd --probe-isa-list`** reports each title's CPU architecture without
+  booting it, reading the update's NPDM as well as the base's. An update can
+  change the answer: a title can ship a 32-bit base and a later 64-bit update.
+
+- **Diagnostics** — the NPDM log line carries a content hash, because size is not
+  an identity - two updates of one title can share a `main.npdm` size while
+  differing in architecture - and `PatchExeFS` names which provider slot
+  answered for an update.
+
+Full change set:
+
+```
+git diff d1d09321d7ab84252291e05b3efbc8a8dfa57481..mk8-recomp
+```
 
 ## Legal Notice
 
@@ -59,32 +210,104 @@ As derived from §512(f), if Nintendo (or an affiliated entity) knowingly materi
 
 ## Building
 
-### Dependencies
+Both platforms below are verified: the Linux instructions were run end to end in
+a clean Ubuntu 24.04 container, and the Windows ones from a fresh clone. Nothing
+here fetches a game, keys or firmware — those are yours to supply.
 
-- CMake 3.15+, Ninja
-- Qt 6.4+ (without bundled Qt: `-DYUZU_USE_BUNDLED_QT=OFF`)
-- Vulkan SDK, libusb, OpenSSL
-
-### Windows
-
-```bat
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF -GNinja
-cmake --build build --target suyu suyu-cmd
-```
+CMake **3.31 or newer** is required. `CMakeModules/CPMUtil.cmake` demands it and
+Ubuntu 24.04 ships 3.28, so on most distributions it has to come from Kitware
+rather than from the package manager.
 
 ### Linux
 
 ```sh
-sudo apt-get install ninja-build qt6-base-dev libqt6svg6-dev libusb-1.0-0-dev libssl-dev
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF -GNinja
+sudo apt-get install -y \
+  build-essential git curl ca-certificates pkg-config ninja-build nasm autoconf \
+  qt6-base-dev qt6-base-private-dev libqt6svg6-dev libqt6charts6-dev \
+  qt6-multimedia-dev libqt6opengl6-dev glslang-tools \
+  libboost-dev libboost-filesystem-dev libboost-context-dev \
+  libusb-1.0-0-dev libssl-dev \
+  libavcodec-dev libavformat-dev libavutil-dev libavfilter-dev \
+  libswscale-dev libswresample-dev \
+  libzstd-dev liblz4-dev libgl1-mesa-dev libasound2-dev libpulse-dev \
+  libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev \
+  libxkbcommon-dev libxss-dev libxtst-dev \
+  libwayland-dev libwayland-egl1 wayland-protocols libdecor-0-dev \
+  libegl-dev libdrm-dev libgbm-dev libvulkan-dev
+```
+
+Three of those are easy to miss and each stops the build outright:
+`glslang-tools` provides `glslangValidator`, which the host shader step looks up
+by name; the X11 and Wayland headers are what SDL3 refuses to configure without;
+and `libavfilter-dev` is required by `FindFFmpeg` even though the emulator only
+decodes.
+
+If the distribution's CMake is older than 3.31:
+
+```sh
+V=3.31.6
+curl -fsSL -o /tmp/cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v${V}/cmake-${V}-linux-x86_64.tar.gz"
+sudo mkdir -p /opt/cmake && sudo tar xzf /tmp/cmake.tar.gz -C /opt/cmake --strip-components=1
+export PATH=/opt/cmake/bin:$PATH
+```
+
+Then:
+
+```sh
+git clone --recursive -b mk8-recomp https://github.com/dougchansan/suyu-v0.0.4 suyu
+cd suyu
+cmake -B build -GNinja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF \
+  -DYUZU_TESTS=OFF -DENABLE_WEB_SERVICE=OFF \
+  -Dfmt_FORCE_BUNDLED=ON
 cmake --build build --target suyu suyu-cmd
 ```
 
+`-Dfmt_FORCE_BUNDLED=ON` is not optional on a distribution shipping fmt 9:
+`logging.h` calls `format_string::get()`, which only exists from fmt 10, and
+suyu forces the bundled copy only inside a branch that does not apply to an
+ordinary Linux build. Without it the build dies several hundred files in.
+
+Binaries land in `build/bin`.
+
+### Windows
+
+Visual Studio 2022 with the **Desktop development with C++** workload, Qt 6.9.3
+for MSVC 2022, and the Vulkan SDK, which supplies `glslangValidator`. Qt via
+aqtinstall if you do not have it:
+
+```
+aqt install-qt windows desktop 6.9.3 win64_msvc2022_64 -m qtcharts qtmultimedia
+```
+
+From a **Developer Command Prompt for VS 2022**:
+
+```bat
+git clone --recursive -b mk8-recomp https://github.com/dougchansan/suyu-v0.0.4 suyu
+cd suyu
+cmake -B build -G Ninja ^
+  -DCMAKE_BUILD_TYPE=Release ^
+  -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF ^
+  -DYUZU_TESTS=OFF -DENABLE_WEB_SERVICE=OFF ^
+  -DCMAKE_PREFIX_PATH="C:/Qt/6.9.3/msvc2022_64"
+cmake --build build --target suyu suyu-cmd
+```
+
+Point `CMAKE_PREFIX_PATH` at wherever Qt actually is; forward slashes save a
+quoting argument with CMake. glslang 16 renamed `glslangValidator` to `glslang`
+and suyu's CMake still searches for the old name, so if configure stops with
+*"Required program `glslangValidator` not found"*, add
+`-DGLSLANGVALIDATOR="C:/path/to/glslang.exe"`.
+
+`suyu.exe` needs the Qt runtime beside it to start — `windeployqt` on the built
+executable copies it in.
+
 ### Android
 
-```sh
-cd src/android && ./gradlew assembleMainlineRelease
-```
+Removed for now. The Gradle build is inherited from upstream and nothing here
+has verified it since the fork, so publishing instructions for it would be
+guessing. It comes back when it has been built and run.
 
 ## License
 

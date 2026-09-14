@@ -613,7 +613,7 @@ if (NOT APPLE AND ENABLE_OPENGL)
     target_compile_definitions(suyu PRIVATE HAS_OPENGL)
 endif()
 
-if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
+if ((ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64) AND NOT SUYU_NO_JIT)
     target_link_libraries(suyu PRIVATE dynarmic::dynarmic)
     # mcl is a LINK_ONLY dep of dynarmic, so its include path does not
     # propagate to consumers. game_export.cpp includes Dynarmic headers that

@@ -41,10 +41,12 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
+#ifndef SUYU_NO_JIT
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 #include "dynarmic/frontend/A64/translate/a64_translate.h"
 #include "dynarmic/ir/basic_block.h"
+#endif
 
 #include "common/common_types.h"
 #include "common/fs/path_util.h"
@@ -1182,6 +1184,9 @@ static FileSys::VirtualFile ExtractRomFsFromRom(const std::string& rom_path) {
     return nullptr;
 }
 
+// Only the IR dump below reads instructions here, so this goes with it rather
+// than sitting unused and tripping -Werror=unused-function.
+#ifndef SUYU_NO_JIT
 static std::optional<u32> ReadArm64InstructionAt(std::span<const u8> text, u32 text_vaddr,
                                                  u64 vaddr) {
     if (vaddr < text_vaddr) {
@@ -1197,7 +1202,18 @@ static std::optional<u32> ReadArm64InstructionAt(std::span<const u8> text, u32 t
     std::memcpy(&instruction, text.data() + offset, sizeof(instruction));
     return instruction;
 }
+#endif
 
+// Writes a Dynarmic IR dump per block, for eyeballing what the JIT would have
+// made of code the emitter is being asked about. Debug material only - nothing
+// in the export pipeline reads it - and the only reason this file needs
+// dynarmic at all, so it goes when dynarmic does.
+#ifdef SUYU_NO_JIT
+static bool SerializeTranslatedBlocks(const NsoAnalysisResult&, const QString&, const QString&,
+                                      u32*, u32*) {
+    return false;
+}
+#else
 static bool SerializeTranslatedBlocks(const NsoAnalysisResult& mod, const QString& ir_root,
                                       const QString& code_root, u32* serialized_blocks,
                                       u32* failed_blocks) {
@@ -1286,6 +1302,7 @@ static bool SerializeTranslatedBlocks(const NsoAnalysisResult& mod, const QStrin
 
     return true;
 }
+#endif
 
 #ifdef _WIN32
 // Every Visual Studio installation that carries the x64 C++ toolset, newest
@@ -1487,6 +1504,9 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
     // only when explicitly asked for, by the same switch that gates the
     // per-block dumps.
     const bool dump_debug_artifacts = !qEnvironmentVariableIsEmpty("SUYU_AOT_DUMP_BLOCKS");
+
+    suyu::recomp::g_translate_all =
+        !qEnvironmentVariableIsEmpty("SUYU_AOT_TRANSLATE_ALL");
     const QString debug_root = cache_dir + QDir::separator() + QStringLiteral("debug");
     const QString blockmap_dir = debug_root + QDir::separator() + QStringLiteral("blockmaps");
     const QString code_dir = debug_root + QDir::separator() + QStringLiteral("code");
@@ -1688,6 +1708,24 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
             exported_roots.insert(exported_roots.end(), data_ptr_roots.begin(), data_ptr_roots.end());
             std::vector<u64> reloc_roots = ScanRelocationsForCodePointers(mod);
             exported_roots.insert(exported_roots.end(), reloc_roots.begin(), reloc_roots.end());
+            // Addresses a previous run reached but block discovery could not:
+            // see SUYU_RECOMP_RECORD_MISSES on the emulator side.
+            const QString roots_dir = qEnvironmentVariable("SUYU_AOT_EXTRA_ROOTS");
+            if (!roots_dir.isEmpty()) {
+                QFile f(roots_dir + QDir::separator() + mod.name + QStringLiteral(".roots"));
+                if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                    int n = 0;
+                    while (!f.atEnd()) {
+                        bool ok = false;
+                        const u64 off = f.readLine().trimmed().toULongLong(&ok, 16);
+                        if (ok) {
+                            exported_roots.push_back(mod.text_vaddr + off);
+                            ++n;
+                        }
+                    }
+                    LOG_INFO(Frontend, "module {}: {} recorded roots", mod.name.toStdString(), n);
+                }
+            }
             std::sort(exported_roots.begin(), exported_roots.end());
             exported_roots.erase(std::unique(exported_roots.begin(), exported_roots.end()),
                                  exported_roots.end());

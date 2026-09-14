@@ -274,6 +274,10 @@ inline size_t FuncNameTo(char (&b)[64], const char* mod, u64 v) {
 // conditional forms need this as much as the unconditional ones do.
 inline std::string ChainTo(u64 t);
 
+// With no JIT behind it there is no cheaper alternative to translating an
+// instruction, so the forms that lose to the JIT are turned on here.
+inline bool g_translate_all = false;
+
 inline const std::unordered_set<u64>* g_chain_blocks = nullptr;
 inline const char* g_chain_mod = nullptr;
 
@@ -300,13 +304,73 @@ inline std::string ChainTo(u64 t) {
         // bound the depth rather than assume it stays at one frame.
         snprintf(b, sizeof b,
                  "{ void %s(GuestContext*); if (--c->chain_budget <= 0) "
-                 "{ c->pc=g_module_base+0x%llxULL; return; } return %s(c); }",
+                 "{ c->pc=g_module_base+0x%llxULL; return; } %s(c); return; }",
                  nm, (unsigned long long)t, nm);
     } else {
         snprintf(b, sizeof b, "{ c->pc=g_module_base+0x%llxULL; return; }",
                  (unsigned long long)t);
     }
     return b;
+}
+
+// The same for a computed target. A chain of blocks otherwise ends at the first
+// BR, BLR or RET, and every one of those is a round trip out to the host
+// dispatcher: RunThread plus the dispatch lambda are 24.7% of all cycles in a
+// JIT-free image against 17.7% in a hybrid one. recomp_lookup is this module's
+// own flat block index - one bounds check and one load - so resolving the
+// target here keeps execution inside the image whenever it stays in the module.
+// A target in another module misses the index and falls back to the dispatcher,
+// which is where it had to go anyway.
+inline std::string ChainIndirect(const std::string& target) {
+    return "{ c->pc=" + target +
+           "; { BlockFn _f=recomp_lookup(c->pc-g_module_base); "
+           "if (_f && --c->chain_budget > 0) { _f(c); return; } } return; }";
+}
+
+// The condition is a literal at every site, so the switch inside recomp_cond
+// is resolvable here rather than at run time. It was 2.1% of all cycles as a
+// call - and the expression that replaces it is smaller than the call was,
+// which matters: the memory helpers were measured as *worse* inlined because
+// the instruction cache cost more than the call did.
+// NZCV, with the operation width and add/subtract resolved here. Same argument
+// as Cond: is_sub and is64 are literals at every site, and a call with six
+// arguments costs more to set up than the arithmetic it hides.
+inline std::string SetFlags(bool is_sub, const std::string& a, const std::string& b,
+                            const std::string& r, bool is64) {
+    const std::string ty = is64 ? "uint64_t" : "uint32_t";
+    const std::string cast = is64 ? "" : "(uint32_t)";
+    const char* top = is64 ? "63" : "31";
+    std::string s = "{ " + ty + " _fa=" + cast + "(" + a + "),_fb=" + cast + "(" + b +
+                    "),_fr=" + cast + "(" + r + "); ";
+    s += "c->z=(_fr==0); c->n=(int)((_fr>>" + std::string(top) + ")&1); ";
+    if (is_sub) {
+        s += "c->c=(_fa>=_fb); ";
+        s += "c->v=(int)((((_fa^_fb)&(_fa^_fr))>>" + std::string(top) + ")&1); }";
+    } else {
+        s += "c->c=(_fr<_fa); ";
+        s += "c->v=(int)((((" + ty + ")~(_fa^_fb)&(_fa^_fr))>>" + std::string(top) + ")&1); }";
+    }
+    return s;
+}
+
+inline std::string Cond(u32 cond) {
+    switch (cond) {
+    case 0:  return "(c->z)";
+    case 1:  return "(!c->z)";
+    case 2:  return "(c->c)";
+    case 3:  return "(!c->c)";
+    case 4:  return "(c->n)";
+    case 5:  return "(!c->n)";
+    case 6:  return "(c->v)";
+    case 7:  return "(!c->v)";
+    case 8:  return "(c->c && !c->z)";
+    case 9:  return "(!(c->c && !c->z))";
+    case 10: return "(c->n == c->v)";
+    case 11: return "(c->n != c->v)";
+    case 12: return "((c->n == c->v) && !c->z)";
+    case 13: return "(!((c->n == c->v) && !c->z))";
+    default: return "(1)";   // AL and the NV encoding, which also always passes
+    }
 }
 
 inline std::string Xz(u32 r) {
@@ -422,7 +486,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         // zero register - that encoding is CMP - so the result is dropped.
         // Without it, register 31 is SP and the write is real.
         if (!(rd == 31 && S)) s += "c->x[" + std::to_string(rd) + "]=_r; ";
-        if (S) s += "recomp_set_flags(c," + std::string(op ? "1" : "0") + ",_a,_b,_r," + (sf ? "1" : "0") + "); ";
+        if (S) s += SetFlags(op != 0, "_a", "_b", "_r", sf != 0) + " ";
         s += "}";
         // Register 31 is SP here, not the zero register, so a write to it is
         // real and must not be discarded: dropping it throws away every
@@ -479,7 +543,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         std::string s = "{ uint64_t _r = " + expr + "; ";
         if (!sf) s += "_r &= 0xFFFFFFFFULL; ";
         if (rd != 31) s += "c->x[" + std::to_string(rd) + "] = _r; ";
-        if (opc == 3) s += "recomp_set_flags(c,0,_r,0,_r," + std::string(sf ? "1" : "0") + "); ";
+        if (opc == 3) s += SetFlags(false, "_r", "0", "_r", sf != 0) + " ";
         s += "}";
         put(s);
         return true;
@@ -498,7 +562,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         snprintf(buf, sizeof buf, "{ uint64_t _a=%s,_b=%s,_r=%s; ", a.c_str(), rmv.c_str(), op ? "_a-_b" : "_a+_b");
         std::string s = buf; if (!sf) s += "_r&=0xFFFFFFFFULL; ";
         if (rd != 31) s += "c->x[" + std::to_string(rd) + "]=_r; ";
-        if (S) s += "recomp_set_flags(c," + std::string(op ? "1" : "0") + ",_a,_b,_r," + (sf ? "1" : "0") + "); ";
+        if (S) s += SetFlags(op != 0, "_a", "_b", "_r", sf != 0) + " ";
         s += "}"; put(s); return true;
     }
 
@@ -586,10 +650,10 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         put(ChainTo(t));
         return false;
     }
-    if ((i & 0xFFFFFC1F) == 0xD65F0000) { put("c->pc=c->x[30]; return; /* RET */"); return false; }
-    if ((i & 0xFFFFFC1F) == 0xD61F0000) { u32 rn = (i >> 5) & 31; snprintf(buf, sizeof buf, "c->pc=c->x[%u]; return; /* BR */", rn); put(buf); return false; }
-    if ((i & 0xFFFFFC1F) == 0xD63F0000) { u32 rn = (i >> 5) & 31; snprintf(buf, sizeof buf, "c->x[30]=g_module_base+0x%llxULL; c->pc=c->x[%u]; return; /* BLR */", (unsigned long long)next, rn); put(buf); return false; }
-    if ((i & 0xFF000010) == 0x54000000) { s64 off = ((s32)((i >> 5) << 13) >> 13); u64 tt = pc + off * 4; u32 cond = i & 15; snprintf(buf, sizeof buf, "if (recomp_cond(c,%u)) { c->pc=g_module_base+0x%llxULL; } else { c->pc=g_module_base+0x%llxULL; } return;", cond, (unsigned long long)tt, (unsigned long long)next); put(buf); return false; }
+    if ((i & 0xFFFFFC1F) == 0xD65F0000) { put(ChainIndirect("c->x[30]") + " /* RET */"); return false; }
+    if ((i & 0xFFFFFC1F) == 0xD61F0000) { u32 rn = (i >> 5) & 31; put(ChainIndirect("c->x[" + std::to_string(rn) + "]") + " /* BR */"); return false; }
+    if ((i & 0xFFFFFC1F) == 0xD63F0000) { u32 rn = (i >> 5) & 31; snprintf(buf, sizeof buf, "c->x[30]=g_module_base+0x%llxULL;", (unsigned long long)next); put(std::string(buf) + " " + ChainIndirect("c->x[" + std::to_string(rn) + "]") + " /* BLR */"); return false; }
+    if ((i & 0xFF000010) == 0x54000000) { s64 off = ((s32)((i >> 5) << 13) >> 13); u64 tt = pc + off * 4; u32 cond = i & 15; snprintf(buf, sizeof buf, "if %s { c->pc=g_module_base+0x%llxULL; } else { c->pc=g_module_base+0x%llxULL; } return;", Cond(cond).c_str(), (unsigned long long)tt, (unsigned long long)next); put(buf); return false; }
     if ((i & 0x7E000000) == 0x34000000) { u32 sf = i >> 31; bool nz = (i >> 24) & 1; u32 rt = i & 31; s64 off = ((s32)(((i >> 5) & 0x7FFFF) << 13) >> 13); u64 tt = pc + off * 4; std::string v = sf ? Xz(rt) : Wz(rt); snprintf(buf, sizeof buf, "if ((%s)%s0) { c->pc=g_module_base+0x%llxULL; } else { c->pc=g_module_base+0x%llxULL; } return;", v.c_str(), nz ? "!=" : "==", (unsigned long long)tt, (unsigned long long)next); put(buf); return false; }
     if ((i & 0x7E000000) == 0x36000000) { bool nz = (i >> 24) & 1; u32 b = ((i >> 31) << 5) | ((i >> 19) & 31); u32 rt = i & 31; s64 off = ((s32)(((i >> 5) & 0x3FFF) << 18) >> 18); u64 tt = pc + off * 4; snprintf(buf, sizeof buf, "if (((%s>>%u)&1)%s0) { c->pc=g_module_base+0x%llxULL; } else { c->pc=g_module_base+0x%llxULL; } return;", Xz(rt).c_str(), b, nz ? "!=" : "==", (unsigned long long)tt, (unsigned long long)next); put(buf); return false; }
     if ((i & 0xFFE0001F) == 0xD4000001) { u32 imm = (i >> 5) & 0xFFFF; snprintf(buf, sizeof buf, "c->pc=g_module_base+0x%llxULL; c->pending_svc=%uULL; recomp_svc(c,%u); return;", (unsigned long long)next, imm, imm); put(buf); return false; }
@@ -614,23 +678,22 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             // pre-index applies the offset before the access.
             const char* addr = (mode == 1) ? "_b" : "(_b+_o)";
             s += "int64_t _o=" + std::to_string((long long)off) + "; ";
+            const std::string w = std::to_string(sz * 8);
             if (is_load) {
-                // Rt/Rt2 == 31 is XZR here, so the loaded value is discarded -
-                // writing it would land on c->x[31], which is where SP lives.
-                if (rt != 31) {
-                    s += "c->x[" + std::to_string(rt) + "]=recomp_load" + std::to_string(sz * 8) +
-                         "(c," + addr + "); ";
-                }
-                if (rt2 != 31) {
-                    s += "c->x[" + std::to_string(rt2) + "]=recomp_load" + std::to_string(sz * 8) +
-                         "(c," + addr + "+" + std::to_string(sz) + "); ";
-                }
+                // Both words come back through temporaries. Rt/Rt2 == 31 is XZR
+                // here, so that half is simply not written back - writing it
+                // would land on c->x[31], which is where SP lives. The load
+                // itself still happens, which is what the architecture does.
+                s += "{ uint64_t _p0,_p1; recomp_ldp" + w + "(c," + addr + ",&_p0,&_p1); ";
+                if (rt != 31)  s += "c->x[" + std::to_string(rt) + "]=_p0; ";
+                if (rt2 != 31) s += "c->x[" + std::to_string(rt2) + "]=_p1; ";
+                s += "} ";
             } else {
-                s += "recomp_store" + std::to_string(sz * 8) + "(c," + addr + "," +
-                     (rt == 31 ? std::string("(uint64_t)0") : ("c->x[" + std::to_string(rt) + "]")) + "); ";
-                s += "recomp_store" + std::to_string(sz * 8) + "(c," + addr + "+" +
-                     std::to_string(sz) + "," +
-                     (rt2 == 31 ? std::string("(uint64_t)0") : ("c->x[" + std::to_string(rt2) + "]")) + "); ";
+                s += "recomp_stp" + w + "(c," + addr + "," +
+                     (rt == 31 ? std::string("(uint64_t)0") : ("c->x[" + std::to_string(rt) + "]")) +
+                     "," +
+                     (rt2 == 31 ? std::string("(uint64_t)0") : ("c->x[" + std::to_string(rt2) + "]")) +
+                     "); ";
             }
             if (mode == 1 || mode == 3) {
                 s += "c->x[" + std::to_string(rn) + "]=_b+_o; ";
@@ -658,7 +721,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             // for ANDS (opc==3). Treating it as XZR everywhere silently
             // dropped every "and sp, xN, #imm" stack realignment.
             if (!(rd == 31 && opc == 3)) s += "c->x[" + std::to_string(rd) + "] = _r; ";
-            if (opc == 3) s += "recomp_set_flags(c,0,_r,0,_r," + std::string(sf ? "1" : "0") + "); ";
+            if (opc == 3) s += SetFlags(false, "_r", "0", "_r", sf != 0) + " ";
             s += "}";
             put(s);
             return true;
@@ -751,12 +814,11 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         const bool is_imm = ((i >> 11) & 1) != 0;
         const u32 rn = (i >> 5) & 31, nzcv = i & 15;
         const std::string b = is_imm ? (std::to_string(imm_or_rm) + "ULL") : Xz(imm_or_rm);
-        std::string s = "{ if (recomp_cond(c," + std::to_string(cond) + ")) { ";
+        std::string s = "{ if " + Cond(cond) + " { ";
         s += "uint64_t _a=" + Xz(rn) + ", _b=" + b + ", _r=" +
              std::string(op ? "_a-_b" : "_a+_b") + "; ";
         if (!sf) s += "_r &= 0xFFFFFFFFULL; ";
-        s += "recomp_set_flags(c," + std::string(op ? "1" : "0") + ",_a,_b,_r," +
-             (sf ? "1" : "0") + "); ";
+        s += SetFlags(op != 0, "_a", "_b", "_r", sf != 0) + " ";
         s += "} else { ";
         s += "c->n=" + std::to_string((nzcv >> 3) & 1) + "; ";
         s += "c->z=" + std::to_string((nzcv >> 2) & 1) + "; ";
@@ -778,7 +840,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             if (!op && o2) els = "(" + b + " + 1)";            // CSINC
             else if (op && !o2) els = "(~" + b + ")";           // CSINV
             else if (op && o2) els = "((uint64_t)(0 - " + b + "))"; // CSNEG
-            std::string s = "{ uint64_t _r = recomp_cond(c," + std::to_string(cond) + ") ? " +
+            std::string s = "{ uint64_t _r = " + Cond(cond) + " ? " +
                             a + " : " + els + "; ";
             if (!sf) s += "_r &= 0xFFFFFFFFULL; ";
             s += "c->x[" + std::to_string(rd) + "] = _r; }";
@@ -1016,8 +1078,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
                                 std::string(op ? "_a-_b" : "_a+_b") + "; ";
                 if (!sf) s += "_r &= 0xFFFFFFFFULL; ";
                 if (rd != 31 || !S) s += "c->x[" + std::to_string(rd) + "]=_r; ";
-                if (S) s += "recomp_set_flags(c," + std::string(op ? "1" : "0") +
-                            ",_a,_b,_r," + (sf ? "1" : "0") + "); ";
+                if (S) s += SetFlags(op != 0, "_a", "_b", "_r", sf != 0) + " ";
                 s += "}";
                 put(s);
                 return true;
@@ -1069,6 +1130,325 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         }
     }
 
+    // SSHR / USHR / SHRN: shift right by an immediate. SSHR and USHR keep the
+    // element width; SHRN halves it and writes one half of the destination.
+    if ((i & 0x9F00FC00) == 0x0F000400 || (i & 0x9F00FC00) == 0x0F008400) {
+        const bool narrow = ((i >> 10) & 0x3F) == 0x21;
+        const u32 Q = (i >> 30) & 1, U = (i >> 29) & 1;
+        const u32 immh = (i >> 19) & 15, immb = (i >> 16) & 7;
+        const u32 rn = (i >> 5) & 31, rd = i & 31;
+        u32 size = 0;
+        bool shaped = true;
+        if (immh & 8)       size = 3;
+        else if (immh & 4)  size = 2;
+        else if (immh & 2)  size = 1;
+        else if (immh & 1)  size = 0;
+        else                shaped = false;
+        if (narrow && size == 3) shaped = false;   // no 128-bit source element
+        if (shaped) {
+            // The shift is relative to the *destination* element in both
+            // cases; for SHRN the source is twice that, which is the whole
+            // point of the instruction.
+            const int dbits = 8 << size;
+            const int sbits = narrow ? (dbits * 2) : dbits;
+            const u32 shift = (u32)(dbits * 2) - ((immh << 3) | immb);
+            if (shift >= 1 && shift <= (u32)dbits) {
+                const int ssz = sbits / 8;
+                if (narrow) {
+                    const int lanes = 8 / (ssz / 2);
+                    const std::string sty = "uint" + std::to_string(sbits) + "_t";
+                    const std::string dty = "uint" + std::to_string(sbits / 2) + "_t";
+                    std::string s = "{ " + sty + " _a[" + std::to_string(lanes) + "]; " + dty +
+                                    " _r[" + std::to_string(lanes) + "]; ";
+                    s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "],16); ";
+                    s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=(" + dty +
+                         ")(_a[_i]>>" + std::to_string(shift) + "); ";
+                    if (!Q) {
+                        s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" +
+                             std::to_string(rd) + "][1]=0; ";
+                    }
+                    s += "memcpy((uint8_t*)c->vreg[" + std::to_string(rd) + "]+" +
+                         std::to_string(Q ? 8 : 0) + ",_r,8); }";
+                    put(s);
+                    return true;
+                }
+                const int bytes = Q ? 16 : 8;
+                if (!(size == 3 && !Q)) {
+                    const int lanes = bytes / ssz;
+                    const std::string uty = "uint" + std::to_string(sbits) + "_t";
+                    const std::string ity = "int" + std::to_string(sbits) + "_t";
+                    // A shift of the full width is defined here and undefined in
+                    // C, so it is folded to the all-sign / all-zero result.
+                    const bool full = shift == (u32)sbits;
+                    std::string s = "{ " + uty + " _a[" + std::to_string(lanes) + "],_r[" +
+                                    std::to_string(lanes) + "]; ";
+                    s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) +
+                         "); ";
+                    s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=";
+                    if (U) {
+                        s += full ? ("(" + uty + ")0")
+                                  : ("(" + uty + ")(_a[_i]>>" + std::to_string(shift) + ")");
+                    } else {
+                        s += "(" + uty + ")((" + ity + ")_a[_i]>>" +
+                             std::to_string(full ? (u32)(sbits - 1) : shift) + ")";
+                    }
+                    s += "; ";
+                    s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" +
+                         std::to_string(rd) + "][1]=0; ";
+                    s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) +
+                         "); }";
+                    put(s);
+                    return true;
+                }
+            }
+        }
+    }
+
+    // SMULL / UMULL and the accumulating forms. The sources are half-width, so
+    // Q picks which half of the source registers feeds the full-width result.
+    if ((i & 0x9F20FC00) == 0x0E208000 || (i & 0x9F20FC00) == 0x0E20A000 ||
+        (i & 0x9F20FC00) == 0x0E20C000) {
+        const u32 Q = (i >> 30) & 1, U = (i >> 29) & 1;
+        const u32 size = (i >> 22) & 3, opcode = (i >> 12) & 15;
+        const u32 rm = (i >> 16) & 31, rn = (i >> 5) & 31, rd = i & 31;
+        if (size != 3) {
+            const int sbits = 8 << size, dbits = sbits * 2;
+            const int lanes = 64 / sbits;
+            const std::string sty =
+                std::string(U ? "uint" : "int") + std::to_string(sbits) + "_t";
+            const std::string dty =
+                std::string(U ? "uint" : "int") + std::to_string(dbits) + "_t";
+            // The accumulator is held unsigned: the wrap is defined there, and
+            // signed overflow in the generated C would not be.
+            const std::string aty = "uint" + std::to_string(dbits) + "_t";
+            const int off = Q ? 8 : 0;
+            const char* acc = (opcode == 8) ? "+=" : (opcode == 0xA) ? "-=" : "=";
+            std::string s = "{ " + sty + " _a[" + std::to_string(lanes) + "],_b[" +
+                            std::to_string(lanes) + "]; " + aty + " _r[" +
+                            std::to_string(lanes) + "]; ";
+            s += "memcpy(_a,(const uint8_t*)c->vreg[" + std::to_string(rn) + "]+" +
+                 std::to_string(off) + ",8); ";
+            s += "memcpy(_b,(const uint8_t*)c->vreg[" + std::to_string(rm) + "]+" +
+                 std::to_string(off) + ",8); ";
+            if (opcode != 0xC) {
+                s += "memcpy(_r,c->vreg[" + std::to_string(rd) + "],16); ";
+            }
+            s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]" +
+                 std::string(acc) + "(" + aty + ")((" + dty + ")_a[_i]*(" + dty + ")_b[_i]); ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r,16); }";
+            put(s);
+            return true;
+        }
+    }
+
+    // SQSHRN / SQRSHRN and the unsigned forms: shift right, round for the R
+    // variants, then saturate into the half-width destination.
+    if ((i & 0x9F00FC00) == 0x0F009400 || (i & 0x9F00FC00) == 0x0F009C00) {
+        const bool round = ((i >> 11) & 1) != 0;
+        const u32 Q = (i >> 30) & 1, U = (i >> 29) & 1;
+        const u32 immh = (i >> 19) & 15, immb = (i >> 16) & 7;
+        const u32 rn = (i >> 5) & 31, rd = i & 31;
+        u32 size = 0;
+        bool shaped = true;
+        if (immh & 8)       shaped = false;   // no 128-bit source element
+        else if (immh & 4)  size = 2;
+        else if (immh & 2)  size = 1;
+        else if (immh & 1)  size = 0;
+        else                shaped = false;
+        if (shaped) {
+            const int dbits = 8 << size, sbits = dbits * 2;
+            const u32 shift = (u32)dbits * 2 - ((immh << 3) | immb);
+            if (shift >= 1 && shift <= (u32)dbits) {
+                const int lanes = 64 / dbits;
+                const std::string sty =
+                    std::string(U ? "uint" : "int") + std::to_string(sbits) + "_t";
+                const std::string dty = "uint" + std::to_string(dbits) + "_t";
+                const std::string wide = U ? "uint64_t" : "int64_t";
+                std::string s = "{ " + sty + " _a[" + std::to_string(lanes) + "]; " + dty +
+                                " _r[" + std::to_string(lanes) + "]; ";
+                s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "],16); ";
+                s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++){ " + wide +
+                     " _v=(" + wide + ")_a[_i]; ";
+                // Rounding as add-then-shift can overflow the source type; taking
+                // the dropped bit out of the shifted value cannot.
+                s += wide + " _x=(_v>>" + std::to_string(shift) + ")";
+                if (round) {
+                    s += "+((_v>>" + std::to_string(shift - 1) + ")&1)";
+                }
+                s += "; ";
+                if (U) {
+                    s += "if(_x>(uint64_t)UINT" + std::to_string(dbits) + "_MAX) _x=(uint64_t)UINT" +
+                         std::to_string(dbits) + "_MAX; ";
+                } else {
+                    s += "if(_x>(int64_t)INT" + std::to_string(dbits) + "_MAX) _x=(int64_t)INT" +
+                         std::to_string(dbits) + "_MAX; ";
+                    s += "else if(_x<(int64_t)INT" + std::to_string(dbits) +
+                         "_MIN) _x=(int64_t)INT" + std::to_string(dbits) + "_MIN; ";
+                }
+                s += "_r[_i]=(" + dty + ")_x; } ";
+                if (!Q) {
+                    s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" +
+                         std::to_string(rd) + "][1]=0; ";
+                }
+                s += "memcpy((uint8_t*)c->vreg[" + std::to_string(rd) + "]+" +
+                     std::to_string(Q ? 8 : 0) + ",_r,8); }";
+                put(s);
+                return true;
+            }
+        }
+    }
+
+    // SQADD / UQADD: add with saturation, and CMHI / CMHS: unsigned compares.
+    // All four are three-same ops separated by opcode and U.
+    if ((i & 0x9F20FC00) == 0x0E200C00 || (i & 0x9F20FC00) == 0x0E203400 ||
+        (i & 0x9F20FC00) == 0x0E203C00 || (i & 0x9F20FC00) == 0x0E208C00 ||
+        (i & 0x9F20FC00) == 0x0E206400 || (i & 0x9F20FC00) == 0x0E206C00) {
+        const u32 Q = (i >> 30) & 1, U = (i >> 29) & 1;
+        const u32 size = (i >> 22) & 3, opcode = (i >> 11) & 0x1F;
+        const u32 rm = (i >> 16) & 31, rn = (i >> 5) & 31, rd = i & 31;
+        const int esz = 1 << size;
+        const int bytes = Q ? 16 : 8;
+        if (!(size == 3 && !Q)) {
+            const int lanes = bytes / esz;
+            const int bits = esz * 8;
+            const std::string uty = "uint" + std::to_string(bits) + "_t";
+            const std::string ity = "int" + std::to_string(bits) + "_t";
+            std::string body;
+            if (opcode == 0x01) {
+                if (U) {
+                    // Unsigned saturating add: the sum wrapping below an input
+                    // is exactly the overflow condition.
+                    body = "{ " + uty + " _s=(" + uty + ")(_a[_i]+_b[_i]); _r[_i]=(_s<_a[_i])?(" +
+                           uty + ")~(" + uty + ")0:_s; }";
+                } else {
+                    body = "{ " + ity + " _x=(" + ity + ")_a[_i], _y=(" + ity + ")_b[_i]; " + ity +
+                           " _s=(" + ity + ")((" + uty + ")_x+(" + uty + ")_y); " +
+                           "if(((_x^_s)&(_y^_s))<0) _r[_i]=(" + uty + ")(_x<0?(" + ity + ")((" +
+                           uty + ")1<<" + std::to_string(bits - 1) + "):(" + ity + ")(((" + uty +
+                           ")1<<" + std::to_string(bits - 1) + ")-1)); else _r[_i]=(" + uty +
+                           ")_s; }";
+                }
+            } else if (opcode == 0x0C || opcode == 0x0D) {
+                // SMAX / SMIN and their unsigned twins.
+                const char* op = (opcode == 0x0C) ? ">" : "<";
+                if (U) {
+                    body = "_r[_i]=(_a[_i]" + std::string(op) + "_b[_i])?_a[_i]:_b[_i];";
+                } else {
+                    body = "{ " + ity + " _x=(" + ity + ")_a[_i],_y=(" + ity + ")_b[_i]; _r[_i]=(" +
+                           uty + ")(_x" + std::string(op) + "_y?_x:_y); }";
+                }
+            } else if (opcode == 0x11) {
+                // CMEQ when U is set, CMTST when it is not.
+                body = U ? ("_r[_i]=(_a[_i]==_b[_i])?(" + uty + ")~(" + uty + ")0:(" + uty + ")0;")
+                         : ("_r[_i]=((_a[_i]&_b[_i])!=0)?(" + uty + ")~(" + uty + ")0:(" + uty +
+                            ")0;");
+            } else if (opcode == 0x06 || opcode == 0x07) {
+                // CMHI is >, CMHS is >=; both unsigned, both U=1.
+                if (!U) {
+                    body.clear();
+                } else {
+                    const char* op = (opcode == 0x06) ? ">" : ">=";
+                    body = "_r[_i]=(_a[_i]" + std::string(op) + "_b[_i])?(" + uty + ")~(" + uty +
+                           ")0:(" + uty + ")0;";
+                }
+            }
+            if (!body.empty()) {
+                std::string s = "{ " + uty + " _a[" + std::to_string(lanes) + "],_b[" +
+                                std::to_string(lanes) + "],_r[" + std::to_string(lanes) + "]; ";
+                s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) +
+                     "); ";
+                s += "memcpy(_b,c->vreg[" + std::to_string(rm) + "]," + std::to_string(bytes) +
+                     "); ";
+                s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) " + body + " ";
+                s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                     "][1]=0; ";
+                s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) +
+                     "); }";
+                put(s);
+                return true;
+            }
+        }
+    }
+
+    // FADDP, vector: add adjacent pairs across the two sources.
+    if ((i & 0xBF20FC00) == 0x2E20D400) {
+        const u32 Q = (i >> 30) & 1;
+        const bool dbl = ((i >> 22) & 1) != 0;
+        const u32 rm = (i >> 16) & 31, rn = (i >> 5) & 31, rd = i & 31;
+        const char* ct = dbl ? "double" : "float";
+        const int fsz = dbl ? 8 : 4;
+        const int bytes = Q ? 16 : 8;
+        const int lanes = bytes / fsz;
+        if (lanes >= 2) {
+            const int half = lanes / 2;
+            std::string s = "{ " + std::string(ct) + " _a[" + std::to_string(lanes) + "],_b[" +
+                            std::to_string(lanes) + "],_r[" + std::to_string(lanes) + "]; ";
+            s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) + "); ";
+            s += "memcpy(_b,c->vreg[" + std::to_string(rm) + "]," + std::to_string(bytes) + "); ";
+            s += "for(int _i=0;_i<" + std::to_string(half) + ";_i++){ _r[_i]=_a[2*_i]+_a[2*_i+1]; ";
+            s += "_r[" + std::to_string(half) + "+_i]=_b[2*_i]+_b[2*_i+1]; } ";
+            s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                 "][1]=0; ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) + "); }";
+            put(s);
+            return true;
+        }
+    }
+
+    // ADDV: sum every lane into the scalar destination. This is the
+    // across-lanes class - bits 21..17 are 11000, not the 10000 of the
+    // two-register-misc ops it otherwise resembles.
+    if ((i & 0x9F3FFC00) == 0x0E31B800) {
+        const u32 Q = (i >> 30) & 1;
+        const u32 size = (i >> 22) & 3;
+        const u32 rn = (i >> 5) & 31, rd = i & 31;
+        const int esz = 1 << size;
+        const int bytes = Q ? 16 : 8;
+        // 64-bit elements have no ADDV form, and 32-bit needs the full register.
+        if (size != 3 && !(size == 2 && !Q)) {
+            const int lanes = bytes / esz;
+            const std::string ty = "uint" + std::to_string(esz * 8) + "_t";
+            std::string s = "{ " + ty + " _a[" + std::to_string(lanes) + "],_s=0; ";
+            s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) + "); ";
+            s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _s=(" + ty + ")(_s+_a[_i]); ";
+            s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                 "][1]=0; ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],&_s," + std::to_string(esz) + "); }";
+            put(s);
+            return true;
+        }
+    }
+
+    // FRECPS: the Newton-Raphson step for reciprocal estimation, 2 - n*m.
+    // Bit 23 selects FRSQRTS, whose step is (3 - n*m)/2.
+    if ((i & 0xBF20FC00) == 0x0E20FC00) {
+        const u32 Q = (i >> 30) & 1;
+        const bool rsqrt = ((i >> 23) & 1) != 0;
+        const bool dbl = ((i >> 22) & 1) != 0;
+        const u32 rm = (i >> 16) & 31, rn = (i >> 5) & 31, rd = i & 31;
+        const char* ct = dbl ? "double" : "float";
+        const int fsz = dbl ? 8 : 4;
+        const int bytes = Q ? 16 : 8;
+        const int lanes = bytes / fsz;
+        if (!(dbl && !Q)) {
+            std::string s = "{ " + std::string(ct) + " _a[" + std::to_string(lanes) + "],_b[" +
+                            std::to_string(lanes) + "],_r[" + std::to_string(lanes) + "]; ";
+            s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) + "); ";
+            s += "memcpy(_b,c->vreg[" + std::to_string(rm) + "]," + std::to_string(bytes) + "); ";
+            s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=";
+            if (rsqrt) {
+                s += "((" + std::string(ct) + ")3.0-_a[_i]*_b[_i])*(" + std::string(ct) + ")0.5; ";
+            } else {
+                s += "(" + std::string(ct) + ")2.0-_a[_i]*_b[_i]; ";
+            }
+            s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                 "][1]=0; ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) + "); }";
+            put(s);
+            return true;
+        }
+    }
+
     // SHA256SU0: the sigma0 half of the message schedule update.
     //   W[t] = W[t-16] + s0(W[t-15]) + W[t-7] + s1(W[t-2])
     // This instruction contributes the first two terms; SHA256SU1 adds the
@@ -1076,6 +1456,28 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
     if ((i & 0xFFFE0C00) == 0x5E280800) {
         const u32 opcode = (i >> 12) & 0x1F;
         const u32 rn = (i >> 5) & 31, rd = i & 31;
+        if (opcode == 0) {
+            // SHA1H: rotate left by 30.
+            std::string s = "{ uint32_t _x; memcpy(&_x,c->vreg[" + std::to_string(rn) +
+                            "],4); _x=(_x<<30)|(_x>>2); ";
+            s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                 "][1]=0; memcpy(c->vreg[" + std::to_string(rd) + "],&_x,4); }";
+            put(s);
+            return true;
+        }
+        if (opcode == 1) {
+            // SHA1SU1: finish the schedule group. The fourth word folds in the
+            // first of this very group, so it cannot be one loop.
+            std::string s = "{ uint32_t _d[4],_n[4],_t[4],_r[4]; ";
+            s += "memcpy(_d,c->vreg[" + std::to_string(rd) + "],16); ";
+            s += "memcpy(_n,c->vreg[" + std::to_string(rn) + "],16); ";
+            s += "_t[0]=_d[0]^_n[1]; _t[1]=_d[1]^_n[2]; _t[2]=_d[2]^_n[3]; _t[3]=_d[3]; ";
+            s += "for(int _e=0;_e<3;_e++) _r[_e]=(_t[_e]<<1)|(_t[_e]>>31); ";
+            s += "{ uint32_t _v=_t[3]^_r[0]; _r[3]=(_v<<1)|(_v>>31); } ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r,16); }";
+            put(s);
+            return true;
+        }
         if (opcode == 2) {
             std::string s = "{ uint32_t _d[4],_n[4],_t[4],_r[4]; ";
             s += "memcpy(_d,c->vreg[" + std::to_string(rd) + "],16); ";
@@ -1085,6 +1487,68 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             s += "for(int _e=0;_e<4;_e++){ uint32_t _x=_t[_e]; ";
             s += "uint32_t _s0=((_x>>7)|(_x<<25))^((_x>>18)|(_x<<14))^(_x>>3); ";
             s += "_r[_e]=_s0+_d[_e]; } ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r,16); }";
+            put(s);
+            return true;
+        }
+    }
+
+    // SHA1C / SHA1P / SHA1M and SHA1SU0. Same class as SHA256SU1, picked
+    // apart by opcode: 000 choose, 001 parity, 010 majority, 011 schedule.
+    if ((i & 0xFFE08C00) == 0x5E000000) {
+        const u32 opcode = (i >> 12) & 7;
+        const u32 rm = (i >> 16) & 31, rn = (i >> 5) & 31, rd = i & 31;
+        if (opcode <= 2) {
+            const char* f = (opcode == 0) ? "((_b&_cc)|(~_b&_dd))"
+                          : (opcode == 1) ? "(_b^_cc^_dd)"
+                                          : "((_b&_cc)|(_b&_dd)|(_cc&_dd))";
+            std::string s = "{ uint32_t _v[4],_w[4],_x,_y; ";
+            s += "memcpy(_v,c->vreg[" + std::to_string(rd) + "],16); ";
+            s += "memcpy(_w,c->vreg[" + std::to_string(rm) + "],16); ";
+            s += "memcpy(&_y,c->vreg[" + std::to_string(rn) + "],4); ";
+            s += "_x=_v[0]; ";
+            s += "for(int _e=0;_e<4;_e++){ uint32_t _b=_v[1],_cc=_v[2],_dd=_v[3]; ";
+            s += "uint32_t _t=((_x<<5)|(_x>>27))+" + std::string(f) + "+_y+_w[_e]; ";
+            s += "_y=_dd; _v[3]=_cc; _v[2]=(_b<<30)|(_b>>2); _v[1]=_x; _x=_t; _v[0]=_t; } ";
+            // Only Vd is written; the running e stays inside the instruction.
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],_v,16); }";
+            put(s);
+            return true;
+        }
+        if (opcode == 4 || opcode == 5) {
+            // SHA256H / SHA256H2. Four rounds over a 256-bit state split across
+            // two registers; the pair differ only in which half is X and which
+            // half is returned.
+            const bool part1 = opcode == 4;
+            const u32 xs = part1 ? rd : rn, ys = part1 ? rn : rd;
+            std::string s = "{ uint32_t _X[4],_Y[4],_W[4],_nx[4],_ny[4]; ";
+            s += "memcpy(_X,c->vreg[" + std::to_string(xs) + "],16); ";
+            s += "memcpy(_Y,c->vreg[" + std::to_string(ys) + "],16); ";
+            s += "memcpy(_W,c->vreg[" + std::to_string(rm) + "],16); ";
+            s += "for(int _e=0;_e<4;_e++){ uint32_t _y0=_Y[0],_x0=_X[0]; ";
+            s += "uint32_t _chs=(_y0&_Y[1])^(~_y0&_Y[2]); ";
+            s += "uint32_t _maj=(_x0&_X[1])^(_x0&_X[2])^(_X[1]&_X[2]); ";
+            s += "uint32_t _s1=((_y0>>6)|(_y0<<26))^((_y0>>11)|(_y0<<21))^((_y0>>25)|(_y0<<7)); ";
+            s += "uint32_t _s0=((_x0>>2)|(_x0<<30))^((_x0>>13)|(_x0<<19))^((_x0>>22)|(_x0<<10)); ";
+            s += "uint32_t _t=_Y[3]+_s1+_chs+_W[_e]; ";
+            // The 256-bit state rotates left by one word each round, so the two
+            // freshly written words land at the bottom of the other half.
+            s += "_nx[0]=_t+_s0+_maj; _nx[1]=_X[0]; _nx[2]=_X[1]; _nx[3]=_X[2]; ";
+            s += "_ny[0]=_t+_X[3]; _ny[1]=_Y[0]; _ny[2]=_Y[1]; _ny[3]=_Y[2]; ";
+            s += "memcpy(_X,_nx,16); memcpy(_Y,_ny,16); } ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "]," +
+                 std::string(part1 ? "_X" : "_Y") + ",16); }";
+            put(s);
+            return true;
+        }
+        if (opcode == 3) {
+            // SHA1SU0: the window two words along, folded with Vd and Vm.
+            std::string s = "{ uint32_t _d[4],_n[4],_m[4],_r[4]; ";
+            s += "memcpy(_d,c->vreg[" + std::to_string(rd) + "],16); ";
+            s += "memcpy(_n,c->vreg[" + std::to_string(rn) + "],16); ";
+            s += "memcpy(_m,c->vreg[" + std::to_string(rm) + "],16); ";
+            s += "_r[0]=_d[2]; _r[1]=_d[3]; _r[2]=_n[0]; _r[3]=_n[1]; ";
+            s += "for(int _e=0;_e<4;_e++) _r[_e]^=_d[_e]^_m[_e]; ";
             s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r,16); }";
             put(s);
             return true;
@@ -1603,7 +2067,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
     // 1.95. The block is SIMD-heavy and the JIT compiles it better than the
     // emitted C does, so paying the transition to stay in the JIT is cheaper
     // than owning the block. Re-measure before flipping this.
-    constexpr bool kTranslateShiftLeftImmediate = false;
+    const bool kTranslateShiftLeftImmediate = g_translate_all;
     if (kTranslateShiftLeftImmediate && (i & 0xBF80FC00) == 0x0F005400) {
         const u32 Q = (i >> 30) & 1;
         const u32 immh = (i >> 19) & 15, immb = (i >> 16) & 7;
@@ -1703,21 +2167,29 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
     // LD1R: load one element and replicate it across every lane. Bit 21 is R,
     // which selects LD2R/LD4R - those write a second register and must stay on
     // the fallback, so it has to be in the mask.
-    if ((i & 0xBFFFF000) == 0x0D40C000) {
+    if ((i & 0xBFFFF000) == 0x0D40C000 || (i & 0xBFE0F000) == 0x0DC0C000) {
         const u32 Q = (i >> 30) & 1;
+        const bool post = ((i >> 23) & 1) != 0;
+        const u32 rm = (i >> 16) & 31;
         const u32 size = (i >> 10) & 3;
         const u32 rn = (i >> 5) & 31, rt = i & 31;
         const int esz = 1 << size;
         const int bytes = Q ? 16 : 8;
         const int lanes = bytes / esz;
         const std::string uty = "uint" + std::to_string(esz * 8) + "_t";
-        std::string s = "{ " + uty + " _e = (" + uty + ")recomp_load" +
-                        std::to_string(esz * 8) + "(c," + Xsp(rn) + "); ";
+        std::string s = "{ uint64_t _a=" + Xsp(rn) + "; " + uty + " _e = (" + uty +
+                        ")recomp_load" + std::to_string(esz * 8) + "(c,_a); ";
         s += uty + " _r[" + std::to_string(lanes) + "]; ";
         s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=_e; ";
         s += "c->vreg[" + std::to_string(rt) + "][0]=0; c->vreg[" + std::to_string(rt) +
              "][1]=0; ";
-        s += "memcpy(c->vreg[" + std::to_string(rt) + "],_r," + std::to_string(bytes) + "); }";
+        s += "memcpy(c->vreg[" + std::to_string(rt) + "],_r," + std::to_string(bytes) + "); ";
+        if (post) {
+            const std::string step =
+                (rm == 31) ? (std::to_string(esz) + "ULL") : ("c->x[" + std::to_string(rm) + "]");
+            s += "c->x[" + std::to_string(rn) + "]=_a+" + step + "; ";
+        }
+        s += "}";
         put(s);
         return true;
     }
@@ -1732,7 +2204,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
     // compiles well - a NaN test, two bound compares and a cast cannot beat the
     // single native instruction it replaces. Coverage only pays when the emitted C
     // is faster than the JIT for that block. Re-measure before flipping this.
-    constexpr bool kTranslateFixedPointConversions = false;
+    const bool kTranslateFixedPointConversions = g_translate_all;
     if (kTranslateFixedPointConversions &&
         (i & 0x5F200000) == 0x1E000000 && ((i >> 21) & 1) == 0) {
         const u32 sf = i >> 31, ftype = (i >> 22) & 3;
@@ -1900,7 +2372,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             const int fsz = (ftype == 1) ? 8 : 4;
             // Selecting whole register halves rather than reinterpreting the
             // value keeps this exact for NaN payloads too.
-            put("{ uint64_t _r = recomp_cond(c," + std::to_string(cond) + ") ? c->vreg[" +
+            put("{ uint64_t _r = " + Cond(cond) + " ? c->vreg[" +
                 std::to_string(rn) + "][0] : c->vreg[" + std::to_string(rm) + "][0]; " +
                 (fsz == 4 ? "_r &= 0xFFFFFFFFULL; " : "") + "c->vreg[" + std::to_string(rd) +
                 "][0]=_r; c->vreg[" + std::to_string(rd) + "][1]=0; }");
@@ -2008,6 +2480,22 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         // thread pointer, while TPIDRRO_EL0 is written by the kernel and holds
         // the thread-local region whose first bytes are the IPC message
         // buffer. Folding them together corrupts both.
+        // NZCV. The flags live in the context as separate fields, so this is
+        // a pack and an unpack rather than a plain load and store.
+        constexpr u32 kNzcv = 0x5A10;
+        if (sysreg == kNzcv) {
+            if (is_read) {
+                if (rt != 31) {
+                    put("c->x[" + std::to_string(rt) +
+                        "] = ((uint64_t)(c->n&1)<<31)|((uint64_t)(c->z&1)<<30)|"
+                        "((uint64_t)(c->c&1)<<29)|((uint64_t)(c->v&1)<<28);");
+                }
+            } else {
+                put("{ uint64_t _f=" + Xz(rt) +
+                    "; c->n=(_f>>31)&1; c->z=(_f>>30)&1; c->c=(_f>>29)&1; c->v=(_f>>28)&1; }");
+            }
+            return true;
+        }
         constexpr u32 kTpidrEl0 = 0x5E82;
         constexpr u32 kTpidrroEl0 = 0x5E83;
         if (sysreg == kTpidrEl0) {
@@ -2225,6 +2713,15 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
                 case 1: expr = dbl ? "fabs(_a)" : "fabsf(_a)"; break;   // FABS
                 case 2: expr = "-_a"; break;                            // FNEG
                 case 3: expr = dbl ? "sqrt(_a)" : "sqrtf(_a)"; break;   // FSQRT
+                // FRINTN, FRINTX and FRINTI all round to nearest-even under the
+                // default FPCR, which is the only mode the exported code runs in.
+                case 8:
+                case 14:
+                case 15: expr = dbl ? "nearbyint(_a)" : "nearbyintf(_a)"; break;
+                case 9: expr = dbl ? "ceil(_a)" : "ceilf(_a)"; break;    // FRINTP
+                case 10: expr = dbl ? "floor(_a)" : "floorf(_a)"; break; // FRINTM
+                case 11: expr = dbl ? "trunc(_a)" : "truncf(_a)"; break; // FRINTZ
+                case 12: expr = dbl ? "round(_a)" : "roundf(_a)"; break; // FRINTA
                 default: break;
                 }
                 if (!expr.empty()) {
@@ -2238,7 +2735,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             // ordinary FCMP has 1000 in bits 13..10, so the two do not overlap.
             if (((i >> 10) & 3) == 1) {
                 const u32 cond = (i >> 12) & 15, nzcv = i & 15;
-                std::string s = "{ if (recomp_cond(c," + std::to_string(cond) + ")) ";
+                std::string s = "{ if " + Cond(cond) + " ";
                 s += ld_n + ld_m;
                 s += "if (_a != _a || _b != _b) { c->n=0; c->z=0; c->c=1; c->v=1; } ";
                 s += "else { c->n = (_a < _b); c->z = (_a == _b); "
@@ -2333,6 +2830,58 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             const bool dbl = ((i >> 22) & 1) != 0;
             const u32 rn = (i >> 5) & 31, rd = i & 31;
             const char* cmp = nullptr;
+            // NOT and RBIT: both opcode 5 with U set, told apart by size.
+            if (opcode == 0x05 && U && vec_misc) {
+                const u32 size = (i >> 22) & 3;
+                const int bytes = Q ? 16 : 8;
+                if (size <= 1) {
+                    std::string s = "{ uint8_t _a[" + std::to_string(bytes) + "]; ";
+                    s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) +
+                         "); ";
+                    if (size == 0) {
+                        s += "for(int _i=0;_i<" + std::to_string(bytes) +
+                             ";_i++) _a[_i]=(uint8_t)~_a[_i]; ";
+                    } else {
+                        s += "for(int _i=0;_i<" + std::to_string(bytes) + ";_i++){ uint8_t _v=_a[_i]; ";
+                        s += "_v=(uint8_t)((_v>>4)|(_v<<4)); ";
+                        s += "_v=(uint8_t)(((_v&0xCC)>>2)|((_v&0x33)<<2)); ";
+                        s += "_v=(uint8_t)(((_v&0xAA)>>1)|((_v&0x55)<<1)); _a[_i]=_v; } ";
+                    }
+                    s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                         "][1]=0; ";
+                    s += "memcpy(c->vreg[" + std::to_string(rd) + "],_a," + std::to_string(bytes) +
+                         "); }";
+                    put(s);
+                    return true;
+                }
+            }
+            // The integer compares against zero share this class; their
+            // opcodes sit just below the floating-point ones.
+            if (opcode >= 0x08 && opcode <= 0x0A && !(opcode == 0x0A && U)) {
+                const u32 size = (i >> 22) & 3;
+                const int esz = 1 << size;
+                const int bytes = scl_misc ? esz : (Q ? 16 : 8);
+                const int lanes = bytes / esz;
+                const std::string uty = "uint" + std::to_string(esz * 8) + "_t";
+                const std::string ity = "int" + std::to_string(esz * 8) + "_t";
+                const char* op = (opcode == 0x08) ? (U ? ">=" : ">")
+                               : (opcode == 0x09) ? (U ? "<=" : "==")
+                                                  : "<";
+                if (!(size == 3 && !Q && !scl_misc)) {
+                    std::string s = "{ " + ity + " _a[" + std::to_string(lanes) + "]; " + uty +
+                                    " _r[" + std::to_string(lanes) + "]; ";
+                    s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) +
+                         "); ";
+                    s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=(_a[_i]" +
+                         std::string(op) + "0)?(" + uty + ")~(" + uty + ")0:(" + uty + ")0; ";
+                    s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                         "][1]=0; ";
+                    s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) +
+                         "); }";
+                    put(s);
+                    return true;
+                }
+            }
             if (opcode == 0x0C) cmp = U ? ">=" : ">";      // FCMGE / FCMGT
             else if (opcode == 0x0D) cmp = U ? "<=" : "=="; // FCMLE / FCMEQ
             else if (opcode == 0x0E && !U) cmp = "<";       // FCMLT
@@ -2445,6 +2994,34 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
                      "); }";
                 put(s);
                 return true;
+            }
+
+            // REV16 / REV32 / REV64: reverse bytes within each container.
+            // opcode 0 is REV64, 1 is REV16, and REV32 is opcode 0 with U set;
+            // size gives the element width being reversed inside.
+            if ((opcode == 0 || opcode == 1) && !scl_misc) {
+                const u32 size = (i >> 22) & 3;
+                const int esz = 1 << size;                 // byte width of an element
+                const int container = (opcode == 1) ? 2 : (U ? 4 : 8);
+                if (esz < container) {
+                    const int bytes = Q ? 16 : 8;
+                    std::string s = "{ uint8_t _a[" + std::to_string(bytes) + "],_r[" +
+                                    std::to_string(bytes) + "]; ";
+                    s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," +
+                         std::to_string(bytes) + "); ";
+                    s += "for(int _i=0;_i<" + std::to_string(bytes) + ";_i++){ ";
+                    s += "int _base=_i-(_i%" + std::to_string(container) + "); ";
+                    s += "int _off=_i-_base; ";
+                    s += "_r[_i]=_a[_base+(" + std::to_string(container) + "-" +
+                         std::to_string(esz) + "-(_off-(_off%" + std::to_string(esz) +
+                         ")))+(_off%" + std::to_string(esz) + ")]; } ";
+                    s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" +
+                         std::to_string(rd) + "][1]=0; ";
+                    s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," +
+                         std::to_string(bytes) + "); }";
+                    put(s);
+                    return true;
+                }
             }
 
             // CNT: set bits per byte. Defined for byte elements only.
@@ -2564,6 +3141,84 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
                 put(s);
                 return true;
             }
+        }
+    }
+
+    // MUL / MLA / MLS by indexed element. Same shape as the floating-point
+    // group above, but size selects an integer width, and for 16-bit elements
+    // M is part of the lane index rather than the top bit of Rm.
+    {
+        const u32 idxop = (i >> 12) & 0xF;
+        const u32 U = (i >> 29) & 1;
+        const bool shaped = (idxop == 0x8 && !U) || ((idxop == 0x0 || idxop == 0x4) && U);
+        if (shaped && (i & 0x9F00F400) == 0x0F000000 + (idxop << 12)) {
+            const u32 Q = (i >> 30) & 1, size = (i >> 22) & 3;
+            const u32 rn = (i >> 5) & 31, rd = i & 31;
+            const u32 H = (i >> 11) & 1, L = (i >> 21) & 1, M = (i >> 20) & 1;
+            u32 rm = 0, index = 0;
+            bool ok = true;
+            if (size == 1) {
+                rm = (i >> 16) & 15;
+                index = (H << 2) | (L << 1) | M;
+            } else if (size == 2) {
+                rm = ((i >> 16) & 15) | (M << 4);
+                index = (H << 1) | L;
+            } else {
+                ok = false;
+            }
+            if (ok) {
+                const int esz = 1 << size;
+                const int bytes = Q ? 16 : 8;
+                const int lanes = bytes / esz;
+                const std::string uty = "uint" + std::to_string(esz * 8) + "_t";
+                std::string s = "{ " + uty + " _a[" + std::to_string(lanes) + "],_r[" +
+                                std::to_string(lanes) + "],_m; ";
+                s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) +
+                     "); ";
+                s += "memcpy(&_m,(const uint8_t*)c->vreg[" + std::to_string(rm) + "]+" +
+                     std::to_string(index * esz) + "," + std::to_string(esz) + "); ";
+                if (idxop == 0x8) {
+                    s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=(" + uty +
+                         ")(_a[_i]*_m); ";
+                } else {
+                    s += "memcpy(_r,c->vreg[" + std::to_string(rd) + "]," + std::to_string(bytes) +
+                         "); ";
+                    s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _r[_i]=(" + uty +
+                         ")(_r[_i]" + std::string(idxop == 0x0 ? "+" : "-") + "(" + uty +
+                         ")(_a[_i]*_m)); ";
+                }
+                s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                     "][1]=0; ";
+                s += "memcpy(c->vreg[" + std::to_string(rd) + "],_r," + std::to_string(bytes) +
+                     "); }";
+                put(s);
+                return true;
+            }
+        }
+    }
+
+    // SADDLV / UADDLV: sum every lane into one element of twice the width.
+    if ((i & 0x9F3FFC00) == 0x0E303800) {
+        const u32 Q = (i >> 30) & 1, U = (i >> 29) & 1, size = (i >> 22) & 3;
+        const u32 rn = (i >> 5) & 31, rd = i & 31;
+        const int esz = 1 << size;
+        const int bytes = Q ? 16 : 8;
+        if (size < 3 && !(size == 2 && !Q)) {
+            const int lanes = bytes / esz;
+            const std::string sty =
+                std::string(U ? "uint" : "int") + std::to_string(esz * 8) + "_t";
+            const std::string dty =
+                std::string(U ? "uint" : "int") + std::to_string(esz * 16) + "_t";
+            std::string s = "{ " + sty + " _a[" + std::to_string(lanes) + "]; " + dty + " _s=0; ";
+            s += "memcpy(_a,c->vreg[" + std::to_string(rn) + "]," + std::to_string(bytes) + "); ";
+            s += "for(int _i=0;_i<" + std::to_string(lanes) + ";_i++) _s=(" + dty + ")(_s+(" + dty +
+                 ")_a[_i]); ";
+            s += "c->vreg[" + std::to_string(rd) + "][0]=0; c->vreg[" + std::to_string(rd) +
+                 "][1]=0; ";
+            s += "memcpy(c->vreg[" + std::to_string(rd) + "],&_s," + std::to_string(esz * 2) +
+                 "); }";
+            put(s);
+            return true;
         }
     }
 
@@ -2851,20 +3506,30 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
             const std::string addr = (mode == 1) ? std::string("_b") : std::string("(_b+_o)");
             if (is_load) {
                 if (sz <= 8) {
-                    s += "{ uint64_t _v=recomp_load" + std::to_string(bits) + "(c," + addr + "); memcpy(&c->vreg[" + std::to_string(rt) + "][0],&_v," + std::to_string(sz) + "); c->vreg[" + std::to_string(rt) + "][1]=0; }";
-                    s += "{ uint64_t _v=recomp_load" + std::to_string(bits) + "(c," + addr + "+" + std::to_string(sz) + "); memcpy(&c->vreg[" + std::to_string(rt2) + "][0],&_v," + std::to_string(sz) + "); c->vreg[" + std::to_string(rt2) + "][1]=0; }";
+                    s += "{ uint64_t _p0,_p1; recomp_ldp" + std::to_string(bits) + "(c," + addr +
+                         ",&_p0,&_p1); ";
+                    s += "memcpy(&c->vreg[" + std::to_string(rt) + "][0],&_p0," +
+                         std::to_string(sz) + "); c->vreg[" + std::to_string(rt) + "][1]=0; ";
+                    s += "memcpy(&c->vreg[" + std::to_string(rt2) + "][0],&_p1," +
+                         std::to_string(sz) + "); c->vreg[" + std::to_string(rt2) + "][1]=0; }";
                 } else {
-                    // 128-bit: two 64-bit loads per register
-                    s += "{ c->vreg[" + std::to_string(rt) + "][0]=recomp_load64(c," + addr + "); c->vreg[" + std::to_string(rt) + "][1]=recomp_load64(c," + addr + "+8); }";
-                    s += "{ c->vreg[" + std::to_string(rt2) + "][0]=recomp_load64(c," + addr + "+16); c->vreg[" + std::to_string(rt2) + "][1]=recomp_load64(c," + addr + "+24); }";
+                    // 128-bit: one pair per register.
+                    s += "recomp_ldp64(c," + addr + ",&c->vreg[" + std::to_string(rt) +
+                         "][0],&c->vreg[" + std::to_string(rt) + "][1]); ";
+                    s += "recomp_ldp64(c," + addr + "+16,&c->vreg[" + std::to_string(rt2) +
+                         "][0],&c->vreg[" + std::to_string(rt2) + "][1]); ";
                 }
             } else {
                 if (sz <= 8) {
-                    s += "{ uint64_t _v=0; memcpy(&_v,&c->vreg[" + std::to_string(rt) + "][0]," + std::to_string(sz) + "); recomp_store" + std::to_string(bits) + "(c," + addr + ",_v); }";
-                    s += "{ uint64_t _v=0; memcpy(&_v,&c->vreg[" + std::to_string(rt2) + "][0]," + std::to_string(sz) + "); recomp_store" + std::to_string(bits) + "(c," + addr + "+" + std::to_string(sz) + ",_v); }";
+                    s += "{ uint64_t _p0=0,_p1=0; memcpy(&_p0,&c->vreg[" + std::to_string(rt) +
+                         "][0]," + std::to_string(sz) + "); memcpy(&_p1,&c->vreg[" +
+                         std::to_string(rt2) + "][0]," + std::to_string(sz) + "); ";
+                    s += "recomp_stp" + std::to_string(bits) + "(c," + addr + ",_p0,_p1); }";
                 } else {
-                    s += "{ recomp_store64(c," + addr + ",c->vreg[" + std::to_string(rt) + "][0]); recomp_store64(c," + addr + "+8,c->vreg[" + std::to_string(rt) + "][1]); }";
-                    s += "{ recomp_store64(c," + addr + "+16,c->vreg[" + std::to_string(rt2) + "][0]); recomp_store64(c," + addr + "+24,c->vreg[" + std::to_string(rt2) + "][1]); }";
+                    s += "recomp_stp64(c," + addr + ",c->vreg[" + std::to_string(rt) +
+                         "][0],c->vreg[" + std::to_string(rt) + "][1]); ";
+                    s += "recomp_stp64(c," + addr + "+16,c->vreg[" + std::to_string(rt2) +
+                         "][0],c->vreg[" + std::to_string(rt2) + "][1]); ";
                 }
             }
             if (mode == 1 || mode == 3) s += "c->x[" + std::to_string(rn) + "]=_b+_o; ";
@@ -2888,7 +3553,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
         const std::string v1 = "c->vreg[" + std::to_string(rt) + "][1]";
         if (is_load) {
             if (nb == 16) {
-                return v0 + "=recomp_load64(c," + ea + "); " + v1 + "=recomp_load64(c,(" + ea + ")+8); ";
+                return "recomp_ldp64(c," + ea + ",&" + v0 + ",&" + v1 + "); ";
             }
             // Narrower loads zero the rest of the register, as the architecture
             // requires - the destination is written whole, not merged into.
@@ -2896,7 +3561,7 @@ inline bool Translate(u32 i, u64 pc, std::string& out, bool* unhandled = nullptr
                    v0 + "=_v; " + v1 + "=0; } ";
         }
         if (nb == 16) {
-            return "recomp_store64(c," + ea + "," + v0 + "); recomp_store64(c,(" + ea + ")+8," + v1 + "); ";
+            return "recomp_stp64(c," + ea + "," + v0 + "," + v1 + "); ";
         }
         return "{ uint64_t _v=0; memcpy(&_v,&" + v0 + "," + std::to_string(nb) + "); recomp_store" +
                std::to_string(nb * 8) + "(c," + ea + ",_v); } ";
@@ -3583,7 +4248,14 @@ inline RecompileStats EmitProject(const std::string& mod, const u8* text, size_t
        << "  set_source_files_properties(${RECOMP_SOURCES} PROPERTIES COMPILE_OPTIONS "
           "\"${_recomp_msvc_opts}\")\n"
        << "else()\n"
-       << "  set_source_files_properties(${RECOMP_SOURCES} PROPERTIES COMPILE_OPTIONS \"-O1\")\n"
+       // Overridable: -O1 suits a hybrid image, where the SIMD-heavy blocks stay
+       // on the JIT anyway, but a JIT-free image owns those blocks and GCC does
+       // not vectorise at all below -O2.
+       << "  set(RECOMP_OPT_FLAGS \"-O1\" CACHE STRING\n"
+          "      \"optimisation flags for the generated block bodies\")\n"
+       << "  separate_arguments(_recomp_opt NATIVE_COMMAND \"${RECOMP_OPT_FLAGS}\")\n"
+       << "  set_source_files_properties(${RECOMP_SOURCES} PROPERTIES COMPILE_OPTIONS "
+          "\"${_recomp_opt}\")\n"
        << "endif()\n\n"
        << "if(NOT RECOMP_STATIC_ONLY)\n"
        << "add_executable(recompiled main.c recomp_runtime.c ${RECOMP_SOURCES})\n"
@@ -3982,6 +4654,11 @@ uint64_t recomp_load8(GuestContext*,uint64_t); uint64_t recomp_load16(GuestConte
 uint64_t recomp_load32(GuestContext*,uint64_t); uint64_t recomp_load64(GuestContext*,uint64_t);
 void recomp_store8(GuestContext*,uint64_t,uint64_t); void recomp_store16(GuestContext*,uint64_t,uint64_t);
 void recomp_store32(GuestContext*,uint64_t,uint64_t); void recomp_store64(GuestContext*,uint64_t,uint64_t);
+/* Pair forms, so LDP and STP resolve one address instead of two. */
+void recomp_ldp32(GuestContext*,uint64_t,uint64_t*,uint64_t*);
+void recomp_ldp64(GuestContext*,uint64_t,uint64_t*,uint64_t*);
+void recomp_stp32(GuestContext*,uint64_t,uint64_t,uint64_t);
+void recomp_stp64(GuestContext*,uint64_t,uint64_t,uint64_t);
 void recomp_svc(GuestContext*,unsigned); void recomp_unhandled(GuestContext*,uint32_t,uint64_t);
 void recomp_barrier(void);
 /* AES S-box, forward or inverse. Built on first call. */
@@ -4038,6 +4715,42 @@ inline const char* RuntimeC() {
 #define PATH_SEP '/'
 #endif
 
+/* AES S-box, built once on first use.
+   S(x) = affine(x^-1), and x^-1 is x^254 because x^255 == 1 for non-zero x.
+   Generated rather than tabulated: two 256-byte tables written out as source
+   would be 512 bytes of literal in a runtime already split to stay under
+   MSVC's 16380-byte cap. Checked against FIPS 197 and for round-trip. */
+static uint8_t recomp_gmul(uint8_t a, uint8_t b){
+  uint8_t p=0;
+  while(b){ if(b&1) p^=a; a=(uint8_t)((a<<1)^((a>>7)*0x1B)); b=(uint8_t)(b>>1); }
+  return p;
+}
+static uint8_t recomp_ginv(uint8_t x){
+  uint8_t p=1; int b;
+  if(!x) return 0;
+  for(b=7;b>=0;b--){ p=recomp_gmul(p,p); if((254>>b)&1) p=recomp_gmul(p,x); }
+  return p;
+}
+static uint8_t recomp_rotl8(uint8_t x,int n){ return (uint8_t)((x<<n)|(x>>(8-n))); }
+const uint8_t* recomp_aes_sbox(int inverse){
+  static uint8_t fwd[256], inv[256];
+  static int built = 0;
+  if(!built){
+    int i;
+    for(i=0;i<256;i++){
+      uint8_t b = recomp_ginv((uint8_t)i);
+      fwd[i] = (uint8_t)(b ^ recomp_rotl8(b,1) ^ recomp_rotl8(b,2) ^ recomp_rotl8(b,3)
+                           ^ recomp_rotl8(b,4) ^ 0x63);
+    }
+    for(i=0;i<256;i++){
+      uint8_t b = (uint8_t)(recomp_rotl8((uint8_t)i,1) ^ recomp_rotl8((uint8_t)i,3)
+                            ^ recomp_rotl8((uint8_t)i,6) ^ 0x05);
+      inv[i] = recomp_ginv(b);
+    }
+    built = 1;
+  }
+  return inverse ? inv : fwd;
+}
 static uint8_t* memptr(GuestContext* c, uint64_t va, uint64_t sz){
   uint64_t off=va-c->mem_base_vaddr;
   if(off+sz>c->mem_size) return 0;
@@ -4159,6 +4872,50 @@ void recomp_store32(GuestContext* c,uint64_t a,uint64_t v){
 void recomp_store64(GuestContext* c,uint64_t a,uint64_t v){
   unsigned char* p=recomp_host_ptr(c,a); if(p){memcpy(p,&v,8);return;} memstore(c,a,8,v);}
 
+/* Pair access. LDP and STP open and close every non-leaf function, which makes
+   them the most frequent guest memory operations there are, and as two separate
+   calls they walked the page table twice for one address. One walk covers both
+   words whenever the second does not cross out of the page; when it does, or
+   when the page is not plain backed memory, the single-word helpers answer
+   exactly as before - so nothing the emulator would have been told about an
+   access is skipped. */
+static int recomp_pair_same_page(const RecompHostMem* hm, uint64_t a, uint64_t bytes){
+  uint64_t psz;
+  if(!hm || !hm->page_entries) return 0;
+  psz = (uint64_t)1 << hm->page_bits;
+  return (a & (psz - 1)) + bytes <= psz;
+}
+void recomp_ldp64(GuestContext* c,uint64_t a,uint64_t* lo,uint64_t* hi){
+  if(recomp_pair_same_page(c->host_mem,a,16)){
+    unsigned char* p=recomp_host_ptr(c,a);
+    if(p){ memcpy(lo,p,8); memcpy(hi,p+8,8); return; }
+  }
+  *lo=recomp_load64(c,a); *hi=recomp_load64(c,a+8);
+}
+void recomp_stp64(GuestContext* c,uint64_t a,uint64_t v0,uint64_t v1){
+  if(recomp_pair_same_page(c->host_mem,a,16)){
+    unsigned char* p=recomp_host_ptr(c,a);
+    if(p){ memcpy(p,&v0,8); memcpy(p+8,&v1,8); return; }
+  }
+  recomp_store64(c,a,v0); recomp_store64(c,a+8,v1);
+}
+void recomp_ldp32(GuestContext* c,uint64_t a,uint64_t* lo,uint64_t* hi){
+  if(recomp_pair_same_page(c->host_mem,a,8)){
+    unsigned char* p=recomp_host_ptr(c,a);
+    if(p){ uint32_t x,y; memcpy(&x,p,4); memcpy(&y,p+4,4);
+           *lo=(uint64_t)x; *hi=(uint64_t)y; return; }
+  }
+  *lo=recomp_load32(c,a); *hi=recomp_load32(c,a+4);
+}
+void recomp_stp32(GuestContext* c,uint64_t a,uint64_t v0,uint64_t v1){
+  if(recomp_pair_same_page(c->host_mem,a,8)){
+    unsigned char* p=recomp_host_ptr(c,a);
+    if(p){ uint32_t x=(uint32_t)v0,y=(uint32_t)v1;
+           memcpy(p,&x,4); memcpy(p+4,&y,4); return; }
+  }
+  recomp_store32(c,a,v0); recomp_store32(c,a+4,v1);
+}
+
 #ifndef RECOMP_STATIC_HOST
 /* Owned by the runtime in the single-module shapes (standalone exe, loadable
    shared image). When several modules are linked statically into one host this
@@ -4227,44 +4984,7 @@ int recomp_save_write(GuestContext* c, const char* name, const void* data, uint6
   /* Ensure parent dirs exist */
   char parent[1024]; snprintf(parent,sizeof parent,"%s",path);
   char* sl=strrchr(parent,PATH_SEP); if(!sl) sl=strrchr(parent,'/'); if(sl)*sl=0;
-)RT") + R"RT(
-/* AES S-box, built once on first use.
-   S(x) = affine(x^-1), and x^-1 is x^254 because x^255 == 1 for non-zero x.
-   Generated rather than tabulated: two 256-byte tables written out as source
-   would be 512 bytes of literal in a runtime already split to stay under
-   MSVC's 16380-byte cap. Checked against FIPS 197 and for round-trip. */
-static uint8_t recomp_gmul(uint8_t a, uint8_t b){
-  uint8_t p=0;
-  while(b){ if(b&1) p^=a; a=(uint8_t)((a<<1)^((a>>7)*0x1B)); b=(uint8_t)(b>>1); }
-  return p;
-}
-static uint8_t recomp_ginv(uint8_t x){
-  uint8_t p=1; int b;
-  if(!x) return 0;
-  for(b=7;b>=0;b--){ p=recomp_gmul(p,p); if((254>>b)&1) p=recomp_gmul(p,x); }
-  return p;
-}
-static uint8_t recomp_rotl8(uint8_t x,int n){ return (uint8_t)((x<<n)|(x>>(8-n))); }
-const uint8_t* recomp_aes_sbox(int inverse){
-  static uint8_t fwd[256], inv[256];
-  static int built = 0;
-  if(!built){
-    int i;
-    for(i=0;i<256;i++){
-      uint8_t b = recomp_ginv((uint8_t)i);
-      fwd[i] = (uint8_t)(b ^ recomp_rotl8(b,1) ^ recomp_rotl8(b,2) ^ recomp_rotl8(b,3)
-                           ^ recomp_rotl8(b,4) ^ 0x63);
-    }
-    for(i=0;i<256;i++){
-      uint8_t b = (uint8_t)(recomp_rotl8((uint8_t)i,1) ^ recomp_rotl8((uint8_t)i,3)
-                            ^ recomp_rotl8((uint8_t)i,6) ^ 0x05);
-      inv[i] = recomp_ginv(b);
-    }
-    built = 1;
-  }
-  return inverse ? inv : fwd;
-}
-)RT" + R"RT(  mkpath(parent);
+)RT") + R"RT(  mkpath(parent);
   FILE* f=fopen(path,"wb");
   if(!f){fprintf(stderr,"[recomp] save write failed: %s\n",path); return 0;}
   fwrite(data,1,(size_t)size,f); fclose(f);

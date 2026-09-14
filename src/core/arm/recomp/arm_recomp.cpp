@@ -20,8 +20,11 @@
 #include "core/core_timing.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/arm/debug.h"
+#ifndef SUYU_NO_JIT
 #include "core/arm/dynarmic/arm_dynarmic_64.h"
 #include "core/arm/dynarmic/dynarmic_exclusive_monitor.h"
+#endif
+#include "core/arm/exclusive_monitor.h"
 #include "core/memory.h"
 
 namespace Core {
@@ -136,7 +139,26 @@ static_assert(offsetof(GuestContextView, chain_budget) == 864);
 // on 512 KB fibers (common/fiber.cpp) and a block frame carrying SIMD locals is
 // not small, so this has to stay well under what that stack can hold. 256
 // overflowed it and crashed on boot.
-constexpr int kChainBudget = 32;
+// Overridable so the depth can be measured rather than guessed, but only
+// upwards from a value known to be safe, and only when the generated code was
+// built with -foptimize-sibling-calls - without real tail calls a large budget
+// is a stack overflow, which is exactly how 256 crashed on boot.
+// Refuse the JIT entirely. Without this, "the JIT was never reached" is an
+// observation about one run; with it, reaching the JIT is a loud, fatal failure
+// that names the address, which is the difference between evidence and proof.
+const bool kStrictNoFallback = [] {
+    const char* e = std::getenv("SUYU_RECOMP_STRICT");
+    return e && *e && *e != '0';
+}();
+
+const int kChainBudget = [] {
+    const char* e = std::getenv("SUYU_RECOMP_CHAIN_BUDGET");
+    if (!e) {
+        return 32;
+    }
+    const int v = std::atoi(e);
+    return (v >= 1 && v <= 8192) ? v : 32;
+}();
 static_assert(offsetof(GuestContextView, host_mem) == 832);
 static_assert(offsetof(GuestContextView, tpidrro_el0) == 840);
 static_assert(offsetof(GuestContextView, fpcr) == 848);
@@ -183,7 +205,6 @@ std::atomic<RecompBaseFn> g_recomp_base_setter{nullptr};
 /// Only this decides whether the AOT path is worth anything, and only this can
 /// rank the missing opcodes by what actually executes.
 struct RecompCounters {
-    std::atomic<u64> static_blocks{0};
     std::atomic<u64> svc_calls{0};
     std::atomic<u64> fallback_from_miss{0};
     std::atomic<u64> fallback_from_unhandled{0};
@@ -226,6 +247,38 @@ struct RecompCounters {
 RecompCounters g_counters;
 std::atomic<int> g_live_instances{0};
 
+/// The block tally is incremented once per executed block by every guest
+/// thread. As one shared atomic that is a contended cache line on the hottest
+/// path there is: it was 23% of the dispatch loop's own cycles. Each thread
+/// counts into its own line instead, and the report sums them.
+struct alignas(64) ThreadBlocks {
+    std::atomic<u64> n{0};
+    char pad[64 - sizeof(std::atomic<u64>)];
+};
+std::mutex g_tally_lock;
+std::vector<ThreadBlocks*> g_tallies;
+std::atomic<u64> g_retired_blocks{0};
+
+struct ThreadBlockSlot {
+    ThreadBlocks* slot = new ThreadBlocks{};
+    ThreadBlockSlot() {
+        std::scoped_lock lk{g_tally_lock};
+        g_tallies.push_back(slot);
+    }
+    // The slot outlives the thread: the reporter may be summing while a guest
+    // thread exits, and the count still belongs in the total.
+};
+thread_local ThreadBlockSlot t_blocks;
+
+u64 TotalStaticBlocks() {
+    std::scoped_lock lk{g_tally_lock};
+    u64 sum = g_retired_blocks.load(std::memory_order_relaxed);
+    for (const ThreadBlocks* s : g_tallies) {
+        sum += s->n.load(std::memory_order_relaxed);
+    }
+    return sum;
+}
+
 template <typename Map>
 auto TopN(const Map& m, size_t n) {
     // Not Map::value_type: that has a const key and so is not assignable, which
@@ -248,7 +301,7 @@ auto TopN(const Map& m, size_t n) {
 /// run's measurement is lost with it. Writing periodically means a report
 /// always exists for the last completed interval however the process ends.
 std::string FormatRecompCoverage() {
-    const u64 blocks = g_counters.static_blocks.load();
+    const u64 blocks = TotalStaticBlocks();
     const u64 miss = g_counters.fallback_from_miss.load();
     const u64 unh = g_counters.fallback_from_unhandled.load();
     const u64 transitions = miss + unh;
@@ -371,6 +424,20 @@ void SetRecompLookup(RecompLookupFn lookup) {
 
 void SetRecompBaseSetter(RecompBaseFn setter) {
     g_recomp_base_setter.store(setter, std::memory_order_release);
+}
+
+RecompLiveStats GetRecompLiveStats() {
+    return RecompLiveStats{
+        TotalStaticBlocks(),
+        g_counters.fallback_from_miss.load(std::memory_order_relaxed) +
+            g_counters.fallback_from_unhandled.load(std::memory_order_relaxed),
+        g_live_instances.load(std::memory_order_relaxed) > 0,
+#ifdef SUYU_NO_JIT
+        false,
+#else
+        true,
+#endif
+    };
 }
 
 RecompLookupFn GetRecompLookup() {
@@ -875,16 +942,21 @@ struct ArmRecomp::Impl {
     // first miss rather than up front: most runs never need it, and a JIT per
     // core costs a code cache each.
     Kernel::KProcess* owner_process{};
-    DynarmicExclusiveMonitor* exclusive_monitor{};
+    // The base interface, not dynarmic's implementation of it: the recompiled
+    // path only ever calls the virtual methods, and holding the concrete type
+    // here is what forced the library into a build that never runs a JIT.
+    ExclusiveMonitor* exclusive_monitor{};
     std::size_t core_index{};
     bool uses_wall_clock{};
+#ifndef SUYU_NO_JIT
     std::unique_ptr<ArmDynarmic64> fallback{};
+#endif
     bool in_fallback{false};
     bool fallback_unavailable{false};
 };
 
 ArmRecomp::ArmRecomp(System& system, bool uses_wall_clock, RecompLookupFn lookup,
-                     Kernel::KProcess* process, DynarmicExclusiveMonitor* exclusive_monitor,
+                     Kernel::KProcess* process, ExclusiveMonitor* exclusive_monitor,
                      std::size_t core_index)
     : ArmInterface{uses_wall_clock}, impl{std::make_unique<Impl>(system, lookup)} {
     impl->owner_process = process;
@@ -911,21 +983,42 @@ bool ArmRecomp::EnterFallback() {
     if (impl->fallback_unavailable) {
         return false;
     }
+    if (kStrictNoFallback) {
+        // Latched, so the caller's own critical log naming the PC is what gets
+        // read, and the second thread to arrive does not repeat this one.
+        impl->fallback_unavailable = true;
+        LOG_CRITICAL(Core_ARM, "recomp: strict mode - refusing to fall back to the JIT");
+        return false;
+    }
+#ifdef SUYU_NO_JIT
+    // Built without a dynamic recompiler at all. There is nothing to fall back
+    // to, by construction rather than by configuration.
+    impl->fallback_unavailable = true;
+    LOG_CRITICAL(Core_ARM, "recomp: built without a JIT; uncovered code cannot run");
+    return false;
+#else
     if (!impl->fallback) {
         if (!impl->owner_process || !impl->exclusive_monitor) {
             impl->fallback_unavailable = true;
             return false;
         }
-        impl->fallback = std::make_unique<ArmDynarmic64>(impl->system, impl->uses_wall_clock,
-                                                         impl->owner_process, *impl->exclusive_monitor,
-                                                         impl->core_index);
+        impl->fallback = std::make_unique<ArmDynarmic64>(
+            impl->system, impl->uses_wall_clock, impl->owner_process,
+            static_cast<DynarmicExclusiveMonitor&>(*impl->exclusive_monitor), impl->core_index);
         LOG_WARNING(Core_ARM, "recomp: created JIT fallback for uncovered code");
     }
     impl->in_fallback = true;
     return true;
+#endif
 }
 
 HaltReason ArmRecomp::RunFallback(Kernel::KThread* thread) {
+#ifdef SUYU_NO_JIT
+    // Unreachable: EnterFallback never succeeds in this build. Kept so the one
+    // call site needs no guard of its own.
+    (void)thread;
+    return HaltReason::PrefetchAbort;
+#else
     // The recompiled context is the single source of truth; the JIT is loaded
     // from it on the way in and drained back on the way out, so every accessor
     // on this interface (SVC arguments, thread context save/restore) keeps
@@ -958,6 +1051,7 @@ HaltReason ArmRecomp::RunFallback(Kernel::KThread* thread) {
         g_counters.jit_to_static.fetch_add(1, std::memory_order_relaxed);
     }
     return hr;
+#endif
 }
 
 HaltReason ArmRecomp::RunThread(Kernel::KThread* thread) {
@@ -1169,8 +1263,9 @@ HaltReason ArmRecomp::RunThread(Kernel::KThread* thread) {
         // Dump periodically: teardown is not guaranteed to run (the emulated
         // process can outlive shutdown), and a run with no report is a run with
         // no measurement. One compare per block against a power-of-two mask.
-        if ((g_counters.static_blocks.fetch_add(1, std::memory_order_relaxed) &
-             0x3FFFFULL) == 0x3FFFFULL) {
+        const u64 seen = t_blocks.slot->n.load(std::memory_order_relaxed) + 1;
+        t_blocks.slot->n.store(seen, std::memory_order_relaxed);
+        if ((seen & 0x3FFFFULL) == 0x3FFFFULL) {
             WriteRecompCoverageFile(FormatRecompCoverage());
         }
         // Generated code calls a direct branch's target itself rather than
@@ -1183,8 +1278,9 @@ HaltReason ArmRecomp::RunThread(Kernel::KThread* thread) {
         {
             const int spent = kChainBudget - impl->ctx.chain_budget;
             if (spent > 1) {
-                g_counters.static_blocks.fetch_add(static_cast<u64>(spent - 1),
-                                                   std::memory_order_relaxed);
+                t_blocks.slot->n.store(t_blocks.slot->n.load(std::memory_order_relaxed) +
+                                           static_cast<u64>(spent - 1),
+                                       std::memory_order_relaxed);
             }
         }
 
@@ -1337,9 +1433,13 @@ void ArmRecomp::SignalInterrupt(Kernel::KThread* thread) {
     impl->interrupted.store(true, std::memory_order_relaxed);
     // While the JIT is running this thread it is the one that has to be woken;
     // the flag above is only read by the recompiled dispatch loop.
+#ifndef SUYU_NO_JIT
     if (impl->fallback) {
         impl->fallback->SignalInterrupt(thread);
     }
+#else
+    (void)thread;
+#endif
 }
 
 const Kernel::DebugWatchpoint* ArmRecomp::HaltedWatchpoint() const {

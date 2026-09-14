@@ -587,6 +587,10 @@ private:
     std::atomic<double> last_frame_ms_{0.0};
     std::atomic<double> last_emu_speed_{0.0};
     QLabel* emu_frametime_label = nullptr;
+    /// Says which CPU is running the game, and whether it has left the
+    /// recompiled image. Otherwise that is only knowable from a file
+    /// written after the run.
+    QLabel* cpu_backend_label = nullptr;
     QLabel* tas_label = nullptr;
     QLabel* firmware_label = nullptr;
     QLabel* ssl_status_label = nullptr;

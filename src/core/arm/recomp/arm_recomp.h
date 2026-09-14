@@ -16,6 +16,7 @@ namespace Core {
 
 class System;
 class DynarmicExclusiveMonitor;
+class ExclusiveMonitor;
 
 /**
  * Signature of a recompiled block produced by suyu::recomp::EmitProject.
@@ -63,6 +64,20 @@ void SetRecompBaseSetter(RecompBaseFn setter);
 /// loaded and the JIT should be used.
 RecompLookupFn GetRecompLookup();
 
+/// What the CPU is actually doing, for display while a game is running.
+///
+/// Whether execution is statically recompiled is otherwise only visible in a
+/// coverage file written after the fact, which is no use to someone watching
+/// the game. `jit_transitions` is the number that settles it: an image that
+/// never reaches the JIT reports zero, and one transition is one too many.
+struct RecompLiveStats {
+    u64 static_blocks;      ///< blocks executed from recompiled images
+    u64 jit_transitions;    ///< times execution had to leave them
+    bool backend_active;    ///< ArmRecomp is the CPU for this process
+    bool jit_available;     ///< false when built without a dynamic recompiler
+};
+RecompLiveStats GetRecompLiveStats();
+
 /**
  * CPU backend that executes statically recompiled AArch64 rather than JITing
  * it.
@@ -91,7 +106,7 @@ public:
     /// debugger that is not attached and the game hangs on a black screen with
     /// no forward progress.
     explicit ArmRecomp(System& system, bool uses_wall_clock, RecompLookupFn lookup,
-                       Kernel::KProcess* process, DynarmicExclusiveMonitor* exclusive_monitor,
+                       Kernel::KProcess* process, ExclusiveMonitor* exclusive_monitor,
                        std::size_t core_index);
     ~ArmRecomp() override;
 

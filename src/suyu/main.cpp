@@ -10,6 +10,9 @@
 #include <cstdio>
 #include <exception>
 #include <fstream>
+#include <map>
+#include <mutex>
+#include <set>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -1233,8 +1236,15 @@ void GMainWindow::InitializeWidgets() {
         tr("Time taken to emulate a Switch frame, not counting framelimiting or v-sync. For "
            "full-speed emulation this should be at most 16.67 ms."));
 
+    cpu_backend_label = new QLabel();
+    cpu_backend_label->setToolTip(
+        tr("Which CPU is running the game. STATIC means execution is coming from statically "
+           "recompiled native code rather than the dynamic recompiler. The number is how many "
+           "times execution has had to leave the recompiled image and run on the JIT instead - "
+           "zero means it never has."));
+
     for (auto& label : {shader_building_label, res_scale_label, emu_speed_label, game_fps_label,
-                        emu_frametime_label}) {
+                        emu_frametime_label, cpu_backend_label}) {
         label->setVisible(false);
         label->setFrameStyle(QFrame::NoFrame);
         label->setContentsMargins(4, 0, 4, 0);
@@ -6115,8 +6125,13 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
         microProfileDialog->setVisible(show_debug);
     if (waitTreeWidget)
         waitTreeWidget->setVisible(show_debug);
-    if (controller_dialog)
-        controller_dialog->setVisible(show_debug);
+    // The controller view is hidden with the rest of the debug panes but never
+    // forced open with them. It covers a corner of the window and is only of
+    // use while actually testing input, and forcing it visible here overrode
+    // the user's own toggle - View -> Debugging -> Controller P1 - every time
+    // the layout was applied, which is on every launch into Hacker mode.
+    if (controller_dialog && !show_debug)
+        controller_dialog->setVisible(false);
 
     // Persist the active mode so it can be queried elsewhere
     ModeSelector::SaveMode(mode);
@@ -6422,6 +6437,31 @@ namespace {
 std::vector<QLibrary*> loaded_images;
 std::vector<RecompImage> loaded_records;
 
+// Off unless asked for: this sits on the dispatch path, which runs tens of
+// millions of times a second.
+std::string miss_record_dir;
+std::mutex miss_mutex;
+std::map<std::string, std::set<u64>> recorded_misses;
+
+void RecordMiss(const std::string& module, u64 offset) {
+    std::scoped_lock lock{miss_mutex};
+    auto& set = recorded_misses[module];
+    if (set.size() >= 65536 || !set.insert(offset).second) {
+        return;
+    }
+    // Written out as each new address first appears rather than at exit: the
+    // process is stopped with a signal at the end of a benchmark, and an atexit
+    // handler is not guaranteed to see that.
+    QDir().mkpath(QString::fromStdString(miss_record_dir));
+    for (const auto& [name, offsets] : recorded_misses) {
+        std::ofstream out(miss_record_dir + "/" + name + ".roots");
+        for (u64 value : offsets) {
+            out << std::hex << value << "\n";
+        }
+    }
+    LOG_INFO(Frontend, "uncovered entry point {}+{:#x}", module, offset);
+}
+
 // A compact, sorted view of the records above. The dispatcher runs tens of
 // millions of times a second, and a RecompImage is ~56 bytes with a std::string
 // at the front, so walking the records themselves touches a cache line per
@@ -6722,6 +6762,9 @@ int GMainWindow::LoadRecompiledImagesFrom(const QString& dir) {
             // an ordinary uncovered-code miss and the JIT handles it. Saying "no
             // owning image" here, as this used to, sends you looking for a
             // module-mapping bug when there is none.
+            if (!miss_record_dir.empty()) {
+                RecordMiss(owner->name, pc - owner->base);
+            }
             LOG_DEBUG(Frontend,
                       "recomp dispatch: {} has no block at +{:#x} (pc={:#x}); using JIT",
                       owner->name, pc - owner->base, pc);
@@ -6745,6 +6788,9 @@ int GMainWindow::LoadRecompiledImagesFrom(const QString& dir) {
         }
         return nullptr;
     };
+    miss_record_dir = qEnvironmentVariable("SUYU_RECOMP_RECORD_MISSES").toStdString();
+    LOG_INFO(Frontend, "recomp miss recording: {}",
+             miss_record_dir.empty() ? std::string{"off"} : miss_record_dir);
     Core::SetRecompLookup(+chained);
     LOG_INFO(Frontend, "Loaded {} recompiled module image(s) from {}", loaded_images.size(),
              dir.toStdString());
@@ -7402,6 +7448,33 @@ void GMainWindow::UpdateStatusBar() {
         tas_label->setText(GetTasStateDescription());
     } else {
         tas_label->clear();
+    }
+
+    // Which CPU is actually executing, live. Without this the only evidence is
+    // a coverage file written after the fact, which is no use to someone
+    // watching the game run.
+    {
+        const auto cpu = Core::GetRecompLiveStats();
+        if (!cpu.backend_active) {
+            cpu_backend_label->setVisible(false);
+        } else {
+            const bool clean = cpu.jit_transitions == 0;
+            QString text;
+            if (!cpu.jit_available) {
+                // Built with no dynamic recompiler at all, so there is nothing
+                // to fall back to and nothing to count.
+                text = tr("STATIC · NO JIT");
+            } else if (clean) {
+                text = tr("STATIC · JIT 0");
+            } else {
+                text = tr("STATIC · JIT %1").arg(cpu.jit_transitions);
+            }
+            cpu_backend_label->setText(text);
+            cpu_backend_label->setStyleSheet(
+                clean ? QStringLiteral("color: #2e9e5b; font-weight: bold;")
+                      : QStringLiteral("color: #c8801a; font-weight: bold;"));
+            cpu_backend_label->setVisible(true);
+        }
     }
 
     auto results = system->GetAndResetPerfStats();
