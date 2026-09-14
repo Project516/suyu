@@ -25,19 +25,19 @@ Use this guide when you want to install Updates or DLC for your games in Eden.
 2. Select *File > Install Files to NAND...*.
 3. Navigate to the Update/DLC files you want to install.
     <aside>
-    
+
     ***TIP***: You can install multiple files at once by selecting multiple files in this window.
-    
+
     </aside>
-    
+
 4. The file(s) will be scanned for validity and then a confirmation window will appear, select *Install* to begin installation.
     <aside>
-    
+
     ***TIP***: You can deselect any that you do not want to install with the checkbox by each entry.
-    
+
     </aside>
-    
-5. Upon installation, you will get a prompt saying it was installed successfully.    
+
+5. Upon installation, you will get a prompt saying it was installed successfully.
 6. Look at the *Add-Ons* column in the main window, you should now see the additional installed content reflected.
 
 ---

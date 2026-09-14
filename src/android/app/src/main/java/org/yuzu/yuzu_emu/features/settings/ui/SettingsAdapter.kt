@@ -97,7 +97,7 @@ class SettingsAdapter(
             SettingsItem.TYPE_LAUNCHABLE -> {
                 LaunchableViewHolder(ListItemSettingBinding.inflate(inflater), this)
             }
-			
+
             SettingsItem.TYPE_PATH -> {
                 PathViewHolder(ListItemSettingBinding.inflate(inflater), this)
             }

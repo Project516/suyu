@@ -17,7 +17,7 @@ Use this guide when you want to use the Steam Deck's native gyro functionality f
 
 1. Go into Steam Deck's Desktop Mode, and use the shortcut to launch EmuDeck.
 2. Install [SteamDeckGyroDSU](https://github.com/kmicki/SteamDeckGyroDSU/releases) by going to *3rd Party Tools > Gyroscope* and clicking **Install.**
-    a. Alternatively you can install [SteamDeckGyroDSU](https://github.com/kmicki/SteamDeckGyroDSU/releases) manually following the GitHub page instructions. 
+    a. Alternatively you can install [SteamDeckGyroDSU](https://github.com/kmicki/SteamDeckGyroDSU/releases) manually following the GitHub page instructions.
 3. Upon completion of the installation. You will need to reboot your Steam Deck.  Do so before continuing on.
 4. Go back into the Steam Deck Desktop Mode and open the Dolphin File Explorer.
 5. Navigate to the following directory to see you controller configuration: `/home/deck/.config/Eden`

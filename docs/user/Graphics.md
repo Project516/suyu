@@ -77,7 +77,7 @@ While stock shaders offer a basic subset of options for most users, programs suc
 6. When the Shader Toggler finishes collecting frames in the top left hit Numpad 2 till it turns off the flickering lines.
 7. Hit Numpad 3 to add it the group of shaders to turn off and hit done and save all toggle groups.
 8. Hit the edit button and select "active at startup" for the shader to be turned off on every game launch.
-9. Caps lock to manually turn on and off the shader (default key you can change it with the previous edit button) 
+9. Caps lock to manually turn on and off the shader (default key you can change it with the previous edit button)
 
 ## Driver specifics
 

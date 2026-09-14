@@ -11,7 +11,7 @@ variables:
   # Use FASTZIP for faster compression in cache and artifacts (boolean)
   # https://docs.gitlab.com/runner/configuration/feature-flags.html#available-feature-flags
   FF_USE_FASTZIP: 1
-  
+
   # Our Variables
   CACHE_DIR: "$CI_PROJECT_DIR/ccache"
   CCACHE_DIR: $CACHE_DIR
@@ -40,7 +40,7 @@ build-linux:
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
     GIT_SUBMODULE_DEPTH: 1
-    RELEASE_NAME: mainline  
+    RELEASE_NAME: mainline
   script:
     - bash .ci/scripts/linux/docker.sh
     - bash .ci/scripts/linux/upload.sh

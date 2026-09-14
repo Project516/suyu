@@ -35,15 +35,15 @@ Another option would be to launch the game in Eden and close it - then go into t
     ```
 
 4. Save the file as a **txt** file with the Build ID of the game.  For my example, my Build ID is **AEE6DCCC06D9C05B** so my file would be `AEE6DCCC06D9C05B.txt`.
-5. Open Eden and press and hold the game you want to apply the cheat to.    
+5. Open Eden and press and hold the game you want to apply the cheat to.
 6. Scroll down on the properties until you see **Add-ons**, select this option.
 7. Select + **Install** then select **Mods and cheats** and **OK** on the window that appears.
 8. A file explorer will now appear.  Navigate to the directory created in step 1 and select the folder.
-    
+
     <aside>
-    
+
     ***INFO***: Make sure you select the correct directory or it will not work, the screen should show the **cheats** sub-directory.
-    
+
     </aside>
 2. You should now see the cheat appear in the **Add-ons** screen.
 3. Launch the game and confirm that the cheat is applied.
@@ -93,7 +93,7 @@ Cheats are enabled by default, but can be disabled so they don't affect gameplay
 
 <aside>
 
-***TIP***: The easiest way I have found to find the Build ID is by Right-Clicking the game **IN RYUJINX** and hitting **Manage Cheats**.  Your Build ID will be displayed at the top. 
+***TIP***: The easiest way I have found to find the Build ID is by Right-Clicking the game **IN RYUJINX** and hitting **Manage Cheats**.  Your Build ID will be displayed at the top.
 
 Another option would be to launch the game in Eden and close it - then go into the log and look for a line like this - the first 16 characters if your Build ID. **Make sure that it is the MAIN line**.
 `[  27.098382] Loader <Info> core/file_sys/patch_manager.cpp:HasNSOPatch:304: Querying NSO patch existence for build_id=AEE6DCCC06D9C05B42061E2019123A61, name=main`
