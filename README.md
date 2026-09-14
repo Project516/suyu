@@ -9,49 +9,30 @@
 </h1>
 
 <h4 align="center">
-Nintendo Switch emulator and native recompiler — based on <a href="https://git.eden-emu.dev/eden-emu/eden">Eden</a>, which itself descends from yuzu.
+Nintendo Switch emulator and native recompiler, based on <a href="https://git.eden-emu.dev/eden-emu/eden">Eden</a>, which itself descends from yuzu.
 </h4>
 
 <p align="center">
   <a href="#status">Status</a> |
   <a href="#static-recompilation">Static recompilation</a> |
-  <a href="#changes-in-v005">Changes in v0.0.5</a> |
   <a href="#building">Building</a> |
   <a href="#license">License</a>
 </p>
 
 ---
 
-> **This is the final public release of suyu — v0.04. This repository is a public archive.**
->
-> No further development or downloads are planned. The codebase is preserved here under GPL-3.0 for historical reference and community use.
->
-> **Note:** a small number of fixes were later pulled in from a community
-> continuation of this codebase, after users reported that installed
-> updates/DLC, service handler registration, and RomFS registration were all
-> broken in the archived build. Those fixes are folded in here as bug fixes to
-> suyu itself; this remains the same final v0.04 release, not new development.
-
 ## About
 
 suyu is a Nintendo Switch emulator and AArch64 native recompiler written in C++. It can run decrypted Switch titles using either:
 
-- **HLE/emulation mode** — full hardware-level emulation via the suyu core (GPU, CPU, audio, services)
-- **Recompiler mode** — ahead-of-time static recompilation of Switch AArch64 game code to native x86-64 executables, bundled with suyu's HLE backend
+- **HLE/emulation mode**: full hardware-level emulation via the suyu core (GPU, CPU, audio, services)
+- **Recompiler mode**: ahead-of-time static recompilation of Switch AArch64 game code to native x86-64 executables, bundled with suyu's HLE backend
 
 Based on [Eden](https://git.eden-emu.dev/eden-emu/eden), with suyu's own improvements to UI, recompiler, and platform support.
 
 ## Status
 
-Final version: **v0.04**. Automated builds are published to the [releases page](../../releases) by GitHub Actions (Windows, Linux, Android).
-
-Upstream was inconsistent about its own version — the repository is named
-`suyu-v0.0.4`, the tag reads `v0.04-latest`, and `BUILD_FULLNAME` was hardcoded
-to `v0.04`. This fork normalises to the three-part form. Read literally, `v0.04`
-means 0.4, which was evidently not the intent.
-
-Platforms: Windows and Linux both build and run. Android is inherited from
-upstream and untested since the fork; macOS/iOS are not included.
+Version: **v0.0.4**. Automated builds are published to the [releases page](../../releases) by GitHub Actions (Windows, Linux, Android).
 
 Linux needs five things Windows does not, all handled by
 [`scripts/build-suyu.sh`][bld] in the consuming project:
