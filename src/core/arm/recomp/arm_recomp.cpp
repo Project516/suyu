@@ -140,6 +140,14 @@ static_assert(offsetof(GuestContextView, chain_budget) == 864);
 // upwards from a value known to be safe, and only when the generated code was
 // built with -foptimize-sibling-calls - without real tail calls a large budget
 // is a stack overflow, which is exactly how 256 crashed on boot.
+// Refuse the JIT entirely. Without this, "the JIT was never reached" is an
+// observation about one run; with it, reaching the JIT is a loud, fatal failure
+// that names the address, which is the difference between evidence and proof.
+const bool kStrictNoFallback = [] {
+    const char* e = std::getenv("SUYU_RECOMP_STRICT");
+    return e && *e && *e != '0';
+}();
+
 const int kChainBudget = [] {
     const char* e = std::getenv("SUYU_RECOMP_CHAIN_BUDGET");
     if (!e) {
@@ -951,6 +959,13 @@ ArmRecomp::~ArmRecomp() {
 
 bool ArmRecomp::EnterFallback() {
     if (impl->fallback_unavailable) {
+        return false;
+    }
+    if (kStrictNoFallback) {
+        // Latched, so the caller's own critical log naming the PC is what gets
+        // read, and the second thread to arrive does not repeat this one.
+        impl->fallback_unavailable = true;
+        LOG_CRITICAL(Core_ARM, "recomp: strict mode - refusing to fall back to the JIT");
         return false;
     }
     if (!impl->fallback) {
