@@ -157,32 +157,104 @@ As derived from §512(f), if Nintendo (or an affiliated entity) knowingly materi
 
 ## Building
 
-### Dependencies
+Both platforms below are verified: the Linux instructions were run end to end in
+a clean Ubuntu 24.04 container, and the Windows ones from a fresh clone. Nothing
+here fetches a game, keys or firmware — those are yours to supply.
 
-- CMake 3.15+, Ninja
-- Qt 6.4+ (without bundled Qt: `-DYUZU_USE_BUNDLED_QT=OFF`)
-- Vulkan SDK, libusb, OpenSSL
-
-### Windows
-
-```bat
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF -GNinja
-cmake --build build --target suyu suyu-cmd
-```
+CMake **3.31 or newer** is required. `CMakeModules/CPMUtil.cmake` demands it and
+Ubuntu 24.04 ships 3.28, so on most distributions it has to come from Kitware
+rather than from the package manager.
 
 ### Linux
 
 ```sh
-sudo apt-get install ninja-build qt6-base-dev libqt6svg6-dev libusb-1.0-0-dev libssl-dev
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF -GNinja
+sudo apt-get install -y \
+  build-essential git curl ca-certificates pkg-config ninja-build nasm autoconf \
+  qt6-base-dev qt6-base-private-dev libqt6svg6-dev libqt6charts6-dev \
+  qt6-multimedia-dev libqt6opengl6-dev glslang-tools \
+  libboost-dev libboost-filesystem-dev libboost-context-dev \
+  libusb-1.0-0-dev libssl-dev \
+  libavcodec-dev libavformat-dev libavutil-dev libavfilter-dev \
+  libswscale-dev libswresample-dev \
+  libzstd-dev liblz4-dev libgl1-mesa-dev libasound2-dev libpulse-dev \
+  libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxfixes-dev \
+  libxkbcommon-dev libxss-dev libxtst-dev \
+  libwayland-dev libwayland-egl1 wayland-protocols libdecor-0-dev \
+  libegl-dev libdrm-dev libgbm-dev libvulkan-dev
+```
+
+Three of those are easy to miss and each stops the build outright:
+`glslang-tools` provides `glslangValidator`, which the host shader step looks up
+by name; the X11 and Wayland headers are what SDL3 refuses to configure without;
+and `libavfilter-dev` is required by `FindFFmpeg` even though the emulator only
+decodes.
+
+If the distribution's CMake is older than 3.31:
+
+```sh
+V=3.31.6
+curl -fsSL -o /tmp/cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v${V}/cmake-${V}-linux-x86_64.tar.gz"
+sudo mkdir -p /opt/cmake && sudo tar xzf /tmp/cmake.tar.gz -C /opt/cmake --strip-components=1
+export PATH=/opt/cmake/bin:$PATH
+```
+
+Then:
+
+```sh
+git clone --recursive -b mk8-recomp https://github.com/dougchansan/suyu-v0.0.4 suyu
+cd suyu
+cmake -B build -GNinja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF \
+  -DYUZU_TESTS=OFF -DENABLE_WEB_SERVICE=OFF \
+  -Dfmt_FORCE_BUNDLED=ON
 cmake --build build --target suyu suyu-cmd
 ```
 
+`-Dfmt_FORCE_BUNDLED=ON` is not optional on a distribution shipping fmt 9:
+`logging.h` calls `format_string::get()`, which only exists from fmt 10, and
+suyu forces the bundled copy only inside a branch that does not apply to an
+ordinary Linux build. Without it the build dies several hundred files in.
+
+Binaries land in `build/bin`.
+
+### Windows
+
+Visual Studio 2022 with the **Desktop development with C++** workload, Qt 6.9.3
+for MSVC 2022, and the Vulkan SDK, which supplies `glslangValidator`. Qt via
+aqtinstall if you do not have it:
+
+```
+aqt install-qt windows desktop 6.9.3 win64_msvc2022_64 -m qtcharts qtmultimedia
+```
+
+From a **Developer Command Prompt for VS 2022**:
+
+```bat
+git clone --recursive -b mk8-recomp https://github.com/dougchansan/suyu-v0.0.4 suyu
+cd suyu
+cmake -B build -G Ninja ^
+  -DCMAKE_BUILD_TYPE=Release ^
+  -DENABLE_QT=ON -DYUZU_USE_BUNDLED_QT=OFF ^
+  -DYUZU_TESTS=OFF -DENABLE_WEB_SERVICE=OFF ^
+  -DCMAKE_PREFIX_PATH="C:/Qt/6.9.3/msvc2022_64"
+cmake --build build --target suyu suyu-cmd
+```
+
+Point `CMAKE_PREFIX_PATH` at wherever Qt actually is; forward slashes save a
+quoting argument with CMake. glslang 16 renamed `glslangValidator` to `glslang`
+and suyu's CMake still searches for the old name, so if configure stops with
+*"Required program `glslangValidator` not found"*, add
+`-DGLSLANGVALIDATOR="C:/path/to/glslang.exe"`.
+
+`suyu.exe` needs the Qt runtime beside it to start — `windeployqt` on the built
+executable copies it in.
+
 ### Android
 
-```sh
-cd src/android && ./gradlew assembleMainlineRelease
-```
+Removed for now. The Gradle build is inherited from upstream and nothing here
+has verified it since the fork, so publishing instructions for it would be
+guessing. It comes back when it has been built and run.
 
 ## License
 
