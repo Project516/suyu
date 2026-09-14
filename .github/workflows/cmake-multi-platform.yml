@@ -418,6 +418,10 @@ jobs:
     name: Build (FreeBSD / Clang)
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    # Non-blocking, same as release.yml: the 14.0 VM toolchain cannot compile
+    # this tree (no std::stop_token in its libc++). Keep running so a future
+    # VM bump or polyfill can flip this back.
+    continue-on-error: true
     env:
       BUILD_TYPE: Release
 
@@ -490,6 +494,10 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
+        with:
+          # The obsolete "tools" package was removed from Google's repo and
+          # makes sdkmanager exit 1; platform-tools is all this job needs.
+          packages: platform-tools
 
       - name: Install NDK
         run: |
