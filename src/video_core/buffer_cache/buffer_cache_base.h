@@ -17,8 +17,8 @@
 #include <vector>
 
 #include <ankerl/unordered_dense.h>
-#include <boost/container/static_vector.hpp>
 #include <boost/container/small_vector.hpp>
+#include <boost/container/static_vector.hpp>
 
 #include "common/common_types.h"
 #include "common/div_ceil.h"
@@ -32,7 +32,6 @@
 #include "video_core/control/channel_state_cache.h"
 #include "video_core/delayed_destruction_ring.h"
 #include "video_core/dirty_flags.h"
-#include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"

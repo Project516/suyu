@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "common/settings.h"
 #include "common/string_util.h"
 #include "common/swap.h"
 #include "core/core.h"
@@ -16,7 +17,6 @@
 #include "core/hle/service/sockets/sockets.h"
 #include "core/hle/service/sockets/sockets_translate.h"
 #include "core/internal_network/network.h"
-#include "common/settings.h"
 #include "core/memory.h"
 
 namespace Service::Sockets {
@@ -55,7 +55,7 @@ enum class NetDbError : s32 {
 };
 
 static const constexpr std::array blockedDomains = {
-    "srv.nintendo.net", //obvious
+    "srv.nintendo.net", // obvious
     "nintendo.es",
     "nintendowifi.net",
     "nintendo-europe.com",
@@ -87,7 +87,7 @@ static const constexpr std::array blockedDomains = {
     "nintendoswitch.com.cn",
     "nintendoswitch.com",
     "sun.hac.lp1.d4c.nintendo.net",
-    "phoenix-api.wbagora.com", //hogwarts legacy
+    "phoenix-api.wbagora.com", // hogwarts legacy
     "battle.net",
     "microsoft.com", // Minecraft dungeons + other games
     "mojang.com",
@@ -295,7 +295,7 @@ static std::vector<u8> SerializeAddrInfo(const std::vector<Network::AddrInfo>& v
         Append<u32_be>(data, static_cast<u32>(Translate(addrinfo.family)));      // ai_family
         Append<u32_be>(data, static_cast<u32>(Translate(addrinfo.socket_type))); // ai_socktype
         Append<u32_be>(data, static_cast<u32>(Translate(addrinfo.protocol)));    // ai_protocol
-        Append<u32_be>(data, 16); // ai_addrlen
+        Append<u32_be>(data, 16);                                                // ai_addrlen
         // ^ *not* sizeof(SerializedSockAddrIn), not that it matters since they're the same size
 
         // ai_addr:

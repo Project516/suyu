@@ -22,19 +22,19 @@ template <typename T>
     return std::size_t(sizeof(T) * CHAR_BIT);
 }
 
-template<typename T>
+template <typename T>
     requires std::is_integral_v<T>
 [[nodiscard]] constexpr u32 MostSignificantBit(const T value) {
     return u32(sizeof(T) * CHAR_BIT - 1 - std::countl_zero(value));
 }
 
-template<typename T>
+template <typename T>
     requires std::is_integral_v<T>
 [[nodiscard]] constexpr T Log2Floor(const T value) {
     return T(MostSignificantBit<T>(value));
 }
 
-template<typename T>
+template <typename T>
     requires std::is_integral_v<T>
 [[nodiscard]] constexpr T Log2Ceil(const T value) {
     const T log2_f = Log2Floor<T>(value);

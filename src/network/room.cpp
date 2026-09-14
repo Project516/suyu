@@ -12,8 +12,8 @@
 #include <shared_mutex>
 #include <sstream>
 #include <thread>
-#include "common/polyfill_thread.h"
 #include "common/logging.h"
+#include "common/polyfill_thread.h"
 #include "enet/enet.h"
 #include "network/packet.h"
 #include "network/room.h"
@@ -354,7 +354,7 @@ void Room::RoomImpl::HandleJoinRequest(const ENetEvent* event) {
     }
 
     if (verify_backend != nullptr)
-     member.user_data = verify_backend->LoadUserData(uid, token);
+        member.user_data = verify_backend->LoadUserData(uid, token);
 
     if (nickname == room_information.host_username) {
         member.user_data.moderator = true;
@@ -809,7 +809,8 @@ IPv4Address Room::RoomImpl::GenerateFakeIPAddress() {
     for (u8 i = 0x01; i < 0xFF; ++i)
         for (u8 j = 0x01; j < 0xFF; ++j) {
             IPv4Address addr{192, 168, i, j};
-            if (std::all_of(members.begin(), members.end(), [&addr](auto const& member) { return member.fake_ip != addr; }))
+            if (std::all_of(members.begin(), members.end(),
+                            [&addr](auto const& member) { return member.fake_ip != addr; }))
                 return addr;
         }
     LOG_ERROR(Network, "All addresses are taken");

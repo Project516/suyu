@@ -6,19 +6,18 @@
  * SPDX-License-Identifier: 0BSD
  */
 
+#include "dynarmic/backend/x64/constant_pool.h"
+
 #include <cstring>
 
 #include "common/assert.h"
-
 #include "dynarmic/backend/x64/block_of_code.h"
-#include "dynarmic/backend/x64/constant_pool.h"
 
 namespace Dynarmic::Backend::X64 {
 
 ConstantPool::ConstantPool(BlockOfCode& code, size_t size)
-    : code(code)
-    , insertion_point(0)
-{
+        : code(code)
+        , insertion_point(0) {
     code.EnsureMemoryCommitted(align_size + size);
     code.int3();
     code.align(align_size);

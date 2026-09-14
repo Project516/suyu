@@ -1,58 +1,58 @@
 // SPDX-FileCopyrightText: 2024 suyu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include "common/logging.h"
 #include "suyu/gamer_environment.h"
 #include "suyu/nintendo_account.h"
-#include "common/logging.h"
 
 #include <QAbstractItemModel>
-#include <QSet>
 #include <QApplication>
-#include <QCryptographicHash>
+#include <QBrush>
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QCursor>
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
-#include <QBrush>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QSettings>
-#include <QFileInfo>
-#include <QFile>
-#include <QGraphicsDropShadowEffect>
-#include <QMenu>
-#include <QPainterPath>
-#include <QPixmap>
-#include <QTabWidget>
-#include <QRadialGradient>
-#include <QScrollBar>
-#include <QStandardItemModel>
-#include <QTimer>
-#include <QUrl>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
-#include <QDateTime>
 #include <QEvent>
-#include <QResizeEvent>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QGraphicsDropShadowEffect>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMenu>
+#include <QMessageBox>
 #include <QMetaObject>
 #include <QMouseEvent>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QPainterPath>
+#include <QPixmap>
+#include <QRadialGradient>
 #include <QRegularExpression>
+#include <QResizeEvent>
+#include <QScrollBar>
+#include <QSet>
+#include <QSettings>
+#include <QStandardItemModel>
 #include <QStandardPaths>
+#include <QTabWidget>
+#include <QTimer>
+#include <QUrl>
 #include <QUrlQuery>
 
 #include "suyu/game_list.h"
 #include "suyu/uisettings.h"
 
 #ifdef SUYU_USE_QT_WEB_ENGINE
+#include <QDialog>
+#include <QWebEngineHistory>
+#include <QWebEnginePage>
 #include <QWebEngineProfile>
 #include <QWebEngineView>
-#include <QWebEnginePage>
-#include <QWebEngineHistory>
-#include <QDialog>
 #endif
 #ifdef SUYU_USE_QT_MULTIMEDIA
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -99,18 +99,18 @@ protected:
         layout->addWidget(popup_view);
 
         QObject::connect(popup_page, &QWebEnginePage::urlChanged, dialog,
-                          [dialog, this](const QUrl& url) {
-                              // The OAuth provider redirects back to reddit.com
-                              // once sign-in succeeds - close the popup and
-                              // reload the opener so it picks up the new
-                              // session cookie.
-                              if (url.host().contains(QStringLiteral("reddit.com"))) {
-                                  dialog->close();
-                                  if (opener_view_) {
-                                      opener_view_->reload();
-                                  }
-                              }
-                          });
+                         [dialog, this](const QUrl& url) {
+                             // The OAuth provider redirects back to reddit.com
+                             // once sign-in succeeds - close the popup and
+                             // reload the opener so it picks up the new
+                             // session cookie.
+                             if (url.host().contains(QStringLiteral("reddit.com"))) {
+                                 dialog->close();
+                                 if (opener_view_) {
+                                     opener_view_->reload();
+                                 }
+                             }
+                         });
         dialog->show();
         return popup_page;
     }
@@ -191,8 +191,9 @@ QPixmap TileArtwork(const QModelIndex& index, const QSize& target) {
     if (icon.isNull()) {
         return {};
     }
-    const qreal dpr =
-        QGuiApplication::primaryScreen() ? QGuiApplication::primaryScreen()->devicePixelRatio() : 1.0;
+    const qreal dpr = QGuiApplication::primaryScreen()
+                          ? QGuiApplication::primaryScreen()->devicePixelRatio()
+                          : 1.0;
     QPixmap scaled = icon.pixmap((QSizeF(target) * dpr).toSize());
     scaled.setDevicePixelRatio(dpr);
     return scaled;
@@ -226,7 +227,7 @@ void GameCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     cardPath.addRoundedRect(r, 10, 10);
 
     const bool selected = option.state & QStyle::State_Selected;
-    const bool hovered  = option.state & QStyle::State_MouseOver;
+    const bool hovered = option.state & QStyle::State_MouseOver;
 
     QColor bg;
     if (selected) {
@@ -267,12 +268,11 @@ void GameCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
         // physical pixels explicitly, then (re)tag the result.
         const qreal dpr = pix.devicePixelRatio();
         const QSize physical_target(qRound(iconRect.width() * dpr), qRound(ICON_H * dpr));
-        QPixmap scaled = pix.scaled(physical_target, Qt::KeepAspectRatioByExpanding,
-                                    Qt::SmoothTransformation);
+        QPixmap scaled =
+            pix.scaled(physical_target, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
         scaled.setDevicePixelRatio(dpr);
-        const QPoint offset(
-            qRound((iconRect.width() - scaled.width() / dpr) / 2.0),
-            qRound((ICON_H - scaled.height() / dpr) / 2.0));
+        const QPoint offset(qRound((iconRect.width() - scaled.width() / dpr) / 2.0),
+                            qRound((ICON_H - scaled.height() / dpr) / 2.0));
         painter->drawPixmap(iconRect.topLeft() + offset, scaled);
     } else {
         // Placeholder gradient when no icon
@@ -306,8 +306,7 @@ void GameCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     painter->setPen(Qt::white);
 
     QRect titleRect(r.left() + 14, r.bottom() - 62, r.width() - 28, 26);
-    painter->drawText(titleRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap,
-                      title);
+    painter->drawText(titleRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap, title);
 
     // ── Size / play-time / info ─────────────────────────────────────────────────
     const QString info = index.data(Qt::UserRole + 10).toString();
@@ -392,10 +391,10 @@ QString NormalizeLaunchPath(const QString& path) {
 } // namespace
 
 // Role constants (matching game_list_p.h, without pulling in that header)
-static constexpr int kGLItemTypeRole  = Qt::UserRole + 1;  // GameListItem::TypeRole
-static constexpr int kGLTitleRole     = Qt::UserRole + 3;  // GameListItemPath::TitleRole
-static constexpr int kGLPathRole      = Qt::UserRole + 4;  // GameListItemPath::FullPathRole
-static constexpr int kGLGameItemType  = 1001;              // GameListItemType::Game
+static constexpr int kGLItemTypeRole = Qt::UserRole + 1; // GameListItem::TypeRole
+static constexpr int kGLTitleRole = Qt::UserRole + 3;    // GameListItemPath::TitleRole
+static constexpr int kGLPathRole = Qt::UserRole + 4;     // GameListItemPath::FullPathRole
+static constexpr int kGLGameItemType = 1001;             // GameListItemType::Game
 
 // ── Constructor / destructor ────────────────────────────────────────────────
 
@@ -417,8 +416,8 @@ GamerEnvironment::GamerEnvironment(GameList* game_list, GMainWindow* parent)
     // Initialize the network manager BEFORE SetupUI() so that BuildSocialPage()
     // can call LoadRedditFeed() and the request will actually be dispatched.
     reddit_network_manager_ = new QNetworkAccessManager(this);
-    connect(reddit_network_manager_, &QNetworkAccessManager::finished,
-            this, &GamerEnvironment::OnRedditFeedFinished);
+    connect(reddit_network_manager_, &QNetworkAccessManager::finished, this,
+            &GamerEnvironment::OnRedditFeedFinished);
     cover_network_manager_ = new QNetworkAccessManager(this);
 
     SetupUI();
@@ -428,13 +427,10 @@ GamerEnvironment::GamerEnvironment(GameList* game_list, GMainWindow* parent)
         auto* model = game_list_->GetModel();
         if (model) {
             connect(model, &QAbstractItemModel::rowsInserted, this,
-                    &GamerEnvironment::OnModelRowsInserted,
-                    Qt::QueuedConnection);
+                    &GamerEnvironment::OnModelRowsInserted, Qt::QueuedConnection);
             connect(model, &QAbstractItemModel::rowsRemoved, this,
-                    &GamerEnvironment::OnModelRowsInserted,
-                    Qt::QueuedConnection);
-            connect(model, &QAbstractItemModel::modelReset, this,
-                    &GamerEnvironment::OnModelReset,
+                    &GamerEnvironment::OnModelRowsInserted, Qt::QueuedConnection);
+            connect(model, &QAbstractItemModel::modelReset, this, &GamerEnvironment::OnModelReset,
                     Qt::QueuedConnection);
         }
 
@@ -466,14 +462,13 @@ QJsonObject GamerEnvironment::GetMcpState() const {
     state[QStringLiteral("visible_game_count")] = game_grid_ ? game_grid_->count() : 0;
     state[QStringLiteral("search_filter")] = filter_text_;
     state[QStringLiteral("current_view")] = content_stack_ && content_stack_->currentIndex() == 1
-        ? QStringLiteral("social")
-        : QStringLiteral("library");
+                                                ? QStringLiteral("social")
+                                                : QStringLiteral("library");
     state[QStringLiteral("social_feed_status")] = social_feed_status_;
     state[QStringLiteral("social_feed_error")] = social_feed_error_;
     state[QStringLiteral("social_post_count")] = social_post_count_;
-    state[QStringLiteral("social_last_updated")] = social_last_updated_.isValid()
-        ? social_last_updated_.toString(Qt::ISODate)
-        : QString();
+    state[QStringLiteral("social_last_updated")] =
+        social_last_updated_.isValid() ? social_last_updated_.toString(Qt::ISODate) : QString();
     return state;
 }
 
@@ -539,10 +534,8 @@ void GamerEnvironment::SetupSidebar(QHBoxLayout* root_layout) {
         f.setPixelSize(26);
         f.setBold(true);
         logo->setFont(f);
-        logo->setStyleSheet(QStringLiteral(
-            "color: white;"
-            "letter-spacing: 2px;"
-        ));
+        logo->setStyleSheet(QStringLiteral("color: white;"
+                                           "letter-spacing: 2px;"));
     }
     vl->addWidget(logo);
 
@@ -611,8 +604,8 @@ void GamerEnvironment::SetupMainContent(QHBoxLayout* root_layout) {
     content_stack_->setAttribute(Qt::WA_TranslucentBackground);
     content_stack_->setAutoFillBackground(false);
 
-    content_stack_->addWidget(BuildLibraryPage());  // index 0
-    content_stack_->addWidget(BuildSocialPage());   // index 1
+    content_stack_->addWidget(BuildLibraryPage()); // index 0
+    content_stack_->addWidget(BuildSocialPage());  // index 1
     content_stack_->setCurrentIndex(0);
 
     root_layout->addWidget(content_stack_, 1);
@@ -628,11 +621,9 @@ QWidget* GamerEnvironment::BuildLibraryPage() {
     vl->setSpacing(12);
 
     auto* heroCard = new QWidget(library_page_);
-    heroCard->setStyleSheet(QStringLiteral(
-        "background: rgba(255,255,255,0.06);"
-        "border: 1px solid rgba(255,255,255,0.12);"
-        "border-radius: 22px;"
-    ));
+    heroCard->setStyleSheet(QStringLiteral("background: rgba(255,255,255,0.06);"
+                                           "border: 1px solid rgba(255,255,255,0.12);"
+                                           "border-radius: 22px;"));
     auto* heroLayout = new QVBoxLayout(heroCard);
     heroLayout->setContentsMargins(20, 20, 20, 20);
     heroLayout->setSpacing(12);
@@ -667,44 +658,42 @@ QWidget* GamerEnvironment::BuildLibraryPage() {
     search_bar_ = new QLineEdit(heroCard);
     search_bar_->setPlaceholderText(tr("Search your games..."));
     search_bar_->setFixedHeight(42);
-    search_bar_->setStyleSheet(QStringLiteral(
-        "QLineEdit {"
-        "  background: rgba(255,255,255,0.10);"
-        "  border: 1px solid rgba(255,255,255,0.16);"
-        "  border-radius: 21px;"
-        "  color: white;"
-        "  padding: 0 18px;"
-        "  font-size: 13px;"
-        "}"
-        "QLineEdit:focus {"
-        "  border-color: rgba(200,120,240,0.9);"
-        "  background: rgba(255,255,255,0.18);"
-        "}"
-    ));
-    connect(search_bar_, &QLineEdit::textChanged,
-            this, &GamerEnvironment::OnSearchChanged);
+    search_bar_->setStyleSheet(QStringLiteral("QLineEdit {"
+                                              "  background: rgba(255,255,255,0.10);"
+                                              "  border: 1px solid rgba(255,255,255,0.16);"
+                                              "  border-radius: 21px;"
+                                              "  color: white;"
+                                              "  padding: 0 18px;"
+                                              "  font-size: 13px;"
+                                              "}"
+                                              "QLineEdit:focus {"
+                                              "  border-color: rgba(200,120,240,0.9);"
+                                              "  background: rgba(255,255,255,0.18);"
+                                              "}"));
+    connect(search_bar_, &QLineEdit::textChanged, this, &GamerEnvironment::OnSearchChanged);
     actionRow->addWidget(search_bar_, 1);
 
-    const QString btnStyle = QStringLiteral(
-        "QPushButton {"
-        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba(160,60,200,0.24), stop:1 rgba(255,120,220,0.28));"
-        "  border: 1px solid rgba(255,255,255,0.22);"
-        "  border-radius: 20px;"
-        "  color: white;"
-        "  padding: 10px 22px;"
-        "  font-size: 13px;"
-        "  min-width: 140px;"
-        "}"
-        "QPushButton:hover {"
-        "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgba(200,100,240,0.32), stop:1 rgba(255,160,255,0.36));"
-        "  border-color: rgba(255,255,255,0.35);"
-        "}"
-        "QPushButton:pressed {"
-        "  background: rgba(220,100,240,0.36);"
-        "}"
-    );
+    const QString btnStyle =
+        QStringLiteral("QPushButton {"
+                       "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 "
+                       "rgba(160,60,200,0.24), stop:1 rgba(255,120,220,0.28));"
+                       "  border: 1px solid rgba(255,255,255,0.22);"
+                       "  border-radius: 20px;"
+                       "  color: white;"
+                       "  padding: 10px 22px;"
+                       "  font-size: 13px;"
+                       "  min-width: 140px;"
+                       "}"
+                       "QPushButton:hover {"
+                       "  background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 "
+                       "rgba(200,100,240,0.32), stop:1 rgba(255,160,255,0.36));"
+                       "  border-color: rgba(255,255,255,0.35);"
+                       "}"
+                       "QPushButton:pressed {"
+                       "  background: rgba(220,100,240,0.36);"
+                       "}");
 
-    add_game_btn_  = new QPushButton(tr("Add a Game"),  heroCard);
+    add_game_btn_ = new QPushButton(tr("Add a Game"), heroCard);
     load_game_btn_ = new QPushButton(tr("Load a Game"), heroCard);
     add_game_btn_->setIcon(QIcon(QStringLiteral(":/icons/folder.svg")));
     load_game_btn_->setIcon(QIcon(QStringLiteral(":/icons/play.svg")));
@@ -716,7 +705,7 @@ QWidget* GamerEnvironment::BuildLibraryPage() {
     load_game_btn_->setFixedHeight(42);
     add_game_btn_->setStyleSheet(btnStyle);
     load_game_btn_->setStyleSheet(btnStyle);
-    connect(add_game_btn_,  &QPushButton::clicked, this, &GamerEnvironment::OnAddGameClicked);
+    connect(add_game_btn_, &QPushButton::clicked, this, &GamerEnvironment::OnAddGameClicked);
     connect(load_game_btn_, &QPushButton::clicked, this, &GamerEnvironment::OnLoadGameClicked);
     actionRow->addWidget(add_game_btn_);
     actionRow->addWidget(load_game_btn_);
@@ -732,10 +721,9 @@ QWidget* GamerEnvironment::BuildLibraryPage() {
     game_grid_->setWrapping(true);
     game_grid_->setFlow(QListView::LeftToRight);
     game_grid_->setSpacing(14);
-    game_grid_->setIconSize(QSize(GameCardDelegate::CARD_W,
-                                   GameCardDelegate::ICON_H));
+    game_grid_->setIconSize(QSize(GameCardDelegate::CARD_W, GameCardDelegate::ICON_H));
     game_grid_->setGridSize(QSize(GameCardDelegate::CARD_W + GameCardDelegate::PAD * 2 + 14,
-                                   GameCardDelegate::CARD_H + GameCardDelegate::PAD * 2 + 14));
+                                  GameCardDelegate::CARD_H + GameCardDelegate::PAD * 2 + 14));
     game_grid_->setMovement(QListView::Static);
     game_grid_->setUniformItemSizes(true);
     game_grid_->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -754,8 +742,7 @@ QWidget* GamerEnvironment::BuildLibraryPage() {
         "  background: rgba(200,100,200,0.5);"
         "  border-radius: 3px;"
         "}"
-        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
-    ));
+        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"));
     game_grid_->setItemDelegate(new GameCardDelegate(game_grid_));
     game_grid_->setAttribute(Qt::WA_TranslucentBackground);
     game_grid_->setAutoFillBackground(false);
@@ -763,24 +750,21 @@ QWidget* GamerEnvironment::BuildLibraryPage() {
     game_grid_->viewport()->setAutoFillBackground(false);
     game_grid_->viewport()->installEventFilter(this);
 
-    connect(game_grid_, &QListWidget::itemDoubleClicked,
-            this, &GamerEnvironment::OnGameDoubleClicked);
-    connect(game_grid_, &QListWidget::customContextMenuRequested,
-            this, &GamerEnvironment::OnGameContextMenu);
+    connect(game_grid_, &QListWidget::itemDoubleClicked, this,
+            &GamerEnvironment::OnGameDoubleClicked);
+    connect(game_grid_, &QListWidget::customContextMenuRequested, this,
+            &GamerEnvironment::OnGameContextMenu);
 
     // ── Empty-state label ─────────────────────────────────────────────────────
     empty_label_ = new QLabel(
-        tr("No games found.\nClick \u201cAdd a Game\u201d to add a directory."),
-        library_page_);
+        tr("No games found.\nClick \u201cAdd a Game\u201d to add a directory."), library_page_);
     empty_label_->setAlignment(Qt::AlignCenter);
-    empty_label_->setStyleSheet(QStringLiteral(
-        "color: rgba(255,255,255,0.45);"
-        "font-size: 13px;"
-    ));
+    empty_label_->setStyleSheet(QStringLiteral("color: rgba(255,255,255,0.45);"
+                                               "font-size: 13px;"));
     empty_label_->setVisible(true);
 
-    vl->addWidget(game_grid_,    1);
-    vl->addWidget(empty_label_,  1, Qt::AlignCenter);
+    vl->addWidget(game_grid_, 1);
+    vl->addWidget(empty_label_, 1, Qt::AlignCenter);
 
     PopulateFromModel();
     return library_page_;
@@ -845,8 +829,9 @@ QWidget* GamerEnvironment::BuildSocialPage() {
     social_web_view_ = new QWebEngineView(redditTab);
     auto* social_page = new SuyuWebPopupPage(profile, social_web_view_);
     social_web_view_->setPage(social_page);
-    social_web_view_->setStyleSheet(QStringLiteral(
-        "QWebEngineView { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); border-radius: 16px; }"));
+    social_web_view_->setStyleSheet(
+        QStringLiteral("QWebEngineView { background: rgba(255,255,255,0.08); border: 1px solid "
+                       "rgba(255,255,255,0.16); border-radius: 16px; }"));
 
     // Back/Refresh/New Post/Music pills are plain https://suyu-action/<name>
     // links intercepted by SuyuWebPopupPage::acceptNavigationRequest (see
@@ -864,9 +849,9 @@ QWidget* GamerEnvironment::BuildSocialPage() {
             // Browser-style back navigation within the page (post -> r/suyu,
             // login -> r/suyu) rather than always leaving the Social tab -
             // only fall back to that when there's nowhere left to go back to.
-            LOG_INFO(Frontend, "Social back diag: canGoBack={} count={} currentIndex={} currentUrl={}",
-                     social_web_view_->history()->canGoBack(),
-                     social_web_view_->history()->count(),
+            LOG_INFO(Frontend,
+                     "Social back diag: canGoBack={} count={} currentIndex={} currentUrl={}",
+                     social_web_view_->history()->canGoBack(), social_web_view_->history()->count(),
                      social_web_view_->history()->currentItemIndex(),
                      social_web_view_->url().toString().toStdString());
             if (social_web_view_->history()->canGoBack()) {
@@ -895,11 +880,11 @@ QWidget* GamerEnvironment::BuildSocialPage() {
             } else {
                 StopSocialMusic();
             }
-            social_web_view_->page()->runJavaScript(QStringLiteral(
-                "(function(){var p=document.getElementById('suyu-music-pill');"
-                "if(p){p.textContent='%1';}window.__suyuMusicEnabled=%2;})();")
-                .arg(social_music_enabled_ ? QStringLiteral("🎵") : QStringLiteral("🔇"))
-                .arg(social_music_enabled_ ? QStringLiteral("true") : QStringLiteral("false")));
+            social_web_view_->page()->runJavaScript(
+                QStringLiteral("(function(){var p=document.getElementById('suyu-music-pill');"
+                               "if(p){p.textContent='%1';}window.__suyuMusicEnabled=%2;})();")
+                    .arg(social_music_enabled_ ? QStringLiteral("🎵") : QStringLiteral("🔇"))
+                    .arg(social_music_enabled_ ? QStringLiteral("true") : QStringLiteral("false")));
         } else if (action == QStringLiteral("/open_external_reddit_login")) {
             // Opens the user's own default system browser to log into Reddit
             // there instead of the embedded view - for users who'd rather
@@ -924,14 +909,13 @@ QWidget* GamerEnvironment::BuildSocialPage() {
     // it to detect "we just left a login-ish URL" and force a real reload()
     // - a fresh server-rendered old.reddit.com page load that legitimately
     // reflects the new session cookie and fires loadFinished normally.
-    connect(social_web_view_, &QWebEngineView::urlChanged, this,
-            [this](const QUrl& url) {
-                const bool is_login = url.path().contains(QStringLiteral("login"));
-                if (social_was_on_login_page_ && !is_login && social_web_view_) {
-                    social_web_view_->reload();
-                }
-                social_was_on_login_page_ = is_login;
-            });
+    connect(social_web_view_, &QWebEngineView::urlChanged, this, [this](const QUrl& url) {
+        const bool is_login = url.path().contains(QStringLiteral("login"));
+        if (social_was_on_login_page_ && !is_login && social_web_view_) {
+            social_web_view_->reload();
+        }
+        social_was_on_login_page_ = is_login;
+    });
 
     connect(social_web_view_, &QWebEngineView::loadFinished, this, [this](bool ok) {
         if (!ok || !social_web_view_) {
@@ -1410,15 +1394,15 @@ QWidget* GamerEnvironment::BuildSocialPage() {
         "a { color: #a585ff; text-decoration: none; }"
         "a:hover { text-decoration: underline; }"
         "body { background: transparent; font-family: 'Segoe UI', sans-serif; }"
-        ".bubble { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); border-radius: 18px; padding: 14px; margin-bottom: 12px; }"
+        ".bubble { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); "
+        "border-radius: 18px; padding: 14px; margin-bottom: 12px; }"
         ".bubble-header { color: rgba(255,255,255,0.72); font-size: 10pt; margin-bottom: 8px; }"
         ".bubble-title { color: white; font-size: 12.5pt; font-weight: 600; margin-bottom: 6px; }"
         ".bubble-body { color: rgba(255,255,255,0.88); font-size: 11pt; line-height: 1.5; }"
         ".bubble-meta { color: rgba(255,255,255,0.55); font-size: 9pt; margin-top: 10px; }"
-        "hr { border: none; border-bottom: 1px solid rgba(255,255,255,0.12); margin: 12px 0; }"
-    ));
-    social_browser_->setHtml(QStringLiteral(
-        "<div class='bubble-header'>Loading r/suyu posts...</div>"));
+        "hr { border: none; border-bottom: 1px solid rgba(255,255,255,0.12); margin: 12px 0; }"));
+    social_browser_->setHtml(
+        QStringLiteral("<div class='bubble-header'>Loading r/suyu posts...</div>"));
     redditLayout->addWidget(social_browser_);
     connect(social_refresh_btn_, &QPushButton::clicked, this, &GamerEnvironment::LoadRedditFeed);
 
@@ -1439,8 +1423,8 @@ void GamerEnvironment::StartSocialMusic() {
         const QString custom_path =
             QString::fromStdString(UISettings::values.social_music_path.GetValue());
         const QUrl source_url = custom_path.isEmpty()
-            ? QUrl(QStringLiteral("qrc:/audio/midnight_tokyo_lofi.mp3"))
-            : QUrl::fromLocalFile(custom_path);
+                                    ? QUrl(QStringLiteral("qrc:/audio/midnight_tokyo_lofi.mp3"))
+                                    : QUrl::fromLocalFile(custom_path);
         social_music_player_ = new QMediaPlayer(this);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         social_music_output_ = new QAudioOutput(this);
@@ -1486,10 +1470,10 @@ void GamerEnvironment::LoadRedditFeed() {
     social_post_count_ = 0;
 
     if (social_browser_) {
-        social_browser_->setHtml(QStringLiteral(
-            "<div style='color:#ccc;font-family:Segoe UI, sans-serif;padding:16px;'>"
-            "Loading r/suyu posts..."
-            "</div>"));
+        social_browser_->setHtml(
+            QStringLiteral("<div style='color:#ccc;font-family:Segoe UI, sans-serif;padding:16px;'>"
+                           "Loading r/suyu posts..."
+                           "</div>"));
     }
 
     // Reddit deprecated unauthenticated .json access on 2026-05-28 - every
@@ -1557,8 +1541,7 @@ void GamerEnvironment::FetchRedditAccessToken() {
                          QByteArrayLiteral("windows:suyu-emulator:v0.04 (by /u/suyu-emu)"));
     request.setHeader(QNetworkRequest::ContentTypeHeader,
                       QStringLiteral("application/x-www-form-urlencoded"));
-    const QByteArray basic_auth =
-        (client_id + QStringLiteral(":")).toUtf8().toBase64();
+    const QByteArray basic_auth = (client_id + QStringLiteral(":")).toUtf8().toBase64();
     request.setRawHeader("Authorization", QByteArray("Basic ") + basic_auth);
 
     QUrlQuery body;
@@ -1585,15 +1568,15 @@ void GamerEnvironment::FetchRedditAccessToken() {
                 social_browser_->setHtml(QStringLiteral(
                     "<div style='color:#f5f5f5;font-family:Segoe UI, sans-serif;padding:16px;'>"
                     "<h3 style='color:#ff7070;'>Unable to authenticate with Reddit</h3>"
-                    "<p>Check that the configured Reddit Client ID is a valid \"installed app\" ID.</p>"
+                    "<p>Check that the configured Reddit Client ID is a valid \"installed app\" "
+                    "ID.</p>"
                     "</div>"));
             }
             return;
         }
 
         const QJsonDocument doc = QJsonDocument::fromJson(bytes);
-        const QString token =
-            doc.object().value(QStringLiteral("access_token")).toString();
+        const QString token = doc.object().value(QStringLiteral("access_token")).toString();
         if (token.isEmpty()) {
             social_feed_status_ = QStringLiteral("error");
             social_feed_error_ = QStringLiteral("Reddit returned no access token");
@@ -1611,8 +1594,8 @@ void GamerEnvironment::OnRedditFeedFinished(QNetworkReply* reply) {
     }
 
     const bool success = reply->error() == QNetworkReply::NoError;
-        const QString error_text = success ? QString{} : reply->errorString();
-        const QByteArray bytes = reply->readAll();
+    const QString error_text = success ? QString{} : reply->errorString();
+    const QByteArray bytes = reply->readAll();
     reply->deleteLater();
     if (reply == reddit_reply_) {
         reddit_reply_ = nullptr;
@@ -1626,14 +1609,16 @@ void GamerEnvironment::OnRedditFeedFinished(QNetworkReply* reply) {
         social_feed_status_ = QStringLiteral("error");
         social_feed_error_ = error_text;
         social_last_updated_ = QDateTime::currentDateTimeUtc();
-        social_browser_->setHtml(QStringLiteral(
-            "<div style='color:#f5f5f5;font-family:Segoe UI, sans-serif;padding:16px;'>"
+        social_browser_->setHtml(
+            QStringLiteral(
+                "<div style='color:#f5f5f5;font-family:Segoe UI, sans-serif;padding:16px;'>"
                 "<h3 style='color:#ff7070;'>Unable to load r/suyu</h3>"
                 "<p>%1</p>"
                 "<p>The subreddit may be unavailable or your connection is offline.</p>"
                 "<p><a href='https://www.reddit.com/r/suyu/new/' style='color:#a585ff;'>"
                 "Open r/suyu in browser \u2192</a></p>"
-                "</div>").arg(error_text.toHtmlEscaped()));
+                "</div>")
+                .arg(error_text.toHtmlEscaped()));
         return;
     }
 
@@ -1649,8 +1634,11 @@ void GamerEnvironment::OnRedditFeedFinished(QNetworkReply* reply) {
         return;
     }
 
-    const QJsonArray children = doc.object().value(QStringLiteral("data")).toObject()
-        .value(QStringLiteral("children")).toArray();
+    const QJsonArray children = doc.object()
+                                    .value(QStringLiteral("data"))
+                                    .toObject()
+                                    .value(QStringLiteral("children"))
+                                    .toArray();
 
     if (children.isEmpty()) {
         social_feed_status_ = QStringLiteral("empty");
@@ -1667,19 +1655,24 @@ void GamerEnvironment::OnRedditFeedFinished(QNetworkReply* reply) {
 
     QString html = QStringLiteral(
         "<style>"
-        "body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; color: #f3f3f3; background: transparent; }"
+        "body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; color: #f3f3f3; "
+        "background: transparent; }"
         "a { color: #a58aff; text-decoration: none; }"
         "a:hover { text-decoration: underline; }"
-        ".bubble { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 18px; padding: 14px; margin-bottom: 14px; }"
-        ".bubble-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }"
+        ".bubble { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); "
+        "border-radius: 18px; padding: 14px; margin-bottom: 14px; }"
+        ".bubble-header { display: flex; justify-content: space-between; align-items: center; "
+        "margin-bottom: 8px; }"
         ".bubble-title { font-size: 13pt; font-weight: 700; margin: 0 0 8px 0; }"
         ".bubble-meta { color: rgba(255,255,255,0.64); font-size: 10pt; }"
-        ".bubble-body { color: rgba(255,255,255,0.88); font-size: 11pt; line-height: 1.5; margin: 0; }"
+        ".bubble-body { color: rgba(255,255,255,0.88); font-size: 11pt; line-height: 1.5; margin: "
+        "0; }"
         "</style>"
         "<div style='padding: 14px;'>"
         "<div style='margin-bottom: 12px;'>"
         "<div style='font-size:15pt;font-weight:700;margin-bottom:4px;'>r/suyu</div>"
-        "<div style='color:rgba(255,255,255,0.65);font-size:10pt;'>Latest posts from the subreddit in a chat-inspired community sidebar.</div>"
+        "<div style='color:rgba(255,255,255,0.65);font-size:10pt;'>Latest posts from the subreddit "
+        "in a chat-inspired community sidebar.</div>"
         "</div>");
 
     const QDateTime now = QDateTime::currentDateTimeUtc();
@@ -1699,9 +1692,10 @@ void GamerEnvironment::OnRedditFeedFinished(QNetworkReply* reply) {
         const QString selftext = post.value(QStringLiteral("selftext")).toString();
 
         const QDateTime created = QDateTime::fromSecsSinceEpoch(createdUtc, Qt::UTC);
-        const QString age = created.secsTo(now) < 3600 ? tr("%1 minutes ago").arg(created.secsTo(now) / 60)
+        const QString age =
+            created.secsTo(now) < 3600    ? tr("%1 minutes ago").arg(created.secsTo(now) / 60)
             : created.secsTo(now) < 86400 ? tr("%1 hours ago").arg(created.secsTo(now) / 3600)
-            : tr("%1 days ago").arg(created.secsTo(now) / 86400);
+                                          : tr("%1 days ago").arg(created.secsTo(now) / 86400);
 
         // Miiverse-style avatar: a colored circle with the author's initial,
         // colored deterministically from their username.
@@ -1713,18 +1707,19 @@ void GamerEnvironment::OnRedditFeedFinished(QNetworkReply* reply) {
         const QString avatar_color = avatar_colors[color_index];
 
         html += QStringLiteral(
-            "<div class='bubble'>"
-            "<table style='width:100%;border-collapse:collapse;'><tr>"
-            "<td style='width:40px;vertical-align:top;'>"
-            "<div style='width:32px;height:32px;border-radius:16px;background:%1;"
-            "color:white;text-align:center;line-height:32px;font-weight:700;'>%2</div>"
-            "</td>"
-            "<td style='vertical-align:top;'>"
-            "<div class='bubble-header'>"
-            "<div class='bubble-meta'>%3 • %4</div>"
-            "</div>"
-            "<div class='bubble-title'><a href='%5'>%6</a></div>"
-            ).arg(avatar_color, initial, author.toHtmlEscaped(), age, url, title.toHtmlEscaped());
+                    "<div class='bubble'>"
+                    "<table style='width:100%;border-collapse:collapse;'><tr>"
+                    "<td style='width:40px;vertical-align:top;'>"
+                    "<div style='width:32px;height:32px;border-radius:16px;background:%1;"
+                    "color:white;text-align:center;line-height:32px;font-weight:700;'>%2</div>"
+                    "</td>"
+                    "<td style='vertical-align:top;'>"
+                    "<div class='bubble-header'>"
+                    "<div class='bubble-meta'>%3 • %4</div>"
+                    "</div>"
+                    "<div class='bubble-title'><a href='%5'>%6</a></div>")
+                    .arg(avatar_color, initial, author.toHtmlEscaped(), age, url,
+                         title.toHtmlEscaped());
 
         if (!selftext.trimmed().isEmpty()) {
             QString body = selftext;
@@ -1735,25 +1730,25 @@ void GamerEnvironment::OnRedditFeedFinished(QNetworkReply* reply) {
         }
 
         // Miiverse-style "stamp" row in place of like/comment buttons.
-        html += QStringLiteral(
-            "<div class='bubble-meta' style='margin-top:8px;'>"
-            "\U0001F44D %1 &nbsp;&nbsp; \U0001F4AC %2"
-            "</div>"
-            "</td></tr></table>"
-            "</div>").arg(QString::number(score), QString::number(comments));
+        html += QStringLiteral("<div class='bubble-meta' style='margin-top:8px;'>"
+                               "\U0001F44D %1 &nbsp;&nbsp; \U0001F4AC %2"
+                               "</div>"
+                               "</td></tr></table>"
+                               "</div>")
+                    .arg(QString::number(score), QString::number(comments));
     }
 
-    html += QStringLiteral("<div style='color:rgba(255,255,255,0.65);font-size:10pt;margin-top:10px;'>Click a post to open it in your browser. Tap New Post to share on r/suyu.</div></div>");
+    html += QStringLiteral(
+        "<div style='color:rgba(255,255,255,0.65);font-size:10pt;margin-top:10px;'>Click a post to "
+        "open it in your browser. Tap New Post to share on r/suyu.</div></div>");
     social_browser_->setHtml(html);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: build a styled nav button
 // ─────────────────────────────────────────────────────────────────────────────
-QPushButton* GamerEnvironment::CreateNavButton(const QString& icon_text,
-                                               const QString& label,
-                                               bool active,
-                                               const QIcon& svg_icon) {
+QPushButton* GamerEnvironment::CreateNavButton(const QString& icon_text, const QString& label,
+                                               bool active, const QIcon& svg_icon) {
     auto* btn = new QPushButton(sidebar_);
     if (!svg_icon.isNull()) {
         // Use a proper SVG icon; show only the label as text.
@@ -1772,21 +1767,19 @@ QPushButton* GamerEnvironment::CreateNavButton(const QString& icon_text,
 
     auto UpdateStyle = [btn]() {
         const bool a = btn->property("active").toBool();
-        btn->setStyleSheet(QStringLiteral(
-            "QPushButton {"
-            "  background: %1;"
-            "  color: %2;"
-            "  border: 1px solid rgba(255,255,255,0.10);"
-            "  border-radius: 12px;"
-            "  text-align: left;"
-            "  padding: 0 14px;"
-            "  font-size: 14px;"
-            "}"
-            "QPushButton:hover { background: rgba(255,255,255,0.14); }"
-        ).arg(a ? QStringLiteral("rgba(255,255,255,0.16)")
-                : QStringLiteral("transparent"),
-              a ? QStringLiteral("white")
-                : QStringLiteral("rgba(255,255,255,0.78)")));
+        btn->setStyleSheet(
+            QStringLiteral("QPushButton {"
+                           "  background: %1;"
+                           "  color: %2;"
+                           "  border: 1px solid rgba(255,255,255,0.10);"
+                           "  border-radius: 12px;"
+                           "  text-align: left;"
+                           "  padding: 0 14px;"
+                           "  font-size: 14px;"
+                           "}"
+                           "QPushButton:hover { background: rgba(255,255,255,0.14); }")
+                .arg(a ? QStringLiteral("rgba(255,255,255,0.16)") : QStringLiteral("transparent"),
+                     a ? QStringLiteral("white") : QStringLiteral("rgba(255,255,255,0.78)")));
     };
     UpdateStyle();
 
@@ -1797,32 +1790,32 @@ void GamerEnvironment::ApplyNavSelection(QPushButton* btn) {
     if (active_nav_btn_ && active_nav_btn_ != btn) {
         active_nav_btn_->setProperty("active", false);
         // Re-apply style for old button
-        const QString inactiveStyle = QStringLiteral(
-            "QPushButton {"
-            "  background: transparent;"
-            "  color: rgba(255,255,255,0.70);"
-            "  border: none;"
-            "  border-radius: 8px;"
-            "  text-align: left;"
-            "  padding: 0 10px;"
-            "  font-size: 13px;"
-            "}"
-            "QPushButton:hover { background: rgba(255,255,255,0.12); }");
+        const QString inactiveStyle =
+            QStringLiteral("QPushButton {"
+                           "  background: transparent;"
+                           "  color: rgba(255,255,255,0.70);"
+                           "  border: none;"
+                           "  border-radius: 8px;"
+                           "  text-align: left;"
+                           "  padding: 0 10px;"
+                           "  font-size: 13px;"
+                           "}"
+                           "QPushButton:hover { background: rgba(255,255,255,0.12); }");
         active_nav_btn_->setStyleSheet(inactiveStyle);
     }
     active_nav_btn_ = btn;
     btn->setProperty("active", true);
-    const QString activeStyle = QStringLiteral(
-        "QPushButton {"
-        "  background: rgba(255,255,255,0.20);"
-        "  color: white;"
-        "  border: 1px solid rgba(255,255,255,0.18);"
-        "  border-radius: 12px;"
-        "  text-align: left;"
-        "  padding: 0 14px;"
-        "  font-size: 14px; font-weight: bold;"
-        "}"
-        "QPushButton:hover { background: rgba(255,255,255,0.26); }" );
+    const QString activeStyle =
+        QStringLiteral("QPushButton {"
+                       "  background: rgba(255,255,255,0.20);"
+                       "  color: white;"
+                       "  border: 1px solid rgba(255,255,255,0.18);"
+                       "  border-radius: 12px;"
+                       "  text-align: left;"
+                       "  padding: 0 14px;"
+                       "  font-size: 14px; font-weight: bold;"
+                       "}"
+                       "QPushButton:hover { background: rgba(255,255,255,0.26); }");
     btn->setStyleSheet(activeStyle);
 }
 
@@ -1844,21 +1837,21 @@ void GamerEnvironment::paintEvent(QPaintEvent*) {
 
     // ── Dark gradient background ──────────────────────────────────────────────
     QLinearGradient bg(0, 0, width(), height());
-    bg.setColorAt(0.00, QColor(10,  0, 28));
-    bg.setColorAt(0.45, QColor(18,  0, 45));
-    bg.setColorAt(1.00, QColor(30,  0, 55));
+    bg.setColorAt(0.00, QColor(10, 0, 28));
+    bg.setColorAt(0.45, QColor(18, 0, 45));
+    bg.setColorAt(1.00, QColor(30, 0, 55));
     p.fillRect(rect(), bg);
 
     // ── Primary glow orb (large, magenta, centre-left) ────────────────────────
     {
         const qreal ox = width() * 0.30;
         const qreal oy = height() * 0.62;
-        const qreal r  = qMax(width(), height()) * 0.60;
+        const qreal r = qMax(width(), height()) * 0.60;
         QRadialGradient orb(ox, oy, r);
-        orb.setColorAt(0.00, QColor(170,   0, 110,  90));
-        orb.setColorAt(0.30, QColor(120,   0,  90,  60));
-        orb.setColorAt(0.65, QColor( 60,   0,  80,  30));
-        orb.setColorAt(1.00, QColor(  0,   0,   0,   0));
+        orb.setColorAt(0.00, QColor(170, 0, 110, 90));
+        orb.setColorAt(0.30, QColor(120, 0, 90, 60));
+        orb.setColorAt(0.65, QColor(60, 0, 80, 30));
+        orb.setColorAt(1.00, QColor(0, 0, 0, 0));
         p.fillRect(rect(), orb);
     }
 
@@ -1866,11 +1859,11 @@ void GamerEnvironment::paintEvent(QPaintEvent*) {
     {
         const qreal ox = width() * 0.72;
         const qreal oy = height() * 0.30;
-        const qreal r  = qMax(width(), height()) * 0.35;
+        const qreal r = qMax(width(), height()) * 0.35;
         QRadialGradient orb(ox, oy, r);
-        orb.setColorAt(0.00, QColor( 90,   0, 150,  55));
-        orb.setColorAt(0.50, QColor( 60,   0, 110,  25));
-        orb.setColorAt(1.00, QColor(  0,   0,   0,   0));
+        orb.setColorAt(0.00, QColor(90, 0, 150, 55));
+        orb.setColorAt(0.50, QColor(60, 0, 110, 25));
+        orb.setColorAt(1.00, QColor(0, 0, 0, 0));
         p.fillRect(rect(), orb);
     }
 
@@ -1889,12 +1882,10 @@ void GamerEnvironment::paintEvent(QPaintEvent*) {
         // asset" seen drifting across the library background. The 512x512
         // mark is square by construction, so it tiles/drifts undistorted and
         // has no baked-in background plate.
-        static const QPixmap mark =
-            QIcon(QStringLiteral(":/img/suyu.svg")).pixmap(QSize(256, 256));
+        static const QPixmap mark = QIcon(QStringLiteral(":/img/suyu.svg")).pixmap(QSize(256, 256));
         if (!mark.isNull()) {
-            const qreal t = ambient_clock_.isValid()
-                                ? qreal(ambient_clock_.elapsed()) / 1000.0
-                                : 0.0;
+            const qreal t =
+                ambient_clock_.isValid() ? qreal(ambient_clock_.elapsed()) / 1000.0 : 0.0;
             p.setRenderHint(QPainter::SmoothPixmapTransform, true);
             for (int i = 0; i < 7; ++i) {
                 // Each mark gets its own size, speed and drift direction.
@@ -1924,7 +1915,8 @@ void GamerEnvironment::paintEvent(QPaintEvent*) {
 // Game grid population
 // ─────────────────────────────────────────────────────────────────────────────
 void GamerEnvironment::PopulateFromModel() {
-    if (!game_list_) return;
+    if (!game_list_)
+        return;
 
     game_grid_->setUpdatesEnabled(false);
     game_grid_->clear();
@@ -1950,7 +1942,8 @@ void GamerEnvironment::PopulateFromModel() {
 
                 if (looks_like_game_entry) {
                     QString title = idx.data(kGLTitleRole).toString();
-                    if (title.isEmpty()) title = idx.data(Qt::DisplayRole).toString();
+                    if (title.isEmpty())
+                        title = idx.data(Qt::DisplayRole).toString();
                     if (title.trimmed().isEmpty()) {
                         continue;
                     }
@@ -2003,7 +1996,8 @@ void GamerEnvironment::PopulateFromModel() {
                     game_grid_->addItem(item);
                     RequestCoverArtwork(display_path, title);
                 }
-                if (model->hasChildren(idx)) traverse(idx);
+                if (model->hasChildren(idx))
+                    traverse(idx);
             }
         };
         traverse(QModelIndex());
@@ -2021,8 +2015,7 @@ void GamerEnvironment::PopulateFromModel() {
         if (seen_titles.contains(title_key)) {
             continue;
         }
-        if (!filter_text_.isEmpty() &&
-            !owned.title.contains(filter_text_, Qt::CaseInsensitive)) {
+        if (!filter_text_.isEmpty() && !owned.title.contains(filter_text_, Qt::CaseInsensitive)) {
             continue;
         }
         seen_titles.insert(title_key);
@@ -2063,9 +2056,8 @@ void GamerEnvironment::PopulateFromModel() {
 
     const int game_count = game_grid_->count();
     if (stats_label_) {
-        stats_label_->setText(game_count == 1
-            ? tr("1 game in your library")
-            : tr("%1 games in your library").arg(game_count));
+        stats_label_->setText(game_count == 1 ? tr("1 game in your library")
+                                              : tr("%1 games in your library").arg(game_count));
     }
 
     const bool hasGames = game_count > 0;
@@ -2074,14 +2066,12 @@ void GamerEnvironment::PopulateFromModel() {
 }
 
 QString GamerEnvironment::CoverCachePathForTitle(const QString& title) const {
-    const QString cache_root =
-        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) +
-        QStringLiteral("/cover_cache");
+    const QString cache_root = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) +
+                               QStringLiteral("/cover_cache");
     QDir().mkpath(cache_root);
 
-    const QByteArray key = QCryptographicHash::hash(title.trimmed().toUtf8(),
-                                                    QCryptographicHash::Sha1)
-                               .toHex();
+    const QByteArray key =
+        QCryptographicHash::hash(title.trimmed().toUtf8(), QCryptographicHash::Sha1).toHex();
     return QDir(cache_root).filePath(QString::fromLatin1(key) + QStringLiteral(".png"));
 }
 
@@ -2125,8 +2115,7 @@ void GamerEnvironment::ApplyCoverToItem(const QString& game_path, const QIcon& i
     }
 }
 
-void GamerEnvironment::RequestCoverArtworkFromUrl(const QString& game_path,
-                                                  const QString& title,
+void GamerEnvironment::RequestCoverArtworkFromUrl(const QString& game_path, const QString& title,
                                                   const QString& url) {
     if (!cover_network_manager_ || title.trimmed().isEmpty() || url.isEmpty()) {
         return;
@@ -2158,22 +2147,21 @@ void GamerEnvironment::RequestCoverArtworkFromUrl(const QString& game_path,
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
     QNetworkReply* reply = cover_network_manager_->get(request);
-    connect(reply, &QNetworkReply::finished, this,
-            [this, reply, key, game_path, cache_path]() {
-                reply->deleteLater();
-                cover_requests_in_flight_.remove(key);
-                if (reply->error() != QNetworkReply::NoError) {
-                    return;
-                }
-                QPixmap px;
-                if (!px.loadFromData(reply->readAll()) || px.isNull()) {
-                    return;
-                }
-                px.save(cache_path, "PNG");
-                const QIcon icon(px);
-                cover_icon_cache_.insert(key, icon);
-                ApplyCoverToItem(game_path, icon);
-            });
+    connect(reply, &QNetworkReply::finished, this, [this, reply, key, game_path, cache_path]() {
+        reply->deleteLater();
+        cover_requests_in_flight_.remove(key);
+        if (reply->error() != QNetworkReply::NoError) {
+            return;
+        }
+        QPixmap px;
+        if (!px.loadFromData(reply->readAll()) || px.isNull()) {
+            return;
+        }
+        px.save(cache_path, "PNG");
+        const QIcon icon(px);
+        cover_icon_cache_.insert(key, icon);
+        ApplyCoverToItem(game_path, icon);
+    });
 }
 
 void GamerEnvironment::RequestCoverArtwork(const QString& game_path, const QString& title) {
@@ -2210,8 +2198,7 @@ void GamerEnvironment::RequestCoverArtwork(const QString& game_path, const QStri
     search_url.setQuery(q);
 
     QNetworkRequest search_req(search_url);
-    search_req.setRawHeader("User-Agent",
-                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) suyu/1.0");
+    search_req.setRawHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) suyu/1.0");
     search_req.setRawHeader("Accept",
                             "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
 
@@ -2256,13 +2243,15 @@ void GamerEnvironment::RequestCoverArtwork(const QString& game_path, const QStri
                                 px.toImage().save(&f, "PNG");
                             }
 
-                            LOG_INFO(Frontend, "Fetched IGDB cover art for '{}'", title.toStdString());
+                            LOG_INFO(Frontend, "Fetched IGDB cover art for '{}'",
+                                     title.toStdString());
                         });
             });
 }
 
 void GamerEnvironment::OnGameDoubleClicked(QListWidgetItem* item) {
-    if (!item) return;
+    if (!item)
+        return;
     const QString stored = item->data(Qt::UserRole).toString();
 
     // Titles imported from the Nintendo Account have no local dump behind
@@ -2327,10 +2316,9 @@ bool GamerEnvironment::eventFilter(QObject* watched, QEvent* event) {
         if (mouse_event->button() == Qt::LeftButton) {
             if (QListWidgetItem* item = game_grid_->itemAt(mouse_event->pos())) {
                 const QRect item_rect = game_grid_->visualItemRect(item);
-                const QRect card_rect = item_rect.adjusted(GameCardDelegate::PAD,
-                                                           GameCardDelegate::PAD,
-                                                           -GameCardDelegate::PAD,
-                                                           -GameCardDelegate::PAD);
+                const QRect card_rect =
+                    item_rect.adjusted(GameCardDelegate::PAD, GameCardDelegate::PAD,
+                                       -GameCardDelegate::PAD, -GameCardDelegate::PAD);
                 const QRect more_rect(card_rect.right() - 64, card_rect.bottom() - 34, 52, 18);
                 if (more_rect.contains(mouse_event->pos())) {
                     ShowGameMenu(item, game_grid_->viewport()->mapToGlobal(mouse_event->pos()));
@@ -2353,17 +2341,16 @@ void GamerEnvironment::ShowGameMenu(QListWidgetItem* item, const QPoint& global_
     const QString title = item->text();
 
     QMenu menu(this);
-    menu.setStyleSheet(QStringLiteral(
-        "QMenu {"
-        "  background: rgba(20,5,50,230);"
-        "  border: 1px solid rgba(255,255,255,0.18);"
-        "  border-radius: 8px;"
-        "  color: white;"
-        "  padding: 4px;"
-        "}"
-        "QMenu::item { padding: 6px 18px; border-radius: 4px; }"
-        "QMenu::item:selected { background: rgba(200,80,200,0.3); }"
-    ));
+    menu.setStyleSheet(
+        QStringLiteral("QMenu {"
+                       "  background: rgba(20,5,50,230);"
+                       "  border: 1px solid rgba(255,255,255,0.18);"
+                       "  border-radius: 8px;"
+                       "  color: white;"
+                       "  padding: 4px;"
+                       "}"
+                       "QMenu::item { padding: 6px 18px; border-radius: 4px; }"
+                       "QMenu::item:selected { background: rgba(200,80,200,0.3); }"));
 
     QAction* launch_action = menu.addAction(tr("Launch \"%1\"").arg(title));
     launch_action->setEnabled(!launch_path.isEmpty());
@@ -2384,9 +2371,9 @@ void GamerEnvironment::ShowGameMenu(QListWidgetItem* item, const QPoint& global_
     if (stored_path.startsWith(QStringLiteral("owned://"))) {
         QAction* locate_action = menu.addAction(tr("Locate ROM..."));
         connect(locate_action, &QAction::triggered, this, [this, title]() {
-            const QString rom_path = QFileDialog::getOpenFileName(
-                this, tr("Locate ROM for %1").arg(title), QString(),
-                tr("Switch ROM (*.nsp *.xci *.nca);;All Files (*)"));
+            const QString rom_path =
+                QFileDialog::getOpenFileName(this, tr("Locate ROM for %1").arg(title), QString(),
+                                             tr("Switch ROM (*.nsp *.xci *.nca);;All Files (*)"));
             if (rom_path.isEmpty()) {
                 return;
             }
@@ -2405,8 +2392,8 @@ void GamerEnvironment::ShowGameMenu(QListWidgetItem* item, const QPoint& global_
     open_location_action->setEnabled(!stored_path.isEmpty());
     connect(open_location_action, &QAction::triggered, this, [stored_path]() {
         const QFileInfo file_info(stored_path);
-        const QString target = file_info.isDir() ? file_info.absoluteFilePath()
-                                                 : file_info.absolutePath();
+        const QString target =
+            file_info.isDir() ? file_info.absoluteFilePath() : file_info.absolutePath();
         if (!target.isEmpty()) {
             QDesktopServices::openUrl(QUrl::fromLocalFile(target));
         }
@@ -2417,7 +2404,8 @@ void GamerEnvironment::ShowGameMenu(QListWidgetItem* item, const QPoint& global_
 
 void GamerEnvironment::OnGameContextMenu(const QPoint& pos) {
     QListWidgetItem* item = game_grid_->itemAt(pos);
-    if (!item) return;
+    if (!item)
+        return;
     ShowGameMenu(item, game_grid_->viewport()->mapToGlobal(pos));
 }
 
@@ -2463,16 +2451,15 @@ void GamerEnvironment::OnNavSocialClicked() {
 void GamerEnvironment::OnNavMoreOptionsClicked() {
     // Show a small context menu with extra options
     QMenu menu(this);
-    menu.setStyleSheet(QStringLiteral(
-        "QMenu {"
-        "  background: rgba(20,5,50,230);"
-        "  border: 1px solid rgba(255,255,255,0.18);"
-        "  border-radius: 8px;"
-        "  color: white; padding: 4px;"
-        "}"
-        "QMenu::item { padding: 6px 18px; border-radius: 4px; }"
-        "QMenu::item:selected { background: rgba(200,80,200,0.3); }"
-    ));
+    menu.setStyleSheet(
+        QStringLiteral("QMenu {"
+                       "  background: rgba(20,5,50,230);"
+                       "  border: 1px solid rgba(255,255,255,0.18);"
+                       "  border-radius: 8px;"
+                       "  color: white; padding: 4px;"
+                       "}"
+                       "QMenu::item { padding: 6px 18px; border-radius: 4px; }"
+                       "QMenu::item:selected { background: rgba(200,80,200,0.3); }"));
     menu.addAction(tr("Refresh game list"), this, [this]() { PopulateFromModel(); });
 
     if (main_window_ != nullptr) {
@@ -2486,8 +2473,7 @@ void GamerEnvironment::OnNavMoreOptionsClicked() {
                                       Qt::QueuedConnection);
         });
         menu.addAction(tr("Install Firmware"), this, [this]() {
-            QMetaObject::invokeMethod(main_window_, "OnInstallFirmware",
-                                      Qt::QueuedConnection);
+            QMetaObject::invokeMethod(main_window_, "OnInstallFirmware", Qt::QueuedConnection);
         });
         menu.addAction(tr("Verify Installed Contents"), this, [this]() {
             QMetaObject::invokeMethod(main_window_, "OnVerifyInstalledContents",
@@ -2506,8 +2492,8 @@ void GamerEnvironment::OnNavManualClicked() {
     emit OpenUserManualRequested();
 }
 
-void GamerEnvironment::OnModelRowsInserted(const QModelIndex& /*parent*/,
-                                           int /*first*/, int /*last*/) {
+void GamerEnvironment::OnModelRowsInserted(const QModelIndex& /*parent*/, int /*first*/,
+                                           int /*last*/) {
     // Delay slightly so the model finishes updating before we re-read it
     QTimer::singleShot(200, this, &GamerEnvironment::RefreshGameGrid);
 }

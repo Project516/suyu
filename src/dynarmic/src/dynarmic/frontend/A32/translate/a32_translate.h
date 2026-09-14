@@ -8,7 +8,6 @@
 #pragma once
 
 #include "common/common_types.h"
-
 #include "dynarmic/interface/A32/arch_version.h"
 
 namespace Dynarmic::IR {

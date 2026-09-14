@@ -33,15 +33,15 @@ static bool CalculateHMAC256(Destination* out, const SourceKey* key, std::size_t
     size_t out_len = 0;
 
     static EVP_MAC* mac = EVP_MAC_fetch(nullptr, "HMAC", nullptr);
-    if (!mac) return false;
+    if (!mac)
+        return false;
 
     static EVP_MAC_CTX* ctx = EVP_MAC_CTX_new(mac);
-    if (!ctx) return false;
+    if (!ctx)
+        return false;
 
-    static OSSL_PARAM params[] = {
-        OSSL_PARAM_construct_utf8_string("digest", (char*)"SHA256", 0),
-        OSSL_PARAM_construct_end()
-    };
+    static OSSL_PARAM params[] = {OSSL_PARAM_construct_utf8_string("digest", (char*)"SHA256", 0),
+                                  OSSL_PARAM_construct_end()};
 
     if (!EVP_MAC_init(ctx, reinterpret_cast<const unsigned char*>(key), key_length, params))
         return false;

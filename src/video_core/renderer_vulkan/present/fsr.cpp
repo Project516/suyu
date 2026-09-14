@@ -25,11 +25,9 @@ using namespace FSR;
 
 using PushConstants = std::array<u32, 4 * 4>;
 
-FSR::FSR(const Device& device, MemoryAllocator& memory_allocator, size_t image_count, VkExtent2D extent)
-    : m_memory_allocator{memory_allocator}
-    , m_image_count{image_count}
-    , m_extent{extent}
-{
+FSR::FSR(const Device& device, MemoryAllocator& memory_allocator, size_t image_count,
+         VkExtent2D extent)
+    : m_memory_allocator{memory_allocator}, m_image_count{image_count}, m_extent{extent} {
     CreateImages(device);
     CreateRenderPasses(device);
     CreateSampler(device);
@@ -44,18 +42,24 @@ FSR::FSR(const Device& device, MemoryAllocator& memory_allocator, size_t image_c
 void FSR::CreateImages(const Device& device) {
     m_dynamic_images.resize(m_image_count);
     for (auto& images : m_dynamic_images) {
-        images.images[Easu] = CreateWrappedImage(m_memory_allocator, m_extent, VK_FORMAT_R16G16B16A16_SFLOAT);
-        images.images[Rcas] = CreateWrappedImage(m_memory_allocator, m_extent, VK_FORMAT_R16G16B16A16_SFLOAT);
-        images.image_views[Easu] = CreateWrappedImageView(device, images.images[Easu], VK_FORMAT_R16G16B16A16_SFLOAT);
-        images.image_views[Rcas] = CreateWrappedImageView(device, images.images[Rcas], VK_FORMAT_R16G16B16A16_SFLOAT);
+        images.images[Easu] =
+            CreateWrappedImage(m_memory_allocator, m_extent, VK_FORMAT_R16G16B16A16_SFLOAT);
+        images.images[Rcas] =
+            CreateWrappedImage(m_memory_allocator, m_extent, VK_FORMAT_R16G16B16A16_SFLOAT);
+        images.image_views[Easu] =
+            CreateWrappedImageView(device, images.images[Easu], VK_FORMAT_R16G16B16A16_SFLOAT);
+        images.image_views[Rcas] =
+            CreateWrappedImageView(device, images.images[Rcas], VK_FORMAT_R16G16B16A16_SFLOAT);
     }
 }
 
 void FSR::CreateRenderPasses(const Device& device) {
     m_renderpass = CreateWrappedRenderPass(device, VK_FORMAT_R16G16B16A16_SFLOAT);
     for (auto& images : m_dynamic_images) {
-        images.framebuffers[Easu] = CreateWrappedFramebuffer(device, m_renderpass, images.image_views[Easu], m_extent);
-        images.framebuffers[Rcas] = CreateWrappedFramebuffer(device, m_renderpass, images.image_views[Rcas], m_extent);
+        images.framebuffers[Easu] =
+            CreateWrappedFramebuffer(device, m_renderpass, images.image_views[Easu], m_extent);
+        images.framebuffers[Rcas] =
+            CreateWrappedFramebuffer(device, m_renderpass, images.image_views[Rcas], m_extent);
     }
 }
 
@@ -83,7 +87,8 @@ void FSR::CreateDescriptorPool(const Device& device) {
 }
 
 void FSR::CreateDescriptorSetLayout(const Device& device) {
-    m_descriptor_set_layout = CreateWrappedDescriptorSetLayout(device, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER});
+    m_descriptor_set_layout =
+        CreateWrappedDescriptorSetLayout(device, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER});
 }
 
 void FSR::CreateDescriptorSets(const Device& device) {
@@ -123,9 +128,10 @@ void FSR::UpdateDescriptorSets(const Device& device, VkImageView image_view, siz
     std::vector<VkDescriptorImageInfo> image_infos;
     image_infos.reserve(2);
     std::vector<VkWriteDescriptorSet> updates{
-        CreateWriteDescriptorSet(image_infos, *m_sampler, image_view, images.descriptor_sets[Easu], 0),
-        CreateWriteDescriptorSet(image_infos, *m_sampler, *images.image_views[Easu], images.descriptor_sets[Rcas], 0)
-    };
+        CreateWriteDescriptorSet(image_infos, *m_sampler, image_view, images.descriptor_sets[Easu],
+                                 0),
+        CreateWriteDescriptorSet(image_infos, *m_sampler, *images.image_views[Easu],
+                                 images.descriptor_sets[Rcas], 0)};
     device.GetLogical().UpdateDescriptorSets(updates, {});
 }
 
@@ -142,9 +148,9 @@ void FSR::UploadImages(const Device& device, Scheduler& scheduler) {
     }
 }
 
-VkImageView FSR::Draw(const Device& device, Scheduler& scheduler, size_t image_index, VkImage source_image,
-                      VkImageView source_image_view, VkExtent2D input_image_extent,
-                      const Common::Rectangle<f32>& crop_rect) {
+VkImageView FSR::Draw(const Device& device, Scheduler& scheduler, size_t image_index,
+                      VkImage source_image, VkImageView source_image_view,
+                      VkExtent2D input_image_extent, const Common::Rectangle<f32>& crop_rect) {
     Images& images = m_dynamic_images[image_index];
 
     VkImage easu_image = *images.images[Easu];

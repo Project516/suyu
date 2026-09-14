@@ -7,11 +7,11 @@
 #include <algorithm>
 #include <array>
 
+#include <ranges>
 #include "common/common_types.h"
 #include "common/fs/file.h"
 #include "common/fs/path_util.h"
 #include "common/logging.h"
-#include <ranges>
 #include "common/stb.h"
 #include "common/string_util.h"
 #include "common/swap.h"
@@ -1092,7 +1092,7 @@ void Module::Interface::GetProfileEditor(HLERequestContext& ctx) {
     rb.PushIpcInterface<IProfileEditor>(ctx, system, user_id, *profile_manager);
 }
 
-void Module::Interface::GetBaasAccountAdministrator(HLERequestContext &ctx) {
+void Module::Interface::GetBaasAccountAdministrator(HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto uuid = rp.PopRaw<Common::UUID>();
 
@@ -1239,8 +1239,8 @@ void Module::Interface::TrySelectUserWithoutInteraction(HLERequestContext& ctx) 
 Module::Interface::Interface(std::shared_ptr<Module> module_,
                              std::shared_ptr<ProfileManager> profile_manager_,
                              Core::System& system_, const char* name)
-    : ServiceFramework{system_, name}, module{std::move(module_)},
-      profile_manager{std::move(profile_manager_)} {}
+    : ServiceFramework{system_, name}, module{std::move(module_)}, profile_manager{std::move(
+                                                                       profile_manager_)} {}
 
 Module::Interface::~Interface() = default;
 

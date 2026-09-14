@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <vector>
 #include <QDialog>
 #include <QString>
 #include <QStringList>
-#include <vector>
 
 class QComboBox;
 class QLabel;
@@ -107,8 +107,7 @@ class ExternalDecryptionToolDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit ExternalDecryptionToolDialog(ExternalDecryptionTool* tool,
-                                          QWidget* parent = nullptr);
+    explicit ExternalDecryptionToolDialog(ExternalDecryptionTool* tool, QWidget* parent = nullptr);
     ~ExternalDecryptionToolDialog() override;
 
 private slots:

@@ -28,7 +28,9 @@ namespace Service {
 class Process {
 public:
     inline explicit Process(Core::System& system) noexcept : m_system(system) {}
-    inline ~Process() { this->Finalize(); }
+    inline ~Process() {
+        this->Finalize();
+    }
 
     Process(const Process&) = delete;
     Process& operator=(const Process&) = delete;

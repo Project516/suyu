@@ -1,21 +1,21 @@
 // SPDX-FileCopyrightText: 2014 Citra Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <cinttypes>
-#include <clocale>
-#include <cmath>
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cinttypes>
+#include <clocale>
+#include <cmath>
 #include <cstdio>
 #include <exception>
 #include <fstream>
-#include <map>
-#include <mutex>
-#include <set>
 #include <iostream>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <optional>
+#include <set>
 #include <thread>
 
 #include <fmt/ranges.h>
@@ -91,23 +91,23 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
-#include <QFileInfo>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QInputDialog>
-#include <QProcess>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QProcess>
 #include <QProgressBar>
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QScreen>
-#include <QSplashScreen>
 #include <QShortcut>
 #include <QSortFilterProxyModel>
+#include <QSplashScreen>
+#include <QSslSocket>
 #include <QStandardPaths>
 #include <QStatusBar>
 #include <QString>
-#include <QSslSocket>
 #include <QSysInfo>
 #include <QTreeView>
 #include <QUrl>
@@ -137,8 +137,8 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "common/cpu_features.h"
 #include "common/settings.h"
 #include "core/arm/debug.h"
-#include "core/core.h"
 #include "core/arm/recomp/arm_recomp.h"
+#include "core/core.h"
 #include "core/core_timing.h"
 #include "core/crypto/key_manager.h"
 #include "core/file_sys/card_image.h"
@@ -156,6 +156,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/hle/service/sm/sm.h"
 #include "core/loader/loader.h"
 #include "core/perf_stats.h"
+#include "core/recompiler/arm64_to_c.h"
 #include "frontend_common/config.h"
 #include "input_common/drivers/tas_input.h"
 #include "input_common/drivers/virtual_amiibo.h"
@@ -172,29 +173,28 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "suyu/debugger/profiler.h"
 #include "suyu/debugger/wait_tree.h"
 #include "suyu/discord.h"
+#include "suyu/emulator_core_manager.h"
+#include "suyu/external_decryption_tool.h"
+#include "suyu/game_export.h"
 #include "suyu/game_list.h"
 #include "suyu/game_list_p.h"
+#include "suyu/gamer_environment.h"
+#include "suyu/hacker_environment.h"
 #include "suyu/hotkeys.h"
 #include "suyu/install_dialog.h"
 #include "suyu/loading_screen.h"
 #include "suyu/main.h"
-#include "suyu/play_time_manager.h"
-#include "suyu/startup_checks.h"
-#include "suyu/uisettings.h"
-#include "suyu/mode_selector.h"
-#include "suyu/emulator_core_manager.h"
-#include "suyu/hacker_environment.h"
-#include "core/recompiler/arm64_to_c.h"
 #include "suyu/mcp_server.h"
-#include "suyu/programmer_environment.h"
-#include "suyu/game_export.h"
-#include "suyu/setup_dialog.h"
-#include "suyu/gamer_environment.h"
-#include "suyu/nintendo_account.h"
-#include "suyu/social_sidebar.h"
-#include "suyu/external_decryption_tool.h"
+#include "suyu/mode_selector.h"
 #include "suyu/mods_browser_dialog.h"
+#include "suyu/nintendo_account.h"
+#include "suyu/play_time_manager.h"
+#include "suyu/programmer_environment.h"
+#include "suyu/setup_dialog.h"
+#include "suyu/social_sidebar.h"
+#include "suyu/startup_checks.h"
 #include "suyu/steam_integration.h"
+#include "suyu/uisettings.h"
 #include "suyu/user_manual_widget.h"
 #include "suyu/util/clickable_label.h"
 #include "suyu/vk_device_info.h"
@@ -204,8 +204,8 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 static void AppendTerminateMessage(std::string_view message) {
     std::fprintf(stderr, "%.*s\n", static_cast<int>(message.size()), message.data());
     try {
-        const auto log_path = Common::FS::GetSuyuPath(Common::FS::SuyuPath::LogDir) /
-                              "suyu_log.txt";
+        const auto log_path =
+            Common::FS::GetSuyuPath(Common::FS::SuyuPath::LogDir) / "suyu_log.txt";
         std::ofstream log_file(log_path, std::ios::app);
         if (log_file.is_open()) {
             log_file << "[terminate] " << message << '\n';
@@ -514,8 +514,7 @@ GMainWindow::GMainWindow(std::unique_ptr<QtConfig> config_, bool has_broken_vulk
     OnCheckFirmwareDecryption();
 
     if (UISettings::values.game_dirs.isEmpty() && !UISettings::values.roms_path.empty()) {
-        const QString fallback_rom_dir =
-            QString::fromStdString(UISettings::values.roms_path);
+        const QString fallback_rom_dir = QString::fromStdString(UISettings::values.roms_path);
         if (QDir(fallback_rom_dir).exists()) {
             UISettings::values.game_dirs.append(
                 UISettings::GameDir{fallback_rom_dir.toStdString(), true, true});
@@ -1191,8 +1190,8 @@ void GMainWindow::InitializeWidgets() {
 
     game_list = new GameList(vfs, provider.get(), *play_time_manager, *system, this);
     ui->emulationLayout->addWidget(game_list);
-        // Switch to emulationPage — all content (game_list, programmer_env_, render_window) lives here
-        ui->centralStack->setCurrentIndex(1);
+    // Switch to emulationPage — all content (game_list, programmer_env_, render_window) lives here
+    ui->centralStack->setCurrentIndex(1);
 
     game_list_placeholder = new GameListPlaceholder(this);
     ui->emulationLayout->addWidget(game_list_placeholder);
@@ -1345,7 +1344,8 @@ void GMainWindow::InitializeWidgets() {
     connect(aa_status_button, &QPushButton::clicked, [&] {
         auto aa_mode = Settings::values.anti_aliasing.GetValue();
         aa_mode = static_cast<Settings::AntiAliasing>(static_cast<u32>(aa_mode) + 1);
-        if (static_cast<u32>(aa_mode) > static_cast<u32>(Settings::EnumMetadata<Settings::AntiAliasing>::GetLast())) {
+        if (static_cast<u32>(aa_mode) >
+            static_cast<u32>(Settings::EnumMetadata<Settings::AntiAliasing>::GetLast())) {
             aa_mode = Settings::AntiAliasing::None;
         }
         Settings::values.anti_aliasing.SetValue(aa_mode);
@@ -1810,10 +1810,9 @@ void GMainWindow::ConnectMenuEvents() {
     connect_menu(ui->action_Reset_Window_Size_800, &GMainWindow::ResetWindowSize800);
     connect_menu(ui->action_Reset_Window_Size_900, &GMainWindow::ResetWindowSize900);
     connect_menu(ui->action_Reset_Window_Size_1080, &GMainWindow::ResetWindowSize1080);
-    ui->menu_Reset_Window_Size->addActions({ui->action_Reset_Window_Size_720,
-                                            ui->action_Reset_Window_Size_800,
-                                            ui->action_Reset_Window_Size_900,
-                                            ui->action_Reset_Window_Size_1080});
+    ui->menu_Reset_Window_Size->addActions(
+        {ui->action_Reset_Window_Size_720, ui->action_Reset_Window_Size_800,
+         ui->action_Reset_Window_Size_900, ui->action_Reset_Window_Size_1080});
 
     // Multiplayer
     connect(ui->action_View_Lobby, &QAction::triggered, multiplayer_state,
@@ -2106,7 +2105,8 @@ bool GMainWindow::LoadROM(const QString& filename, Service::AM::FrontendAppletPa
                "outdated format that has been superseded by others such as NCA, NAX, XCI, or "
                "NSP. Deconstructed ROM directories lack icons, metadata, and update "
                "support.<br><br>For an explanation of the various Switch formats suyu supports, <a "
-               "href='https://suyu-emu.github.io/website/'>check out our website</a>. This message will not be shown again."));
+               "href='https://suyu-emu.github.io/website/'>check out our website</a>. This message "
+               "will not be shown again."));
     }
 
     if (result != Core::SystemResultStatus::Success) {
@@ -2122,7 +2122,8 @@ bool GMainWindow::LoadROM(const QString& filename, Service::AM::FrontendAppletPa
                 tr("suyu has encountered an error while running the video core. "
                    "This is usually caused by outdated GPU drivers, including integrated ones. "
                    "Please see the log for more details. "
-                   "For more information, please visit the <a href='https://suyu-emu.github.io/website/'>"
+                   "For more information, please visit the <a "
+                   "href='https://suyu-emu.github.io/website/'>"
                    "suyu website</a>. "));
             break;
         default:
@@ -2271,7 +2272,7 @@ void GMainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletP
             LOG_INFO(Frontend,
                      "Selected Vulkan device '{}' is Intel; keeping the configured Vulkan backend "
                      "and allowing renderer initialization to report any real device error.",
-                        vk_device_records[vulkan_device_index].name);
+                     vk_device_records[vulkan_device_index].name);
         }
     }
 
@@ -2328,22 +2329,23 @@ void GMainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletP
     connect(emu_thread.get(), &EmuThread::LoadProgress, loading_screen,
             &LoadingScreen::OnLoadProgress, Qt::QueuedConnection);
 
-    connect(emu_thread.get(), &EmuThread::FatalError, this,
-            [this](const QString& msg) {
-                LOG_CRITICAL(Frontend, "Emulation thread crashed: {}", msg.toStdString());
-                QMessageBox::critical(this, tr("Emulation Crashed"),
-                                      tr("The emulation thread encountered a fatal error:\n\n%1\n\n"
-                                         "The game has been stopped.")
-                                          .arg(msg));
-                // Attempt graceful cleanup; skip confirm dialog since emulation already died.
-                if (emulation_running) {
-                    play_time_manager->Stop();
-                    OnShutdownBegin();
-                    OnEmulationStopTimeExpired();
-                    OnEmulationStopped();
-                }
-            },
-            Qt::QueuedConnection);
+    connect(
+        emu_thread.get(), &EmuThread::FatalError, this,
+        [this](const QString& msg) {
+            LOG_CRITICAL(Frontend, "Emulation thread crashed: {}", msg.toStdString());
+            QMessageBox::critical(this, tr("Emulation Crashed"),
+                                  tr("The emulation thread encountered a fatal error:\n\n%1\n\n"
+                                     "The game has been stopped.")
+                                      .arg(msg));
+            // Attempt graceful cleanup; skip confirm dialog since emulation already died.
+            if (emulation_running) {
+                play_time_manager->Stop();
+                OnShutdownBegin();
+                OnEmulationStopTimeExpired();
+                OnEmulationStopped();
+            }
+        },
+        Qt::QueuedConnection);
 
     // Update the GUI
     UpdateStatusButtons();
@@ -2756,7 +2758,6 @@ void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
     const auto qt_shader_cache_path = QString::fromStdString(shader_path_string);
     QDesktopServices::openUrl(QUrl::fromLocalFile(qt_shader_cache_path));
 }
-
 
 static bool RomFSRawCopy(size_t total_size, size_t& read_size, QProgressDialog& dialog,
                          const FileSys::VirtualDir& src, const FileSys::VirtualDir& dest,
@@ -3828,21 +3829,19 @@ void GMainWindow::OnExportRecompiledSource(const QString& output_dir, bool sourc
     connect(future_watcher, &QFutureWatcher<suyu::recomp::RecompileStats>::finished, this,
             [this, future_watcher, output_dir]() {
                 const auto stats = future_watcher->result();
-                QMessageBox::information(
-                    this, tr("Recompile Export"),
-                    tr("Exported %1 blocks (%2 instructions) to:\n%3")
-                        .arg(static_cast<int>(stats.blocks))
-                        .arg(static_cast<int>(stats.instructions))
-                        .arg(output_dir));
+                QMessageBox::information(this, tr("Recompile Export"),
+                                         tr("Exported %1 blocks (%2 instructions) to:\n%3")
+                                             .arg(static_cast<int>(stats.blocks))
+                                             .arg(static_cast<int>(stats.instructions))
+                                             .arg(output_dir));
                 future_watcher->deleteLater();
             });
 
-    auto future = QtConcurrent::run(
-        [td = std::move(text_data), base, output_dir, source_only]() {
-            QDir().mkpath(output_dir);
-            return suyu::recomp::EmitProject("game", td.data(), td.size(), base,
-                                             output_dir.toStdString(), source_only);
-        });
+    auto future = QtConcurrent::run([td = std::move(text_data), base, output_dir, source_only]() {
+        QDir().mkpath(output_dir);
+        return suyu::recomp::EmitProject("game", td.data(), td.size(), base,
+                                         output_dir.toStdString(), source_only);
+    });
     future_watcher->setFuture(future);
 }
 
@@ -4185,9 +4184,9 @@ void GMainWindow::OnConfigure() {
             configure_dialog.ApplyConfiguration();
         } catch (const std::exception& e) {
             LOG_ERROR(Frontend, "Exception applying configuration: {}", e.what());
-            QMessageBox::critical(this, tr("Settings Error"),
-                                  tr("Failed to apply settings:\n%1")
-                                      .arg(QString::fromUtf8(e.what())));
+            QMessageBox::critical(
+                this, tr("Settings Error"),
+                tr("Failed to apply settings:\n%1").arg(QString::fromUtf8(e.what())));
         } catch (...) {
             LOG_ERROR(Frontend, "Unknown exception applying configuration");
             QMessageBox::critical(this, tr("Settings Error"),
@@ -4218,13 +4217,14 @@ void GMainWindow::OnConfigure() {
             config = std::make_unique<QtConfig>();
         } catch (const std::exception& e) {
             LOG_ERROR(Frontend, "Exception reinitializing config: {}", e.what());
-            QMessageBox::critical(this, tr("Settings Error"),
-                                  tr("Failed to reset configuration:\n%1")
-                                      .arg(QString::fromUtf8(e.what())));
+            QMessageBox::critical(
+                this, tr("Settings Error"),
+                tr("Failed to reset configuration:\n%1").arg(QString::fromUtf8(e.what())));
         } catch (...) {
             LOG_ERROR(Frontend, "Unknown exception reinitializing config");
-            QMessageBox::critical(this, tr("Settings Error"),
-                                  tr("An unexpected error occurred while resetting configuration."));
+            QMessageBox::critical(
+                this, tr("Settings Error"),
+                tr("An unexpected error occurred while resetting configuration."));
         }
         UISettings::values.reset_to_defaults = false;
 
@@ -4439,7 +4439,8 @@ void GMainWindow::OnIncreaseVolume() {
 void GMainWindow::OnToggleAdaptingFilter() {
     auto filter = Settings::values.scaling_filter.GetValue();
     filter = static_cast<Settings::ScalingFilter>(static_cast<u32>(filter) + 1);
-    if (static_cast<u32>(filter) > static_cast<u32>(Settings::EnumMetadata<Settings::ScalingFilter>::GetLast())) {
+    if (static_cast<u32>(filter) >
+        static_cast<u32>(Settings::EnumMetadata<Settings::ScalingFilter>::GetLast())) {
         filter = Settings::ScalingFilter::NearestNeighbor;
     }
     Settings::values.scaling_filter.SetValue(filter);
@@ -4499,7 +4500,6 @@ void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file
         config->SaveAllValues();
     }
 }
-
 
 void GMainWindow::OnLoadAmiibo() {
     if (emu_thread == nullptr || !emu_thread->IsRunning()) {
@@ -4737,7 +4737,8 @@ void GMainWindow::OnInstallFirmware() {
 
             if (!VfsRawCopy(firmware_src_vfile, firmware_dst_vfile)) {
                 LOG_ERROR(Frontend, "Failed to copy firmware file {} to {} in registered folder!",
-                          firmware_src_path.generic_string(), firmware_src_path.filename().string());
+                          firmware_src_path.generic_string(),
+                          firmware_src_path.filename().string());
                 success = false;
             }
 
@@ -4746,8 +4747,8 @@ void GMainWindow::OnInstallFirmware() {
                 progress.close();
                 QMessageBox::warning(
                     this, tr("Firmware install failed"),
-                tr("Firmware installation cancelled, firmware may be in bad state, "
-                   "restart suyu or re-install firmware."));
+                    tr("Firmware installation cancelled, firmware may be in bad state, "
+                       "restart suyu or re-install firmware."));
                 return;
             }
         }
@@ -4777,9 +4778,11 @@ void GMainWindow::OnInstallFirmware() {
     try {
         system->GetFileSystemController().CreateFactories(*vfs);
     } catch (const std::exception& e) {
-        LOG_ERROR(Frontend, "Exception rebuilding filesystem factories after firmware install: {}", e.what());
+        LOG_ERROR(Frontend, "Exception rebuilding filesystem factories after firmware install: {}",
+                  e.what());
     } catch (...) {
-        LOG_ERROR(Frontend, "Unknown exception rebuilding filesystem factories after firmware install");
+        LOG_ERROR(Frontend,
+                  "Unknown exception rebuilding filesystem factories after firmware install");
     }
 
     auto VerifyFirmwareCallback = [&](size_t total_size, size_t processed_size) {
@@ -4788,8 +4791,8 @@ void GMainWindow::OnInstallFirmware() {
     };
 
     if (ContentManager::AreKeysPresent()) {
-        auto result =
-            ContentManager::VerifyInstalledContents(*system, *provider, VerifyFirmwareCallback, true);
+        auto result = ContentManager::VerifyInstalledContents(*system, *provider,
+                                                              VerifyFirmwareCallback, true);
 
         if (result.size() > 0) {
             const auto failed_names =
@@ -4801,8 +4804,9 @@ void GMainWindow::OnInstallFirmware() {
             return;
         }
     } else {
-        LOG_WARNING(Frontend,
-                    "Skipping firmware content verification because decryption keys are not available");
+        LOG_WARNING(
+            Frontend,
+            "Skipping firmware content verification because decryption keys are not available");
     }
 
     progress.close();
@@ -4911,8 +4915,8 @@ bool GMainWindow::InstallDecryptionKeysFromPath(const QString& key_source_locati
     } catch (const std::exception& e) {
         LOG_ERROR(Frontend, "Exception installing decryption keys: {}", e.what());
         if (out_error != nullptr) {
-            *out_error = tr("An error occurred while installing keys:\n%1")
-                             .arg(QString::fromUtf8(e.what()));
+            *out_error =
+                tr("An error occurred while installing keys:\n%1").arg(QString::fromUtf8(e.what()));
         }
         return false;
     } catch (...) {
@@ -4940,8 +4944,9 @@ void GMainWindow::OnConfigureExternalDecryption() {
             return;
         } catch (...) {
             LOG_ERROR(Frontend, "Unknown exception creating ExternalDecryptionTool");
-            QMessageBox::critical(this, tr("Decryption Tool Error"),
-                                  tr("An unexpected error occurred initializing the external decryption tool."));
+            QMessageBox::critical(
+                this, tr("Decryption Tool Error"),
+                tr("An unexpected error occurred initializing the external decryption tool."));
             return;
         }
     }
@@ -4956,7 +4961,8 @@ void GMainWindow::OnConfigureExternalDecryption() {
             game_list->PopulateAsync(UISettings::values.game_dirs);
             OnCheckFirmwareDecryption();
         } catch (const std::exception& e) {
-            LOG_ERROR(Frontend, "Exception reloading keys after external decryption tool: {}", e.what());
+            LOG_ERROR(Frontend, "Exception reloading keys after external decryption tool: {}",
+                      e.what());
             QMessageBox::critical(this, tr("Decryption Tool Error"),
                                   tr("Failed to reload keys after tool configuration:\n%1")
                                       .arg(QString::fromUtf8(e.what())));
@@ -4979,8 +4985,8 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
         if (!gamer_env_) {
             gamer_env_ = new GamerEnvironment(game_list, this);
             ui->emulationLayout->addWidget(gamer_env_);
-            connect(gamer_env_, &GamerEnvironment::GameLaunchRequested,
-                    this, [this](const QString& path) {
+            connect(gamer_env_, &GamerEnvironment::GameLaunchRequested, this,
+                    [this](const QString& path) {
                         if (path.isEmpty() || path.startsWith(QStringLiteral("owned://")) ||
                             !QFileInfo::exists(path)) {
                             QMessageBox::information(
@@ -4991,22 +4997,23 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                         }
                         BootGame(path, ApplicationAppletParameters());
                     });
-            connect(gamer_env_, &GamerEnvironment::AddDirectoryRequested,
-                    this, &GMainWindow::OnGameListAddDirectory);
-            connect(gamer_env_, &GamerEnvironment::LoadFileRequested,
-                    this, &GMainWindow::OnMenuLoadFile);
-            connect(gamer_env_, &GamerEnvironment::OpenSettingsRequested,
-                    this, &GMainWindow::OnConfigure);
-            connect(gamer_env_, &GamerEnvironment::OpenMultiplayerRequested,
-                    this, [this]() {
-                        if (multiplayer_state) multiplayer_state->OnViewLobby();
-                    });
-                connect(gamer_env_, &GamerEnvironment::OpenUserManualRequested,
-                        this, &GMainWindow::OnOpenUserManual);
+            connect(gamer_env_, &GamerEnvironment::AddDirectoryRequested, this,
+                    &GMainWindow::OnGameListAddDirectory);
+            connect(gamer_env_, &GamerEnvironment::LoadFileRequested, this,
+                    &GMainWindow::OnMenuLoadFile);
+            connect(gamer_env_, &GamerEnvironment::OpenSettingsRequested, this,
+                    &GMainWindow::OnConfigure);
+            connect(gamer_env_, &GamerEnvironment::OpenMultiplayerRequested, this, [this]() {
+                if (multiplayer_state)
+                    multiplayer_state->OnViewLobby();
+            });
+            connect(gamer_env_, &GamerEnvironment::OpenUserManualRequested, this,
+                    &GMainWindow::OnOpenUserManual);
         }
         game_list->hide();
         game_list_placeholder->hide();
-        if (programmer_env_) programmer_env_->hide();
+        if (programmer_env_)
+            programmer_env_->hide();
         if (!emulation_running) {
             gamer_env_->show();
             gamer_env_->RefreshGameGrid();
@@ -5014,7 +5021,8 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
             gamer_env_->hide();
         }
     } else {
-        if (gamer_env_) gamer_env_->hide();
+        if (gamer_env_)
+            gamer_env_->hide();
     }
 
     // --- Programmer Environment ---
@@ -5043,7 +5051,8 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
     }
 
     // --- Social Sidebar dock (suppressed - social is inside GamerEnvironment now) ---
-    if (social_sidebar_dock_) social_sidebar_dock_->setVisible(false);
+    if (social_sidebar_dock_)
+        social_sidebar_dock_->setVisible(false);
 
     // --- MCP Server (available in all modes) ---
     const bool allow_runtime_mcp = !emulation_running;
@@ -5054,9 +5063,12 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
             if (gamer_env_ && gamer_env_->isVisible()) {
                 const QJsonObject gamer_state = gamer_env_->GetMcpState();
                 state[QStringLiteral("mode")] = QStringLiteral("gamer");
-                state[QStringLiteral("game_count")] = gamer_state.value(QStringLiteral("visible_game_count")).toInt();
-                state[QStringLiteral("search_filter")] = gamer_state.value(QStringLiteral("search_filter")).toString();
-                state[QStringLiteral("current_view")] = gamer_state.value(QStringLiteral("current_view")).toString();
+                state[QStringLiteral("game_count")] =
+                    gamer_state.value(QStringLiteral("visible_game_count")).toInt();
+                state[QStringLiteral("search_filter")] =
+                    gamer_state.value(QStringLiteral("search_filter")).toString();
+                state[QStringLiteral("current_view")] =
+                    gamer_state.value(QStringLiteral("current_view")).toString();
                 state[QStringLiteral("social_feed_status")] =
                     gamer_state.value(QStringLiteral("social_feed_status")).toString();
                 state[QStringLiteral("social_feed_error")] =
@@ -5073,8 +5085,7 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                 state[QStringLiteral("mode")] = QStringLiteral("unknown");
             }
             state[QStringLiteral("game_running")] =
-                emulation_running ||
-                (core_manager_ ? core_manager_->IsGameRunning() : false);
+                emulation_running || (core_manager_ ? core_manager_->IsGameRunning() : false);
             state[QStringLiteral("emu_running")] = emulation_running;
             state[QStringLiteral("emulation_thread_running")] =
                 emu_thread ? emu_thread->IsRunning() : false;
@@ -5105,8 +5116,7 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                 state[QStringLiteral("tas_running")] =
                     tas_state == InputCommon::TasInput::TasState::Running;
                 state[QStringLiteral("tas_frame")] = static_cast<qint64>(tas_frame);
-                state[QStringLiteral("tas_total_frames")] =
-                    static_cast<qint64>(tas_lengths[0]);
+                state[QStringLiteral("tas_total_frames")] = static_cast<qint64>(tas_lengths[0]);
             }
             state[QStringLiteral("qt_ssl_available")] = qt_ssl_available_;
             state[QStringLiteral("qt_ssl_build_version")] = qt_ssl_build_version_;
@@ -5120,15 +5130,19 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                       mcp_server_->GetLastErrorString().toStdString());
         } else {
             LOG_INFO(Frontend, "MCP Server started on port 9742");
-            const auto install_firmware_from_directory = [this](const QString& firmware_source_location) -> QJsonObject {
+            const auto install_firmware_from_directory =
+                [this](const QString& firmware_source_location) -> QJsonObject {
                 if (emu_thread != nullptr && emu_thread->IsRunning()) {
-                    return QJsonObject{{QStringLiteral("success"), false},
-                                       {QStringLiteral("error"),
-                                        QStringLiteral("Cannot install firmware while emulation is running")}};
+                    return QJsonObject{
+                        {QStringLiteral("success"), false},
+                        {QStringLiteral("error"),
+                         QStringLiteral("Cannot install firmware while emulation is running")}};
                 }
 
-                const std::filesystem::path firmware_source_path = firmware_source_location.toStdString();
-                if (firmware_source_location.isEmpty() || !Common::FS::IsDir(firmware_source_path)) {
+                const std::filesystem::path firmware_source_path =
+                    firmware_source_location.toStdString();
+                if (firmware_source_location.isEmpty() ||
+                    !Common::FS::IsDir(firmware_source_path)) {
                     return QJsonObject{{QStringLiteral("success"), false},
                                        {QStringLiteral("error"),
                                         QStringLiteral("Firmware source directory does not exist")},
@@ -5147,8 +5161,9 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     }
 
                     auto ext = entry.path().extension().string();
-                    std::transform(ext.begin(), ext.end(), ext.begin(),
-                                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
+                        return static_cast<char>(std::tolower(c));
+                    });
                     if (ext == ".nca") {
                         nca_files.emplace_back(entry.path());
                     }
@@ -5161,15 +5176,18 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                                        {QStringLiteral("path"), firmware_source_location}};
                 }
 
-                auto sysnand_content_vdir = system->GetFileSystemController().GetSystemNANDContentDirectory();
+                auto sysnand_content_vdir =
+                    system->GetFileSystemController().GetSystemNANDContentDirectory();
                 if (!sysnand_content_vdir) {
                     system->GetFileSystemController().CreateFactories(*vfs);
-                    sysnand_content_vdir = system->GetFileSystemController().GetSystemNANDContentDirectory();
+                    sysnand_content_vdir =
+                        system->GetFileSystemController().GetSystemNANDContentDirectory();
                 }
                 if (!sysnand_content_vdir) {
-                    return QJsonObject{{QStringLiteral("success"), false},
-                                       {QStringLiteral("error"),
-                                        QStringLiteral("System NAND content directory not available")}};
+                    return QJsonObject{
+                        {QStringLiteral("success"), false},
+                        {QStringLiteral("error"),
+                         QStringLiteral("System NAND content directory not available")}};
                 }
                 if (!sysnand_content_vdir->CleanSubdirectoryRecursive("registered")) {
                     LOG_WARNING(Frontend,
@@ -5194,18 +5212,20 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     auto firmware_dst_vfile =
                         firmware_vdir->CreateFileRelative(firmware_src_path.filename().string());
                     if (!VfsRawCopy(firmware_src_vfile, firmware_dst_vfile)) {
-                        copy_failures.append(QString::fromStdString(firmware_src_path.filename().string()));
+                        copy_failures.append(
+                            QString::fromStdString(firmware_src_path.filename().string()));
                         continue;
                     }
                     ++copied_count;
                 }
 
                 if (!copy_failures.isEmpty()) {
-                    return QJsonObject{{QStringLiteral("success"), false},
-                                       {QStringLiteral("error"),
-                                        QStringLiteral("One or more firmware files failed to copy")},
-                                       {QStringLiteral("copied_count"), copied_count},
-                                       {QStringLiteral("copy_failures"), copy_failures}};
+                    return QJsonObject{
+                        {QStringLiteral("success"), false},
+                        {QStringLiteral("error"),
+                         QStringLiteral("One or more firmware files failed to copy")},
+                        {QStringLiteral("copied_count"), copied_count},
+                        {QStringLiteral("copy_failures"), copy_failures}};
                 }
 
                 system->GetFileSystemController().CreateFactories(*vfs);
@@ -5213,27 +5233,29 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     const auto verify_callback = [](size_t /*total*/, size_t /*processed*/) {
                         return false;
                     };
-                    const auto result =
-                        ContentManager::VerifyInstalledContents(*system, *provider, verify_callback, true);
+                    const auto result = ContentManager::VerifyInstalledContents(
+                        *system, *provider, verify_callback, true);
 
                     if (!result.empty()) {
                         QJsonArray verification_failures;
                         for (const auto& failed : result) {
                             verification_failures.append(QString::fromStdString(failed));
                         }
-                        return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"),
-                                            QStringLiteral("Firmware verification failed")},
-                                           {QStringLiteral("copied_count"), copied_count},
-                                           {QStringLiteral("verification_failures"), verification_failures}};
+                        return QJsonObject{
+                            {QStringLiteral("success"), false},
+                            {QStringLiteral("error"),
+                             QStringLiteral("Firmware verification failed")},
+                            {QStringLiteral("copied_count"), copied_count},
+                            {QStringLiteral("verification_failures"), verification_failures}};
                     }
                 }
 
                 OnCheckFirmwareDecryption();
-                return QJsonObject{{QStringLiteral("success"), true},
-                                   {QStringLiteral("path"), firmware_source_location},
-                                   {QStringLiteral("detected_nca_count"), static_cast<int>(nca_files.size())},
-                                   {QStringLiteral("copied_count"), copied_count}};
+                return QJsonObject{
+                    {QStringLiteral("success"), true},
+                    {QStringLiteral("path"), firmware_source_location},
+                    {QStringLiteral("detected_nca_count"), static_cast<int>(nca_files.size())},
+                    {QStringLiteral("copied_count"), copied_count}};
             };
 
             // Enumerate what is actually registered in NAND, through the same
@@ -5277,8 +5299,7 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                             // which filter AOC that way. Asking only for Program
                             // silently drops every add-on that is installed.
                             std::vector<FileSys::ContentProviderEntry> found =
-                                cache->ListEntriesFilter(kind,
-                                                         FileSys::ContentRecordType::Program);
+                                cache->ListEntriesFilter(kind, FileSys::ContentRecordType::Program);
                             for (const auto& data_entry :
                                  cache->ListEntriesFilter(kind, FileSys::ContentRecordType::Data)) {
                                 const bool already =
@@ -5303,13 +5324,12 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                                 // title. An update's id is base|0x800, but an
                                 // add-on's is base + 0x1000 + index, so dropping
                                 // the low bits is not enough for those.
-                                const u64 base_id =
-                                    kind == FileSys::TitleType::AOC
-                                        ? (entry.title_id & ~0xFFFULL) - 0x1000ULL
-                                        : entry.title_id & ~0xFFFULL;
-                                const FileSys::PatchManager pm(
-                                    base_id, system->GetFileSystemController(),
-                                    system->GetContentProvider());
+                                const u64 base_id = kind == FileSys::TitleType::AOC
+                                                        ? (entry.title_id & ~0xFFFULL) - 0x1000ULL
+                                                        : entry.title_id & ~0xFFFULL;
+                                const FileSys::PatchManager pm(base_id,
+                                                               system->GetFileSystemController(),
+                                                               system->GetContentProvider());
                                 const auto metadata = pm.GetControlMetadata();
                                 if (metadata.first != nullptr) {
                                     title[QStringLiteral("name")] = QString::fromStdString(
@@ -5350,19 +5370,24 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
             // Register runtime tools that need access to UISettings / game_list
             mcp_server_->RegisterTool(
                 QStringLiteral("capture_ui_screenshot"),
-                QStringLiteral("Capture a PNG screenshot of the current main window or active modal dialog."),
-                QJsonObject{{QStringLiteral("type"), QStringLiteral("object")},
-                            {QStringLiteral("properties"),
-                             QJsonObject{{QStringLiteral("path"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("Optional output PNG path")}}},
-                                         {QStringLiteral("target"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("main_window, active_modal, active_window, or central_widget")}}}}}},
+                QStringLiteral(
+                    "Capture a PNG screenshot of the current main window or active modal dialog."),
+                QJsonObject{
+                    {QStringLiteral("type"), QStringLiteral("object")},
+                    {QStringLiteral("properties"),
+                     QJsonObject{
+                         {QStringLiteral("path"),
+                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
+                                      {QStringLiteral("description"),
+                                       QStringLiteral("Optional output PNG path")}}},
+                         {QStringLiteral("target"),
+                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
+                                      {QStringLiteral("description"),
+                                       QStringLiteral("main_window, active_modal, active_window, "
+                                                      "or central_widget")}}}}}},
                 [this](const QJsonObject& params) -> QJsonObject {
-                    const QString target = params[QStringLiteral("target")].toString(QStringLiteral("main_window"));
+                    const QString target =
+                        params[QStringLiteral("target")].toString(QStringLiteral("main_window"));
                     QString output_path = params[QStringLiteral("path")].toString();
                     QWidget* target_widget = this;
 
@@ -5375,16 +5400,19 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     }
 
                     if (!target_widget) {
-                        return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"),
-                                            QStringLiteral("Requested screenshot target is not available")},
-                                           {QStringLiteral("target"), target}};
+                        return QJsonObject{
+                            {QStringLiteral("success"), false},
+                            {QStringLiteral("error"),
+                             QStringLiteral("Requested screenshot target is not available")},
+                            {QStringLiteral("target"), target}};
                     }
 
                     if (output_path.isEmpty()) {
-                        output_path = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
-                                          .filePath(QStringLiteral("suyu_mcp_%1.png")
-                                                        .arg(QDateTime::currentDateTimeUtc().toString(QStringLiteral("yyyyMMdd_hhmmss_zzz"))));
+                        output_path =
+                            QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation))
+                                .filePath(QStringLiteral("suyu_mcp_%1.png")
+                                              .arg(QDateTime::currentDateTimeUtc().toString(
+                                                  QStringLiteral("yyyyMMdd_hhmmss_zzz"))));
                     }
 
                     QFileInfo file_info(output_path);
@@ -5392,10 +5420,10 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
 
                     const QPixmap screenshot = target_widget->grab();
                     if (screenshot.isNull() || !screenshot.save(output_path, "PNG")) {
-                        return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"),
-                                            QStringLiteral("Failed to save screenshot")},
-                                           {QStringLiteral("path"), output_path}};
+                        return QJsonObject{
+                            {QStringLiteral("success"), false},
+                            {QStringLiteral("error"), QStringLiteral("Failed to save screenshot")},
+                            {QStringLiteral("path"), output_path}};
                     }
 
                     return QJsonObject{{QStringLiteral("success"), true},
@@ -5407,16 +5435,20 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
 
             mcp_server_->RegisterTool(
                 QStringLiteral("set_app_mode"),
-                QStringLiteral("Switch the active suyu interface mode to gamer, programmer, or hacker."),
-                QJsonObject{{QStringLiteral("type"), QStringLiteral("object")},
-                            {QStringLiteral("properties"),
-                             QJsonObject{{QStringLiteral("mode"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("Mode name: gamer, programmer, or hacker")}}}}},
-                            {QStringLiteral("required"), QJsonArray{QStringLiteral("mode")}}},
+                QStringLiteral(
+                    "Switch the active suyu interface mode to gamer, programmer, or hacker."),
+                QJsonObject{
+                    {QStringLiteral("type"), QStringLiteral("object")},
+                    {QStringLiteral("properties"),
+                     QJsonObject{{QStringLiteral("mode"),
+                                  QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
+                                              {QStringLiteral("description"),
+                                               QStringLiteral(
+                                                   "Mode name: gamer, programmer, or hacker")}}}}},
+                    {QStringLiteral("required"), QJsonArray{QStringLiteral("mode")}}},
                 [this](const QJsonObject& params) -> QJsonObject {
-                    const QString mode_name = params[QStringLiteral("mode")].toString().trimmed().toLower();
+                    const QString mode_name =
+                        params[QStringLiteral("mode")].toString().trimmed().toLower();
                     if (mode_name == QStringLiteral("gamer")) {
                         ApplyAppMode(AppMode::Gamer);
                     } else if (mode_name == QStringLiteral("programmer")) {
@@ -5425,7 +5457,8 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                         ApplyAppMode(AppMode::Hacker);
                     } else {
                         return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"), QStringLiteral("Unknown mode: %1").arg(mode_name)}};
+                                           {QStringLiteral("error"),
+                                            QStringLiteral("Unknown mode: %1").arg(mode_name)}};
                     }
 
                     return QJsonObject{{QStringLiteral("success"), true},
@@ -5434,29 +5467,37 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
 
             mcp_server_->RegisterTool(
                 QStringLiteral("navigate_gamer_view"),
-                QStringLiteral("Navigate the gamer interface to the library or social view, or open related dialogs."),
-                QJsonObject{{QStringLiteral("type"), QStringLiteral("object")},
-                            {QStringLiteral("properties"),
-                             QJsonObject{{QStringLiteral("view"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("library, social, settings, multiplayer, manual, website, or more_options")}}}}},
-                            {QStringLiteral("required"), QJsonArray{QStringLiteral("view")}}},
+                QStringLiteral("Navigate the gamer interface to the library or social view, or "
+                               "open related dialogs."),
+                QJsonObject{
+                    {QStringLiteral("type"), QStringLiteral("object")},
+                    {QStringLiteral("properties"),
+                     QJsonObject{
+                         {QStringLiteral("view"),
+                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
+                                      {QStringLiteral("description"),
+                                       QStringLiteral("library, social, settings, multiplayer, "
+                                                      "manual, website, or more_options")}}}}},
+                    {QStringLiteral("required"), QJsonArray{QStringLiteral("view")}}},
                 [this](const QJsonObject& params) -> QJsonObject {
-                    const QString view = params[QStringLiteral("view")].toString().trimmed().toLower();
+                    const QString view =
+                        params[QStringLiteral("view")].toString().trimmed().toLower();
                     if (current_mode_ != AppMode::Gamer) {
                         ApplyAppMode(AppMode::Gamer);
                     }
                     if (!gamer_env_) {
                         return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"), QStringLiteral("Gamer environment is not available")}};
+                                           {QStringLiteral("error"),
+                                            QStringLiteral("Gamer environment is not available")}};
                     }
 
                     bool invoked = false;
                     if (view == QStringLiteral("library")) {
-                        invoked = QMetaObject::invokeMethod(gamer_env_, "OnNavLibraryClicked", Qt::DirectConnection);
+                        invoked = QMetaObject::invokeMethod(gamer_env_, "OnNavLibraryClicked",
+                                                            Qt::DirectConnection);
                     } else if (view == QStringLiteral("social")) {
-                        invoked = QMetaObject::invokeMethod(gamer_env_, "OnNavSocialClicked", Qt::DirectConnection);
+                        invoked = QMetaObject::invokeMethod(gamer_env_, "OnNavSocialClicked",
+                                                            Qt::DirectConnection);
                     } else if (view == QStringLiteral("settings")) {
                         OnConfigure();
                         invoked = true;
@@ -5469,15 +5510,19 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                         OnOpenUserManual();
                         invoked = true;
                     } else if (view == QStringLiteral("website")) {
-                        QMetaObject::invokeMethod(gamer_env_, "OnNavWebsiteClicked", Qt::DirectConnection);
+                        QMetaObject::invokeMethod(gamer_env_, "OnNavWebsiteClicked",
+                                                  Qt::DirectConnection);
                         invoked = true;
                     } else if (view == QStringLiteral("more_options")) {
-                        invoked = QMetaObject::invokeMethod(gamer_env_, "OnNavMoreOptionsClicked", Qt::DirectConnection);
+                        invoked = QMetaObject::invokeMethod(gamer_env_, "OnNavMoreOptionsClicked",
+                                                            Qt::DirectConnection);
                     }
 
                     if (!invoked) {
-                        return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"), QStringLiteral("Unsupported gamer view: %1").arg(view)}};
+                        return QJsonObject{
+                            {QStringLiteral("success"), false},
+                            {QStringLiteral("error"),
+                             QStringLiteral("Unsupported gamer view: %1").arg(view)}};
                     }
 
                     return QJsonObject{{QStringLiteral("success"), true},
@@ -5495,7 +5540,8 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     }
                     if (!gamer_env_) {
                         return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"), QStringLiteral("Gamer environment is not available")}};
+                                           {QStringLiteral("error"),
+                                            QStringLiteral("Gamer environment is not available")}};
                     }
                     gamer_env_->RefreshSocialFeed();
                     return QJsonObject{{QStringLiteral("success"), true}};
@@ -5503,16 +5549,19 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
 
             mcp_server_->RegisterTool(
                 QStringLiteral("social_debug_navigate"),
-                QStringLiteral("Test-only: navigate the Social page's embedded browser view directly to a URL."),
-                QJsonObject{{QStringLiteral("type"), QStringLiteral("object")},
-                            {QStringLiteral("properties"),
-                             QJsonObject{{QStringLiteral("url"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")}}}}},
-                            {QStringLiteral("required"), QJsonArray{QStringLiteral("url")}}},
+                QStringLiteral("Test-only: navigate the Social page's embedded browser view "
+                               "directly to a URL."),
+                QJsonObject{
+                    {QStringLiteral("type"), QStringLiteral("object")},
+                    {QStringLiteral("properties"),
+                     QJsonObject{{QStringLiteral("url"), QJsonObject{{QStringLiteral("type"),
+                                                                      QStringLiteral("string")}}}}},
+                    {QStringLiteral("required"), QJsonArray{QStringLiteral("url")}}},
                 [this](const QJsonObject& params) -> QJsonObject {
                     if (!gamer_env_) {
                         return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"), QStringLiteral("Gamer environment is not available")}};
+                                           {QStringLiteral("error"),
+                                            QStringLiteral("Gamer environment is not available")}};
                     }
                     gamer_env_->DebugNavigateSocial(params[QStringLiteral("url")].toString());
                     return QJsonObject{{QStringLiteral("success"), true}};
@@ -5540,28 +5589,31 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
 
                         const auto top_level_widgets = QApplication::topLevelWidgets();
                         for (QWidget* widget : top_level_widgets) {
-                            if (!widget) continue;
+                            if (!widget)
+                                continue;
                             if (widget->objectName() == QStringLiteral("Lobby") ||
-                                widget->windowTitle().contains(QStringLiteral("Public Room Browser"),
-                                                               Qt::CaseInsensitive)) {
+                                widget->windowTitle().contains(
+                                    QStringLiteral("Public Room Browser"), Qt::CaseInsensitive)) {
                                 lobby_window = widget;
                                 break;
                             }
                         }
-                        if (!lobby_window) continue;
+                        if (!lobby_window)
+                            continue;
 
                         auto* room_list =
                             lobby_window->findChild<QTreeView*>(QStringLiteral("room_list"));
                         if (room_list && room_list->model()) {
                             int unfiltered = 0;
-                            if (const auto* proxy =
-                                    qobject_cast<const QSortFilterProxyModel*>(room_list->model())) {
+                            if (const auto* proxy = qobject_cast<const QSortFilterProxyModel*>(
+                                    room_list->model())) {
                                 if (proxy->sourceModel())
                                     unfiltered = proxy->sourceModel()->rowCount();
                             } else {
                                 unfiltered = room_list->model()->rowCount();
                             }
-                            if (unfiltered > 0) break;
+                            if (unfiltered > 0)
+                                break;
                         }
                     }
 
@@ -5571,11 +5623,13 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                                             QStringLiteral("Lobby window is not available")}};
                     }
 
-                    auto* room_list = lobby_window->findChild<QTreeView*>(QStringLiteral("room_list"));
+                    auto* room_list =
+                        lobby_window->findChild<QTreeView*>(QStringLiteral("room_list"));
                     if (!room_list || !room_list->model()) {
-                        return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"),
-                                            QStringLiteral("Lobby room list model is not available")}};
+                        return QJsonObject{
+                            {QStringLiteral("success"), false},
+                            {QStringLiteral("error"),
+                             QStringLiteral("Lobby room list model is not available")}};
                     }
 
                     const int visible_rows = room_list->model()->rowCount();
@@ -5596,32 +5650,37 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     const auto* hide_full =
                         lobby_window->findChild<QCheckBox*>(QStringLiteral("hide_full"));
 
-                    return QJsonObject{{QStringLiteral("success"), true},
-                                       {QStringLiteral("visible_rows"), visible_rows},
-                                       {QStringLiteral("unfiltered_rows"), unfiltered_rows},
-                                       {QStringLiteral("filters"),
-                                        QJsonObject{{QStringLiteral("search"),
-                                                     search ? search->text() : QString()},
-                                                    {QStringLiteral("games_owned"),
-                                                     games_owned ? games_owned->isChecked() : false},
-                                                    {QStringLiteral("hide_empty"),
-                                                     hide_empty ? hide_empty->isChecked() : false},
-                                                    {QStringLiteral("hide_full"),
-                                                     hide_full ? hide_full->isChecked() : false}}}};
+                    return QJsonObject{
+                        {QStringLiteral("success"), true},
+                        {QStringLiteral("visible_rows"), visible_rows},
+                        {QStringLiteral("unfiltered_rows"), unfiltered_rows},
+                        {QStringLiteral("filters"),
+                         QJsonObject{
+                             {QStringLiteral("search"), search ? search->text() : QString()},
+                             {QStringLiteral("games_owned"),
+                              games_owned ? games_owned->isChecked() : false},
+                             {QStringLiteral("hide_empty"),
+                              hide_empty ? hide_empty->isChecked() : false},
+                             {QStringLiteral("hide_full"),
+                              hide_full ? hide_full->isChecked() : false}}}};
                 });
 
             mcp_server_->RegisterTool(
                 QStringLiteral("set_theme_mode"),
-                QStringLiteral("Set the frontend theme mode to light, dark, or auto and apply it immediately."),
-                QJsonObject{{QStringLiteral("type"), QStringLiteral("object")},
-                            {QStringLiteral("properties"),
-                             QJsonObject{{QStringLiteral("mode"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("Theme mode: light, dark, or auto")}}}}},
-                            {QStringLiteral("required"), QJsonArray{QStringLiteral("mode")}}},
+                QStringLiteral("Set the frontend theme mode to light, dark, or auto and apply it "
+                               "immediately."),
+                QJsonObject{
+                    {QStringLiteral("type"), QStringLiteral("object")},
+                    {QStringLiteral("properties"),
+                     QJsonObject{
+                         {QStringLiteral("mode"),
+                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
+                                      {QStringLiteral("description"),
+                                       QStringLiteral("Theme mode: light, dark, or auto")}}}}},
+                    {QStringLiteral("required"), QJsonArray{QStringLiteral("mode")}}},
                 [this](const QJsonObject& params) -> QJsonObject {
-                    const QString mode_name = params[QStringLiteral("mode")].toString().trimmed().toLower();
+                    const QString mode_name =
+                        params[QStringLiteral("mode")].toString().trimmed().toLower();
                     if (mode_name == QStringLiteral("dark")) {
                         UISettings::values.dark_mode_state = DarkModeState::On;
                     } else if (mode_name == QStringLiteral("light")) {
@@ -5629,8 +5688,10 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     } else if (mode_name == QStringLiteral("auto")) {
                         UISettings::values.dark_mode_state = DarkModeState::Auto;
                     } else {
-                        return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"), QStringLiteral("Unknown theme mode: %1").arg(mode_name)}};
+                        return QJsonObject{
+                            {QStringLiteral("success"), false},
+                            {QStringLiteral("error"),
+                             QStringLiteral("Unknown theme mode: %1").arg(mode_name)}};
                     }
                     UpdateUITheme();
                     return QJsonObject{{QStringLiteral("success"), true},
@@ -5641,27 +5702,38 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
             mcp_server_->RegisterTool(
                 QStringLiteral("trigger_ui_action"),
                 QStringLiteral("Trigger a named frontend action without using menu automation."),
-                QJsonObject{{QStringLiteral("type"), QStringLiteral("object")},
-                            {QStringLiteral("properties"),
-                             QJsonObject{{QStringLiteral("action"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("Action name such as export_game, open_user_manual, nintendo_account, steam_integration, configure, toggle_fullscreen, or install_firmware_dialog")}}},
-                                         {QStringLiteral("rom_path"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("aot_test_export only: absolute ROM path to export. Defaults to the Smash test title.")}}},
-                                         {QStringLiteral("output_dir"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("aot_test_export only: absolute output directory. Defaults to aot_test_output.")}}},
-                                         {QStringLiteral("format"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("aot_test_export only: 'source' or 'build'. Defaults to whatever the dialog's combo shows.")}}}}},
-                            {QStringLiteral("required"), QJsonArray{QStringLiteral("action")}}},
+                QJsonObject{
+                    {QStringLiteral("type"), QStringLiteral("object")},
+                    {QStringLiteral("properties"),
+                     QJsonObject{
+                         {QStringLiteral("action"),
+                          QJsonObject{
+                              {QStringLiteral("type"), QStringLiteral("string")},
+                              {QStringLiteral("description"),
+                               QStringLiteral("Action name such as export_game, open_user_manual, "
+                                              "nintendo_account, steam_integration, configure, "
+                                              "toggle_fullscreen, or install_firmware_dialog")}}},
+                         {QStringLiteral("rom_path"),
+                          QJsonObject{
+                              {QStringLiteral("type"), QStringLiteral("string")},
+                              {QStringLiteral("description"),
+                               QStringLiteral("aot_test_export only: absolute ROM path to export. "
+                                              "Defaults to the Smash test title.")}}},
+                         {QStringLiteral("output_dir"),
+                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
+                                      {QStringLiteral("description"),
+                                       QStringLiteral("aot_test_export only: absolute output "
+                                                      "directory. Defaults to aot_test_output.")}}},
+                         {QStringLiteral("format"),
+                          QJsonObject{
+                              {QStringLiteral("type"), QStringLiteral("string")},
+                              {QStringLiteral("description"),
+                               QStringLiteral("aot_test_export only: 'source' or 'build'. Defaults "
+                                              "to whatever the dialog's combo shows.")}}}}},
+                    {QStringLiteral("required"), QJsonArray{QStringLiteral("action")}}},
                 [this](const QJsonObject& params) -> QJsonObject {
-                    const QString action = params[QStringLiteral("action")].toString().trimmed().toLower();
+                    const QString action =
+                        params[QStringLiteral("action")].toString().trimmed().toLower();
                     if (action == QStringLiteral("export_game")) {
                         OnExportGame();
                     } else if (action == QStringLiteral("open_user_manual")) {
@@ -5674,12 +5746,12 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                         OnConfigure();
                     } else if (action == QStringLiteral("toggle_fullscreen")) {
                         ToggleFullscreen();
-                    // TAS playback and recording, exposed so a benchmark can
-                    // replay a recorded run without a human at the keyboard.
-                    // Reaching the same point in a real race repeatedly is the
-                    // only way to compare two CPU backends on the workload that
-                    // actually matters; the attract sequence varies run to run
-                    // and savestates do not exist.
+                        // TAS playback and recording, exposed so a benchmark can
+                        // replay a recorded run without a human at the keyboard.
+                        // Reaching the same point in a real race repeatedly is the
+                        // only way to compare two CPU backends on the workload that
+                        // actually matters; the attract sequence varies run to run
+                        // and savestates do not exist.
                     } else if (action == QStringLiteral("tas_start_stop")) {
                         OnTasStartStop();
                     } else if (action == QStringLiteral("tas_record")) {
@@ -5697,26 +5769,33 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                         // its file pickers, so live automation can trigger
                         // and observe the AOT pipeline's known hang past
                         // ~15% progress without needing UI clicks.
-                        auto* dialog = qobject_cast<GameExportDialog*>(QApplication::activeModalWidget());
+                        auto* dialog =
+                            qobject_cast<GameExportDialog*>(QApplication::activeModalWidget());
                         if (!dialog) {
-                            return QJsonObject{{QStringLiteral("success"), false},
-                                               {QStringLiteral("error"), QStringLiteral("No GameExportDialog is currently open")}};
+                            return QJsonObject{
+                                {QStringLiteral("success"), false},
+                                {QStringLiteral("error"),
+                                 QStringLiteral("No GameExportDialog is currently open")}};
                         }
                         // rom_path/output_dir are caller-supplied - no default
                         // title or machine-specific path baked in here, so
                         // this stays usable from any checkout for any game.
-                        const QString rom_path = params[QStringLiteral("rom_path")].toString().trimmed();
-                        const QString output_dir = params[QStringLiteral("output_dir")].toString().trimmed();
+                        const QString rom_path =
+                            params[QStringLiteral("rom_path")].toString().trimmed();
+                        const QString output_dir =
+                            params[QStringLiteral("output_dir")].toString().trimmed();
                         if (rom_path.isEmpty() || output_dir.isEmpty()) {
-                            return QJsonObject{{QStringLiteral("success"), false},
-                                               {QStringLiteral("error"), QStringLiteral("rom_path and output_dir are required")}};
+                            return QJsonObject{
+                                {QStringLiteral("success"), false},
+                                {QStringLiteral("error"),
+                                 QStringLiteral("rom_path and output_dir are required")}};
                         }
                         QDir().mkpath(output_dir);
                         // "source" (default) emits a source package; "build"
                         // additionally links the single-file static launcher.
                         const QString fmt =
                             params[QStringLiteral("format")].toString().trimmed().toLower();
-                        const int format_index = fmt == QStringLiteral("build")   ? 1
+                        const int format_index = fmt == QStringLiteral("build")    ? 1
                                                  : fmt == QStringLiteral("source") ? 0
                                                                                    : -1;
                         dialog->TriggerExportForTesting(rom_path, output_dir, format_index);
@@ -5726,15 +5805,19 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                         // currently the active modal, bypassing widget click
                         // delivery, to isolate handler-logic bugs from
                         // click-delivery bugs during live debugging.
-                        auto* dialog = qobject_cast<NintendoAccountDialog*>(QApplication::activeModalWidget());
+                        auto* dialog =
+                            qobject_cast<NintendoAccountDialog*>(QApplication::activeModalWidget());
                         if (!dialog) {
-                            return QJsonObject{{QStringLiteral("success"), false},
-                                               {QStringLiteral("error"), QStringLiteral("No NintendoAccountDialog is currently open")}};
+                            return QJsonObject{
+                                {QStringLiteral("success"), false},
+                                {QStringLiteral("error"),
+                                 QStringLiteral("No NintendoAccountDialog is currently open")}};
                         }
                         dialog->TriggerOneClickSignInForTesting();
                     } else {
                         return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"), QStringLiteral("Unknown action: %1").arg(action)}};
+                                           {QStringLiteral("error"),
+                                            QStringLiteral("Unknown action: %1").arg(action)}};
                     }
                     return QJsonObject{{QStringLiteral("success"), true},
                                        {QStringLiteral("action"), action}};
@@ -5742,14 +5825,18 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
 
             mcp_server_->RegisterTool(
                 QStringLiteral("launch_game_path"),
-                QStringLiteral("Launch a local ROM or deconstructed game directory by absolute path."),
-                QJsonObject{{QStringLiteral("type"), QStringLiteral("object")},
-                            {QStringLiteral("properties"),
-                             QJsonObject{{QStringLiteral("path"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("Absolute path to a ROM file or game directory")}}}}},
-                            {QStringLiteral("required"), QJsonArray{QStringLiteral("path")}}},
+                QStringLiteral(
+                    "Launch a local ROM or deconstructed game directory by absolute path."),
+                QJsonObject{
+                    {QStringLiteral("type"), QStringLiteral("object")},
+                    {QStringLiteral("properties"),
+                     QJsonObject{
+                         {QStringLiteral("path"),
+                          QJsonObject{
+                              {QStringLiteral("type"), QStringLiteral("string")},
+                              {QStringLiteral("description"),
+                               QStringLiteral("Absolute path to a ROM file or game directory")}}}}},
+                    {QStringLiteral("required"), QJsonArray{QStringLiteral("path")}}},
                 [this](const QJsonObject& params) -> QJsonObject {
                     if (emulation_running) {
                         return QJsonObject{{QStringLiteral("success"), false},
@@ -5760,10 +5847,10 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     const QString path = params[QStringLiteral("path")].toString().trimmed();
                     const QFileInfo info(path);
                     if (path.isEmpty() || !info.exists()) {
-                        return QJsonObject{{QStringLiteral("success"), false},
-                                           {QStringLiteral("error"),
-                                            QStringLiteral("Game path does not exist")},
-                                           {QStringLiteral("path"), path}};
+                        return QJsonObject{
+                            {QStringLiteral("success"), false},
+                            {QStringLiteral("error"), QStringLiteral("Game path does not exist")},
+                            {QStringLiteral("path"), path}};
                     }
 
                     BootGame(path, ApplicationAppletParameters());
@@ -5797,17 +5884,21 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
 
             mcp_server_->RegisterTool(
                 QStringLiteral("get_thread_diagnostics"),
-                QStringLiteral("Return guest thread states, registers, and short backtraces for launch debugging."),
-                QJsonObject{{QStringLiteral("type"), QStringLiteral("object")},
-                            {QStringLiteral("properties"),
-                             QJsonObject{{QStringLiteral("include_backtrace"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("boolean")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("Include a short guest callstack for each thread")}}},
-                                         {QStringLiteral("max_backtrace"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("integer")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("Maximum backtrace frames per thread")}}}}}},
+                QStringLiteral("Return guest thread states, registers, and short backtraces for "
+                               "launch debugging."),
+                QJsonObject{
+                    {QStringLiteral("type"), QStringLiteral("object")},
+                    {QStringLiteral("properties"),
+                     QJsonObject{
+                         {QStringLiteral("include_backtrace"),
+                          QJsonObject{
+                              {QStringLiteral("type"), QStringLiteral("boolean")},
+                              {QStringLiteral("description"),
+                               QStringLiteral("Include a short guest callstack for each thread")}}},
+                         {QStringLiteral("max_backtrace"),
+                          QJsonObject{{QStringLiteral("type"), QStringLiteral("integer")},
+                                      {QStringLiteral("description"),
+                                       QStringLiteral("Maximum backtrace frames per thread")}}}}}},
                 [this](const QJsonObject& params) -> QJsonObject {
                     QJsonObject result;
                     result[QStringLiteral("emu_running")] = emulation_running;
@@ -5846,10 +5937,9 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                             Core::GetThreadName(thread).value_or(std::string{}));
                         thread_json[QStringLiteral("state")] =
                             QString::fromStdString(Core::GetThreadState(thread));
-                        thread_json[QStringLiteral("wait_reason")] =
-                            QString::fromUtf8(Core::GetThreadWaitReason(thread).data(),
-                                              static_cast<int>(
-                                                  Core::GetThreadWaitReason(thread).size()));
+                        thread_json[QStringLiteral("wait_reason")] = QString::fromUtf8(
+                            Core::GetThreadWaitReason(thread).data(),
+                            static_cast<int>(Core::GetThreadWaitReason(thread).size()));
                         thread_json[QStringLiteral("active_core")] = thread->GetActiveCore();
                         thread_json[QStringLiteral("priority")] = thread->GetPriority();
                         thread_json[QStringLiteral("base_priority")] = thread->GetBasePriority();
@@ -5890,16 +5980,21 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
 
             mcp_server_->RegisterTool(
                 QStringLiteral("install_firmware_from_path"),
-                QStringLiteral("Install dumped firmware directly from a directory path without opening the folder picker dialog."),
-                QJsonObject{{QStringLiteral("type"), QStringLiteral("object")},
-                            {QStringLiteral("properties"),
-                             QJsonObject{{QStringLiteral("path"),
-                                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
-                                                      {QStringLiteral("description"),
-                                                       QStringLiteral("Absolute path to the dumped firmware directory")}}}}},
-                            {QStringLiteral("required"), QJsonArray{QStringLiteral("path")}}},
+                QStringLiteral("Install dumped firmware directly from a directory path without "
+                               "opening the folder picker dialog."),
+                QJsonObject{
+                    {QStringLiteral("type"), QStringLiteral("object")},
+                    {QStringLiteral("properties"),
+                     QJsonObject{
+                         {QStringLiteral("path"),
+                          QJsonObject{{QStringLiteral("type"), QStringLiteral("string")},
+                                      {QStringLiteral("description"),
+                                       QStringLiteral(
+                                           "Absolute path to the dumped firmware directory")}}}}},
+                    {QStringLiteral("required"), QJsonArray{QStringLiteral("path")}}},
                 [install_firmware_from_directory](const QJsonObject& params) -> QJsonObject {
-                    return install_firmware_from_directory(params[QStringLiteral("path")].toString());
+                    return install_firmware_from_directory(
+                        params[QStringLiteral("path")].toString());
                 });
 
             mcp_server_->RegisterTool(
@@ -5921,7 +6016,7 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     const QString dir_path = params[QStringLiteral("path")].toString();
                     if (dir_path.isEmpty()) {
                         return QJsonObject{{QStringLiteral("error"),
-                                           QStringLiteral("path parameter is required")}};
+                                            QStringLiteral("path parameter is required")}};
                     }
                     if (!QDir(dir_path).exists()) {
                         return QJsonObject{
@@ -5929,8 +6024,7 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                              QStringLiteral("Directory does not exist: %1").arg(dir_path)}};
                     }
                     UISettings::GameDir game_dir{dir_path.toStdString(), true, true};
-                    const bool already_present =
-                        UISettings::values.game_dirs.contains(game_dir);
+                    const bool already_present = UISettings::values.game_dirs.contains(game_dir);
                     if (!already_present) {
                         UISettings::values.game_dirs.append(game_dir);
                         if (game_list) {
@@ -5941,8 +6035,7 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                         {QStringLiteral("success"), true},
                         {QStringLiteral("path"), dir_path},
                         {QStringLiteral("already_present"), already_present},
-                        {QStringLiteral("total_directories"),
-                         UISettings::values.game_dirs.size()},
+                        {QStringLiteral("total_directories"), UISettings::values.game_dirs.size()},
                     };
                 });
 
@@ -5956,8 +6049,7 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     QJsonArray dirs;
                     for (const auto& gd : UISettings::values.game_dirs) {
                         QJsonObject entry;
-                        entry[QStringLiteral("path")] =
-                            QString::fromStdString(gd.path);
+                        entry[QStringLiteral("path")] = QString::fromStdString(gd.path);
                         entry[QStringLiteral("deep_scan")] = gd.deep_scan;
                         entry[QStringLiteral("expanded")] = gd.expanded;
                         dirs.append(entry);
@@ -5998,25 +6090,27 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                 QJsonObject search_filter_schema;
                 search_filter_schema[QStringLiteral("type")] = QStringLiteral("object");
                 search_filter_schema[QStringLiteral("properties")] = properties;
-                search_filter_schema[QStringLiteral("required")] = QJsonArray{QStringLiteral("filter")};
+                search_filter_schema[QStringLiteral("required")] =
+                    QJsonArray{QStringLiteral("filter")};
 
                 mcp_server_->RegisterTool(
                     QStringLiteral("set_gamer_search_filter"),
-                    QStringLiteral("Set the gamer library search filter and refresh the visible library."),
-                    search_filter_schema,
-                    [this](const QJsonObject& params) -> QJsonObject {
+                    QStringLiteral(
+                        "Set the gamer library search filter and refresh the visible library."),
+                    search_filter_schema, [this](const QJsonObject& params) -> QJsonObject {
                         const QString filter = params[QStringLiteral("filter")].toString();
                         if (current_mode_ != AppMode::Gamer) {
                             ApplyAppMode(AppMode::Gamer);
                         }
                         if (!gamer_env_) {
-                            return QJsonObject{{QStringLiteral("success"), false},
-                                               {QStringLiteral("error"),
-                                                QStringLiteral("Gamer environment is not available")}};
+                            return QJsonObject{
+                                {QStringLiteral("success"), false},
+                                {QStringLiteral("error"),
+                                 QStringLiteral("Gamer environment is not available")}};
                         }
-                        const bool invoked = QMetaObject::invokeMethod(
-                            gamer_env_, "OnSearchChanged", Qt::DirectConnection,
-                            Q_ARG(QString, filter));
+                        const bool invoked =
+                            QMetaObject::invokeMethod(gamer_env_, "OnSearchChanged",
+                                                      Qt::DirectConnection, Q_ARG(QString, filter));
                         if (!invoked) {
                             return QJsonObject{{QStringLiteral("success"), false},
                                                {QStringLiteral("error"),
@@ -6027,11 +6121,13 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     });
             }
 
-            const auto install_keys_from_directory = [this](const QString& key_source_location) -> QJsonObject {
+            const auto install_keys_from_directory =
+                [this](const QString& key_source_location) -> QJsonObject {
                 if (emu_thread != nullptr && emu_thread->IsRunning()) {
-                    return QJsonObject{{QStringLiteral("success"), false},
-                                       {QStringLiteral("error"),
-                                        QStringLiteral("Cannot install keys while emulation is running")}};
+                    return QJsonObject{
+                        {QStringLiteral("success"), false},
+                        {QStringLiteral("error"),
+                         QStringLiteral("Cannot install keys while emulation is running")}};
                 }
 
                 QString error_message;
@@ -6049,8 +6145,8 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
             {
                 QJsonObject path_schema;
                 path_schema[QStringLiteral("type")] = QStringLiteral("string");
-                path_schema[QStringLiteral("description")] =
-                    QStringLiteral("Absolute path to prod.keys or a directory containing key files");
+                path_schema[QStringLiteral("description")] = QStringLiteral(
+                    "Absolute path to prod.keys or a directory containing key files");
 
                 QJsonObject properties;
                 properties[QStringLiteral("path")] = path_schema;
@@ -6058,14 +6154,16 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                 QJsonObject install_keys_schema;
                 install_keys_schema[QStringLiteral("type")] = QStringLiteral("object");
                 install_keys_schema[QStringLiteral("properties")] = properties;
-                install_keys_schema[QStringLiteral("required")] = QJsonArray{QStringLiteral("path")};
+                install_keys_schema[QStringLiteral("required")] =
+                    QJsonArray{QStringLiteral("path")};
 
                 mcp_server_->RegisterTool(
                     QStringLiteral("install_keys_from_path"),
                     QStringLiteral("Install prod.keys/title.keys from a file path or directory."),
                     install_keys_schema,
                     [install_keys_from_directory](const QJsonObject& params) -> QJsonObject {
-                        return install_keys_from_directory(params[QStringLiteral("path")].toString());
+                        return install_keys_from_directory(
+                            params[QStringLiteral("path")].toString());
                     });
             }
 
@@ -6078,14 +6176,10 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
                     const auto nand_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir);
                     const auto keys_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::KeysDir);
                     QJsonObject result;
-                    result[QStringLiteral("nand_path")] =
-                        QString::fromStdString(nand_dir.string());
-                    result[QStringLiteral("nand_exists")] =
-                        Common::FS::IsDir(nand_dir);
-                    result[QStringLiteral("keys_path")] =
-                        QString::fromStdString(keys_dir.string());
-                    result[QStringLiteral("keys_dir_exists")] =
-                        Common::FS::IsDir(keys_dir);
+                    result[QStringLiteral("nand_path")] = QString::fromStdString(nand_dir.string());
+                    result[QStringLiteral("nand_exists")] = Common::FS::IsDir(nand_dir);
+                    result[QStringLiteral("keys_path")] = QString::fromStdString(keys_dir.string());
+                    result[QStringLiteral("keys_dir_exists")] = Common::FS::IsDir(keys_dir);
                     result[QStringLiteral("prod_keys_present")] =
                         Common::FS::Exists(keys_dir / "prod.keys") ? true : false;
                     result[QStringLiteral("title_keys_present")] =
@@ -6108,7 +6202,8 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
         }
         hacker_env_dock_->setVisible(true);
     } else {
-        if (hacker_env_dock_) hacker_env_dock_->setVisible(false);
+        if (hacker_env_dock_)
+            hacker_env_dock_->setVisible(false);
     }
 
     // --- Emulator Core Manager (always available, scans once) ---
@@ -6137,7 +6232,7 @@ void GMainWindow::ApplyAppMode(AppMode mode) {
     ModeSelector::SaveMode(mode);
 
     LOG_INFO(Frontend, "Applied {} mode layout",
-             mode == AppMode::Gamer       ? "Gamer"
+             mode == AppMode::Gamer        ? "Gamer"
              : mode == AppMode::Programmer ? "Programmer"
                                            : "Hacker");
 }
@@ -6178,17 +6273,20 @@ static int CountPlayableLibraryEntries(QAbstractItemModel* model) {
 void GMainWindow::OnSetup() {
     QVector<SetupDialog::Step> steps;
 
-    steps.push_back(
-        {tr("Decryption keys"),
-         tr("Your own prod.keys and title.keys. Nothing can be read without them."),
-         [] { return ContentManager::AreKeysPresent(); }, ui->action_Install_Keys,
-         tr("Install Keys..."), {}});
+    steps.push_back({tr("Decryption keys"),
+                     tr("Your own prod.keys and title.keys. Nothing can be read without them."),
+                     [] { return ContentManager::AreKeysPresent(); },
+                     ui->action_Install_Keys,
+                     tr("Install Keys..."),
+                     {}});
 
     steps.push_back({tr("Firmware"),
                      tr("System titles dumped from your own console. Needed for the "
                         "services games call into."),
-                     [this] { return CheckFirmwarePresence(); }, ui->action_Install_Firmware,
-                     tr("Install Firmware..."), {}});
+                     [this] { return CheckFirmwarePresence(); },
+                     ui->action_Install_Firmware,
+                     tr("Install Firmware..."),
+                     {}});
 
     steps.push_back(
         {tr("Games"), tr("Install a dump, and its update, into NAND."),
@@ -6239,8 +6337,8 @@ void GMainWindow::OnExportGame() {
                                                   : idx.data(kTitleRole).toString();
                         const QVariant icon_v = idx.data(kRawIconRole);
                         const QPixmap icon = icon_v.canConvert<QPixmap>()
-                                                  ? icon_v.value<QPixmap>()
-                                                  : idx.data(Qt::DecorationRole).value<QPixmap>();
+                                                 ? icon_v.value<QPixmap>()
+                                                 : idx.data(Qt::DecorationRole).value<QPixmap>();
                         library_entries.push_back(
                             {title, game_path, idx.data(kProgramIdRole).toULongLong(), icon});
                     }
@@ -6293,8 +6391,7 @@ void GMainWindow::OnExportGame() {
     dialog.exec();
 }
 
-void GMainWindow::OnLaunchRecompiledBuild(const QString& game_name,
-                                          const std::string& game_path) {
+void GMainWindow::OnLaunchRecompiledBuild(const QString& game_name, const std::string& game_path) {
     const QStringList builds =
         GameExportDialog::FindRecompiledExecutables(game_name, QString::fromStdString(game_path));
     if (builds.isEmpty()) {
@@ -6331,9 +6428,9 @@ void GMainWindow::OnLaunchRecompiledBuild(const QString& game_name,
             labels.append(QStringLiteral("[module: %1]  %2").arg(module, candidate));
         }
         bool ok = false;
-        const QString chosen = QInputDialog::getItem(
-            this, tr("Launch Recompiled Build"), tr("Which recompiled module should run?"), labels,
-            0, false, &ok);
+        const QString chosen =
+            QInputDialog::getItem(this, tr("Launch Recompiled Build"),
+                                  tr("Which recompiled module should run?"), labels, 0, false, &ok);
         if (!ok) {
             return;
         }
@@ -6408,32 +6505,32 @@ void GMainWindow::RunFirstRunSetupIfNeeded() {
 }
 
 namespace {
-    // A title is several NSO modules - main, rtld, sdk, subsdk0 - and each
-    // recompiles to its own image. Execution begins in rtld, the dynamic
-    // linker, not in main, so loading a single image is not enough: the very
-    // first block lookup misses and the CPU halts with "No recompiled block at
-    // PC". Every image for the title is loaded and their lookups chained.
-    //
-    // Held for the process lifetime: the recompiled blocks live in these
-    // libraries, so unloading one while a game is running would pull the code
-    // out from under the CPU.
-    // Every image is keyed by an offset *within its own module* (0-based), so
-    // two images legitimately both have a block at offset 0. A lookup that
-    // doesn't first pin down which module owns a given absolute PC will
-    // silently hand back the wrong module's block - the CPU keeps "running"
-    // but is executing whatever code happened to share that offset in a
-    // different module, with no error anywhere. base tracks each image's
-    // load address once the kernel reports it, so dispatch can pick the
-    // owning image by address range before reducing to an offset.
-    struct RecompImage {
-        std::string name;
-        Core::RecompLookupFn lookup;
-        void (*set_base)(u64);
-        // Hands out the image's block index so the dispatcher can do the lookup
-        // itself instead of calling across the shared-object boundary for it.
-        int (*get_index)(u64*, u64*, Core::RecompBlockFn**);
-        u64 base = 0;
-    };
+// A title is several NSO modules - main, rtld, sdk, subsdk0 - and each
+// recompiles to its own image. Execution begins in rtld, the dynamic
+// linker, not in main, so loading a single image is not enough: the very
+// first block lookup misses and the CPU halts with "No recompiled block at
+// PC". Every image for the title is loaded and their lookups chained.
+//
+// Held for the process lifetime: the recompiled blocks live in these
+// libraries, so unloading one while a game is running would pull the code
+// out from under the CPU.
+// Every image is keyed by an offset *within its own module* (0-based), so
+// two images legitimately both have a block at offset 0. A lookup that
+// doesn't first pin down which module owns a given absolute PC will
+// silently hand back the wrong module's block - the CPU keeps "running"
+// but is executing whatever code happened to share that offset in a
+// different module, with no error anywhere. base tracks each image's
+// load address once the kernel reports it, so dispatch can pick the
+// owning image by address range before reducing to an offset.
+struct RecompImage {
+    std::string name;
+    Core::RecompLookupFn lookup;
+    void (*set_base)(u64);
+    // Hands out the image's block index so the dispatcher can do the lookup
+    // itself instead of calling across the shared-object boundary for it.
+    int (*get_index)(u64*, u64*, Core::RecompBlockFn**);
+    u64 base = 0;
+};
 std::vector<QLibrary*> loaded_images;
 std::vector<RecompImage> loaded_records;
 
@@ -6491,7 +6588,7 @@ void RebuildOwnerTable() {
         u64 lo = 0, hi = 0;
         Core::RecompBlockFn* idx = nullptr;
         if (!r.get_index || !r.get_index(&lo, &hi, &idx)) {
-            lo = 1;   // An empty range no pc can satisfy.
+            lo = 1; // An empty range no pc can satisfy.
             hi = 0;
             idx = nullptr;
         }
@@ -6586,8 +6683,7 @@ int GMainWindow::LoadRecompiledImagesFrom(const QString& dir) {
             lib->deleteLater();
             continue;
         }
-        const auto fn =
-            reinterpret_cast<Core::RecompLookupFn>(lib->resolve("recomp_image_lookup"));
+        const auto fn = reinterpret_cast<Core::RecompLookupFn>(lib->resolve("recomp_image_lookup"));
         if (!fn) {
             // Some other library that happens to sit in the tree.
             lib->unload();
@@ -6606,12 +6702,10 @@ int GMainWindow::LoadRecompiledImagesFrom(const QString& dir) {
                 break;
             }
         }
-        auto* set_base =
-            reinterpret_cast<void (*)(u64)>(lib->resolve("recomp_image_set_base"));
+        auto* set_base = reinterpret_cast<void (*)(u64)>(lib->resolve("recomp_image_set_base"));
         auto* get_index = reinterpret_cast<int (*)(u64*, u64*, Core::RecompBlockFn**)>(
             lib->resolve("recomp_image_index"));
-        records.push_back(
-            RecompImage{owner.dirName().toStdString(), fn, set_base, get_index, 0});
+        records.push_back(RecompImage{owner.dirName().toStdString(), fn, set_base, get_index, 0});
     }
 
     if (found.empty()) {
@@ -6646,9 +6740,8 @@ int GMainWindow::LoadRecompiledImagesFrom(const QString& dir) {
         // it is the only entry whose position depends on how many subsdks a
         // title happens to have.
         static const char* kByLoadOrder[] = {
-            "rtld",    "main",    "subsdk0", "subsdk1", "subsdk2", "subsdk3",
-            "subsdk4", "subsdk5", "subsdk6", "subsdk7", "subsdk8", "subsdk9",
-            "sdk",
+            "rtld",    "main",    "subsdk0", "subsdk1", "subsdk2", "subsdk3", "subsdk4",
+            "subsdk5", "subsdk6", "subsdk7", "subsdk8", "subsdk9", "sdk",
         };
 
         std::string name = module;
@@ -6683,8 +6776,8 @@ int GMainWindow::LoadRecompiledImagesFrom(const QString& dir) {
             record->base = base;
             record->set_base(base);
             RebuildOwnerTable();
-            LOG_INFO(Frontend, "Recompiled image for module '{}' (#{}) based at {:#x}", name,
-                     index, base);
+            LOG_INFO(Frontend, "Recompiled image for module '{}' (#{}) based at {:#x}", name, index,
+                     base);
         } else {
             LOG_WARNING(Frontend, "No recompiled image for module '{}' (#{}, base {:#x})", name,
                         index, base);
@@ -6765,8 +6858,7 @@ int GMainWindow::LoadRecompiledImagesFrom(const QString& dir) {
             if (!miss_record_dir.empty()) {
                 RecordMiss(owner->name, pc - owner->base);
             }
-            LOG_DEBUG(Frontend,
-                      "recomp dispatch: {} has no block at +{:#x} (pc={:#x}); using JIT",
+            LOG_DEBUG(Frontend, "recomp dispatch: {} has no block at +{:#x} (pc={:#x}); using JIT",
                       owner->name, pc - owner->base, pc);
             return nullptr;
         }
@@ -6828,8 +6920,8 @@ void GMainWindow::OnLoadRecompiledImage() {
     QString dir = QString::fromLocal8Bit(qgetenv("SUYU_RECOMP_DIR"));
     const bool unattended = !dir.isEmpty();
     if (dir.isEmpty()) {
-        dir = QFileDialog::getExistingDirectory(
-            this, tr("Select the recompiled folder for this game"));
+        dir = QFileDialog::getExistingDirectory(this,
+                                                tr("Select the recompiled folder for this game"));
     }
     if (dir.isEmpty()) {
         return;
@@ -6876,23 +6968,23 @@ void GMainWindow::OnLoadLibretroCore() {
         }
     }
 
-    const QString core_path = QFileDialog::getOpenFileName(
-        this, tr("Select a Libretro Core"), start_dir,
+    const QString core_path =
+        QFileDialog::getOpenFileName(this, tr("Select a Libretro Core"), start_dir,
 #ifdef _WIN32
-        tr("Libretro Core (*.dll)")
+                                     tr("Libretro Core (*.dll)")
 #elif defined(__APPLE__)
-        tr("Libretro Core (*.dylib)")
+                                      tr("Libretro Core (*.dylib)")
 #else
-        tr("Libretro Core (*.so)")
+                                      tr("Libretro Core (*.so)")
 #endif
-    );
+        );
     if (core_path.isEmpty()) {
         return;
     }
 
     if (!core_manager_->LoadLibretroCore(core_path)) {
         QMessageBox::warning(this, tr("Libretro Core"),
-                              tr("Failed to load the selected file as a libretro core."));
+                             tr("Failed to load the selected file as a libretro core."));
         return;
     }
 
@@ -6903,13 +6995,12 @@ void GMainWindow::OnLoadLibretroCore() {
 
     if (!core_manager_->SelectCore(QFileInfo(core_path).baseName()) ||
         !core_manager_->LaunchGame(rom_path)) {
-        QMessageBox::warning(
-            this, tr("Libretro Core"),
-            tr("Loaded the core, but launching failed. suyu runs libretro cores "
-               "through RetroArch ('retroarch -L <core> <rom>') rather than "
-               "hosting them itself, so RetroArch needs to be installed. suyu "
-               "looks for it in the usual install locations, including Steam, "
-               "as well as on PATH."));
+        QMessageBox::warning(this, tr("Libretro Core"),
+                             tr("Loaded the core, but launching failed. suyu runs libretro cores "
+                                "through RetroArch ('retroarch -L <core> <rom>') rather than "
+                                "hosting them itself, so RetroArch needs to be installed. suyu "
+                                "looks for it in the usual install locations, including Steam, "
+                                "as well as on PATH."));
     }
 }
 
@@ -6969,12 +7060,15 @@ void GMainWindow::OnSteamIntegration() {
     QString message = installed ? tr("Steam is installed.\n") : tr("Steam is not detected.\n");
     if (self_added_this_run) {
         message += tr("suyu itself has been added to your Steam library (overlay enabled) - "
-                       "restart Steam to see it.\n");
+                      "restart Steam to see it.\n");
     }
     message += tr("%1 game shortcut(s) currently managed.\n").arg(shortcuts.size());
-    message += tr("Steam is detected by standard install paths, Steam registry settings, or the STEAM_PATH environment variable.\n");
-    message += tr("Artwork is fetched from the Steam Store public search endpoint with no API key required.\n");
-    message += tr("Add to Steam will still work without custom artwork if a matched store image cannot be found.");
+    message += tr("Steam is detected by standard install paths, Steam registry settings, or the "
+                  "STEAM_PATH environment variable.\n");
+    message += tr("Artwork is fetched from the Steam Store public search endpoint with no API key "
+                  "required.\n");
+    message += tr("Add to Steam will still work without custom artwork if a matched store image "
+                  "cannot be found.");
 
     QMessageBox::information(this, tr("Steam Integration"), message);
 }
@@ -6995,21 +7089,20 @@ void GMainWindow::OnShowGameOverlay() {
                                    ? tr("Steam overlay is still available with Shift+Tab.")
                                    : tr("Steam integration will not interfere with this overlay.");
 
-    const QString body = tr(
-        "<div style='color:white;'>"
-        "<p style='font-size:28pt; font-weight:bold; margin:0 0 18px;'>%1</p>"
-        "<p style='font-size:12pt; color:#bbbbbb; margin:0 0 22px;'>"
-        "A quick overlay for resume, game settings, and instant status."
-        "</p>"
-        "<p style='font-size:11pt; color:#d0d0d0; margin:0 0 14px;'>"
-        "Press <b>F1</b> to open this overlay while a game is running."
-        "</p>"
-        "<p style='font-size:10pt; color:#909090; margin-top:20px;'>%2</p>"
-        "</div>")
-        .arg(game_name, steam_note);
+    const QString body = tr("<div style='color:white;'>"
+                            "<p style='font-size:28pt; font-weight:bold; margin:0 0 18px;'>%1</p>"
+                            "<p style='font-size:12pt; color:#bbbbbb; margin:0 0 22px;'>"
+                            "A quick overlay for resume, game settings, and instant status."
+                            "</p>"
+                            "<p style='font-size:11pt; color:#d0d0d0; margin:0 0 14px;'>"
+                            "Press <b>F1</b> to open this overlay while a game is running."
+                            "</p>"
+                            "<p style='font-size:10pt; color:#909090; margin-top:20px;'>%2</p>"
+                            "</div>")
+                             .arg(game_name, steam_note);
 
-    OverlayDialog overlay(render_window, *system, tr("Game Overlay"), body,
-                          tr("Resume"), tr("Settings"), Qt::AlignLeft, true);
+    OverlayDialog overlay(render_window, *system, tr("Game Overlay"), body, tr("Resume"),
+                          tr("Settings"), Qt::AlignLeft, true);
     if (overlay.exec() == QDialog::Accepted) {
         OnConfigurePerGame();
     }
@@ -7028,8 +7121,9 @@ static QString GetSteamArtworkCacheDir() {
 void GMainWindow::OnGameListCreateSteamShortcut(u64 program_id, const std::string& game_path) {
     SteamIntegration* steam = new SteamIntegration(this);
     if (!steam->IsSteamInstalled()) {
-        QMessageBox::warning(this, tr("Steam Integration"),
-                             tr("Unable to find Steam installation. Please install Steam and try again."));
+        QMessageBox::warning(
+            this, tr("Steam Integration"),
+            tr("Unable to find Steam installation. Please install Steam and try again."));
         steam->deleteLater();
         return;
     }
@@ -7038,7 +7132,8 @@ void GMainWindow::OnGameListCreateSteamShortcut(u64 program_id, const std::strin
     const FileSys::PatchManager pm{program_id, system->GetFileSystemController(),
                                    system->GetContentProvider()};
     const auto control = pm.GetControlMetadata();
-    const auto loader = Loader::GetLoader(*system, vfs->OpenFile(game_path, FileSys::OpenMode::Read));
+    const auto loader =
+        Loader::GetLoader(*system, vfs->OpenFile(game_path, FileSys::OpenMode::Read));
     std::string game_title = fmt::format("{:016X}", program_id);
     if (control.first != nullptr) {
         game_title = control.first->GetApplicationName();
@@ -7070,41 +7165,45 @@ void GMainWindow::OnGameListCreateSteamShortcut(u64 program_id, const std::strin
     if (QFileInfo::exists(steam_icon_path)) {
         if (steam->AddGameShortcut(qt_game_title, QString::fromStdString(game_path),
                                    steam_icon_path)) {
-            QMessageBox::information(
-                this, tr("Steam Integration"),
-                tr("%1 has been added to Steam using cached %2 artwork.")
-                    .arg(qt_game_title, selected_artwork_type));
+            QMessageBox::information(this, tr("Steam Integration"),
+                                     tr("%1 has been added to Steam using cached %2 artwork.")
+                                         .arg(qt_game_title, selected_artwork_type));
         } else {
-            QMessageBox::warning(this, tr("Steam Integration"),
-                                 tr("Failed to add %1 to Steam using cached artwork.")
-                                     .arg(qt_game_title));
+            QMessageBox::warning(
+                this, tr("Steam Integration"),
+                tr("Failed to add %1 to Steam using cached artwork.").arg(qt_game_title));
         }
         steam->deleteLater();
         return;
     }
 
-    connect(steam, &SteamIntegration::ArtworkFetched, this,
-            [this, steam, qt_game_title, game_path](const QString& title, const QString& path) {
-                Q_UNUSED(title);
-                if (steam->AddGameShortcut(qt_game_title, QString::fromStdString(game_path), path)) {
-                    QMessageBox::information(this, this->tr("Steam Integration"),
-                                             this->tr("%1 has been added to Steam with artwork.").arg(qt_game_title));
-                } else {
-                    QMessageBox::warning(this, this->tr("Steam Integration"),
-                                         this->tr("Failed to add %1 to Steam after artwork download.").arg(qt_game_title));
-                }
-                steam->deleteLater();
-            });
+    connect(
+        steam, &SteamIntegration::ArtworkFetched, this,
+        [this, steam, qt_game_title, game_path](const QString& title, const QString& path) {
+            Q_UNUSED(title);
+            if (steam->AddGameShortcut(qt_game_title, QString::fromStdString(game_path), path)) {
+                QMessageBox::information(
+                    this, this->tr("Steam Integration"),
+                    this->tr("%1 has been added to Steam with artwork.").arg(qt_game_title));
+            } else {
+                QMessageBox::warning(this, this->tr("Steam Integration"),
+                                     this->tr("Failed to add %1 to Steam after artwork download.")
+                                         .arg(qt_game_title));
+            }
+            steam->deleteLater();
+        });
     connect(steam, &SteamIntegration::ArtworkFetchFailed, this,
             [this, steam, qt_game_title, game_path](const QString& title, const QString& error) {
                 Q_UNUSED(title);
                 if (steam->AddGameShortcut(qt_game_title, QString::fromStdString(game_path))) {
                     QMessageBox::warning(
                         this, this->tr("Steam Integration"),
-                        this->tr("%1 has been added to Steam, but artwork download failed: %2").arg(qt_game_title, error));
+                        this->tr("%1 has been added to Steam, but artwork download failed: %2")
+                            .arg(qt_game_title, error));
                 } else {
-                    QMessageBox::warning(this, this->tr("Steam Integration"),
-                                         this->tr("Failed to add %1 to Steam: %2").arg(qt_game_title, error));
+                    QMessageBox::warning(
+                        this, this->tr("Steam Integration"),
+                        this->tr("Failed to add %1 to Steam: %2").arg(qt_game_title, error));
                 }
                 steam->deleteLater();
             });
@@ -7119,7 +7218,9 @@ void GMainWindow::OnGameListCreateSteamShortcut(u64 program_id, const std::strin
     steam->FetchArtwork(qt_game_title, steam_icon_path, artwork_enum);
     const QString title = tr("Steam Integration");
     QMessageBox::information(this, title,
-                             tr("Searching the Steam Store for %1 artwork. Shortcut will be created when the download completes.").arg(qt_game_title));
+                             tr("Searching the Steam Store for %1 artwork. Shortcut will be "
+                                "created when the download completes.")
+                                 .arg(qt_game_title));
 }
 
 void GMainWindow::OnOpenUserManual() {
@@ -7340,8 +7441,9 @@ void GMainWindow::UpdateWindowTitle(std::string_view title_name, std::string_vie
     const auto suyu_title = fmt::format("suyu | {}-{}", branch_name, description);
     const auto override_title =
         fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
-    const auto window_title = !build_fullname.empty() ? build_fullname
-                                                      : (override_title.empty() ? suyu_title : override_title);
+    const auto window_title = !build_fullname.empty()
+                                  ? build_fullname
+                                  : (override_title.empty() ? suyu_title : override_title);
 
     if (title_name.empty()) {
         setWindowTitle(QString::fromStdString(window_title));
@@ -7646,8 +7748,8 @@ bool GMainWindow::CheckFirmwarePresence() {
     // Accept firmware as valid if ANY known system applet NCA is present.
     // OR logic here avoids false negatives when only some firmware files were installed.
     const auto has_nca = [&](Service::AM::AppletProgramId id) {
-        return bis_system->GetEntry(static_cast<u64>(id),
-                                    FileSys::ContentRecordType::Program) != nullptr;
+        return bis_system->GetEntry(static_cast<u64>(id), FileSys::ContentRecordType::Program) !=
+               nullptr;
     };
     return has_nca(Service::AM::AppletProgramId::QLaunch) ||
            has_nca(Service::AM::AppletProgramId::MiiEdit) ||
@@ -7887,13 +7989,11 @@ void GMainWindow::UpdateUITheme() {
 
 void GMainWindow::UpdateIcons(const QString& theme_path) {
     // Get the theme directory from its path
-    const QString normalized_theme_path = theme_path.endsWith(QLatin1Char('/'))
-        ? theme_path.left(theme_path.size() - 1)
-        : theme_path;
+    const QString normalized_theme_path =
+        theme_path.endsWith(QLatin1Char('/')) ? theme_path.left(theme_path.size() - 1) : theme_path;
     const int last_slash = normalized_theme_path.lastIndexOf(QLatin1Char('/'));
-    const QString theme_dir = last_slash >= 0
-        ? normalized_theme_path.mid(last_slash + 1)
-        : normalized_theme_path;
+    const QString theme_dir =
+        last_slash >= 0 ? normalized_theme_path.mid(last_slash + 1) : normalized_theme_path;
 
     // Append _dark to the theme name to use dark variant icons
     if (CheckDarkMode()) {
@@ -8525,7 +8625,8 @@ int main(int argc, char* argv[]) {
     {
         AppMode active_mode = requested_mode.value_or(ModeSelector::LoadSavedMode());
         QSettings settings;
-        const bool remember = settings.value(QStringLiteral("General/RememberMode"), false).toBool();
+        const bool remember =
+            settings.value(QStringLiteral("General/RememberMode"), false).toBool();
         if (!requested_mode.has_value() && !remember) {
             ModeSelector selector;
             if (selector.exec() == QDialog::Accepted) {

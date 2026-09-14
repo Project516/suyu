@@ -19,7 +19,8 @@ class StagingBufferPool;
 
 class SMAA final : public AntiAliasPass {
 public:
-    explicit SMAA(const Device& device, MemoryAllocator& allocator, size_t image_count, VkExtent2D extent);
+    explicit SMAA(const Device& device, MemoryAllocator& allocator, size_t image_count,
+                  VkExtent2D extent);
     ~SMAA() override;
 
     void Draw(const Device& device, Scheduler& scheduler, size_t image_index, VkImage* inout_image,

@@ -142,8 +142,8 @@ void KPageTableBase::MemoryRange::Close(KernelCore& kernel) {
 }
 
 KPageTableBase::KPageTableBase(KernelCore& kernel)
-    : m_system(kernel.System()), m_general_lock(kernel),
-      m_map_physical_memory_lock(kernel), m_device_map_lock(kernel) {}
+    : m_system(kernel.System()), m_general_lock(kernel), m_map_physical_memory_lock(kernel),
+      m_device_map_lock(kernel) {}
 KPageTableBase::~KPageTableBase() = default;
 
 Result KPageTableBase::InitializeForKernel(bool is_64_bit, KVirtualAddress start,
@@ -201,7 +201,13 @@ Result KPageTableBase::InitializeForKernel(bool is_64_bit, KVirtualAddress start
                                                m_memory_block_slab_manager));
 }
 
-Result KPageTableBase::InitializeForProcess(Svc::CreateProcessFlag as_type, bool enable_aslr, bool enable_das_merge, bool from_back, KMemoryManager::Pool pool, KProcessAddress code_address, size_t code_size, KSystemResource* system_resource, KResourceLimit* resource_limit, Core::Memory::Memory& memory, KProcessAddress aslr_space_start) {
+Result KPageTableBase::InitializeForProcess(Svc::CreateProcessFlag as_type, bool enable_aslr,
+                                            bool enable_das_merge, bool from_back,
+                                            KMemoryManager::Pool pool, KProcessAddress code_address,
+                                            size_t code_size, KSystemResource* system_resource,
+                                            KResourceLimit* resource_limit,
+                                            Core::Memory::Memory& memory,
+                                            KProcessAddress aslr_space_start) {
     // Calculate region extents.
     const size_t as_width = GetAddressSpaceWidth(as_type);
     const KProcessAddress start = 0;
@@ -292,8 +298,10 @@ Result KPageTableBase::InitializeForProcess(Svc::CreateProcessFlag as_type, bool
     const auto as_mask = Svc::CreateProcessFlag::AddressSpaceMask;
     const bool is_64bit_as = (as_type & as_mask) == Svc::CreateProcessFlag::AddressSpace64Bit;
 
-    if (is_64bit_as && (as_type & Svc::CreateProcessFlag::EnableAliasRegionExtraSize)
-        != Svc::CreateProcessFlag{0} && alias_region_size) {
+    if (is_64bit_as &&
+        (as_type & Svc::CreateProcessFlag::EnableAliasRegionExtraSize) !=
+            Svc::CreateProcessFlag{0} &&
+        alias_region_size) {
         const size_t address_space_size = (GetInteger(end) - GetInteger(start));
 
         // Same as address_space_size/8 but faster due to bit shifting operation
@@ -313,10 +321,14 @@ Result KPageTableBase::InitializeForProcess(Svc::CreateProcessFlag as_type, bool
     // Determine random placements for each region.
     size_t alias_rnd = 0, heap_rnd = 0, stack_rnd = 0, kmap_rnd = 0;
     if (enable_aslr) {
-        alias_rnd = KSystemControl::GenerateRandomRange(0, remaining_size / RegionAlignment) * RegionAlignment;
-        heap_rnd = KSystemControl::GenerateRandomRange(0, remaining_size / RegionAlignment) * RegionAlignment;
-        stack_rnd = KSystemControl::GenerateRandomRange(0, remaining_size / RegionAlignment) * RegionAlignment;
-        kmap_rnd = KSystemControl::GenerateRandomRange(0, remaining_size / RegionAlignment) * RegionAlignment;
+        alias_rnd = KSystemControl::GenerateRandomRange(0, remaining_size / RegionAlignment) *
+                    RegionAlignment;
+        heap_rnd = KSystemControl::GenerateRandomRange(0, remaining_size / RegionAlignment) *
+                   RegionAlignment;
+        stack_rnd = KSystemControl::GenerateRandomRange(0, remaining_size / RegionAlignment) *
+                    RegionAlignment;
+        kmap_rnd = KSystemControl::GenerateRandomRange(0, remaining_size / RegionAlignment) *
+                   RegionAlignment;
     }
 
     // Setup heap and alias regions.
@@ -441,7 +453,8 @@ Result KPageTableBase::InitializeForProcess(Svc::CreateProcessFlag as_type, bool
     m_memory = std::addressof(memory);
 
     // Initialize our memory block manager.
-    R_RETURN(m_memory_block_manager.Initialize(m_address_space_start, m_address_space_end, m_memory_block_slab_manager));
+    R_RETURN(m_memory_block_manager.Initialize(m_address_space_start, m_address_space_end,
+                                               m_memory_block_slab_manager));
 }
 
 Result KPageTableBase::FinalizeProcess() {
@@ -492,7 +505,8 @@ void KPageTableBase::Finalize() {
         if (auto* const insecure_resource_limit =
                 KSystemControl::GetInsecureMemoryResourceLimit(m_system.Kernel());
             insecure_resource_limit != nullptr) {
-            insecure_resource_limit->Release(m_system.Kernel(), Svc::LimitableResource::PhysicalMemoryMax,
+            insecure_resource_limit->Release(m_system.Kernel(),
+                                             Svc::LimitableResource::PhysicalMemoryMax,
                                              m_mapped_insecure_memory);
         }
     }
@@ -1383,7 +1397,8 @@ Result KPageTableBase::UnmapCodeMemory(KProcessAddress dst_address, KProcessAddr
 
 Result KPageTableBase::MapInsecureMemory(KProcessAddress address, size_t size) {
     // Get the insecure memory resource limit and pool.
-    auto* const insecure_resource_limit = KSystemControl::GetInsecureMemoryResourceLimit(m_system.Kernel());
+    auto* const insecure_resource_limit =
+        KSystemControl::GetInsecureMemoryResourceLimit(m_system.Kernel());
     const auto insecure_pool =
         static_cast<KMemoryManager::Pool>(KSystemControl::GetInsecureMemoryPool());
 
@@ -1493,7 +1508,8 @@ Result KPageTableBase::UnmapInsecureMemory(KProcessAddress address, size_t size)
     if (auto* const insecure_resource_limit =
             KSystemControl::GetInsecureMemoryResourceLimit(m_system.Kernel());
         insecure_resource_limit != nullptr) {
-        insecure_resource_limit->Release(m_system.Kernel(), Svc::LimitableResource::PhysicalMemoryMax, size);
+        insecure_resource_limit->Release(m_system.Kernel(),
+                                         Svc::LimitableResource::PhysicalMemoryMax, size);
     }
 
     R_SUCCEED();
@@ -1606,8 +1622,8 @@ Result KPageTableBase::AllocateAndMapPagesImpl(PageLinkedList* page_list, KProce
     KPageGroup pg(m_system.Kernel(), m_block_info_manager);
 
     // Allocate the pages.
-    R_TRY(
-        m_system.Kernel().MemoryManager().AllocateAndOpen(std::addressof(pg), num_pages, m_allocate_option));
+    R_TRY(m_system.Kernel().MemoryManager().AllocateAndOpen(std::addressof(pg), num_pages,
+                                                            m_allocate_option));
 
     // Ensure that the page group is closed when we're done working with it.
     SCOPE_EXIT {
@@ -2048,7 +2064,8 @@ Result KPageTableBase::SetProcessMemoryPermission(KProcessAddress addr, size_t s
     // Ensure cache coherency, if we're setting pages as executable.
     if (is_x) {
         for (const auto& block : pg) {
-            StoreDataCache(GetHeapVirtualPointer(m_system.Kernel(), block.GetAddress()), block.GetSize());
+            StoreDataCache(GetHeapVirtualPointer(m_system.Kernel(), block.GetAddress()),
+                           block.GetSize());
         }
         InvalidateInstructionCache(m_system.Kernel(), this, addr, size);
     }
@@ -2188,14 +2205,15 @@ Result KPageTableBase::SetHeapSize(KProcessAddress* out, size_t size) {
     }
 
     // Reserve memory for the heap extension.
-    KScopedResourceReservation memory_reservation(m_system.Kernel(),
-        m_resource_limit, Svc::LimitableResource::PhysicalMemoryMax, allocation_size);
+    KScopedResourceReservation memory_reservation(m_system.Kernel(), m_resource_limit,
+                                                  Svc::LimitableResource::PhysicalMemoryMax,
+                                                  allocation_size);
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
     // Allocate pages for the heap extension.
     KPageGroup pg(m_system.Kernel(), m_block_info_manager);
-    R_TRY(m_system.Kernel().MemoryManager().AllocateAndOpen(std::addressof(pg), allocation_size / PageSize,
-                                                   m_allocate_option));
+    R_TRY(m_system.Kernel().MemoryManager().AllocateAndOpen(
+        std::addressof(pg), allocation_size / PageSize, m_allocate_option));
 
     // Close the opened pages when we're done with them.
     // If the mapping succeeds, each page will gain an extra reference, otherwise they will be freed
@@ -2707,7 +2725,8 @@ Result KPageTableBase::MapStatic(KPhysicalAddress phys_addr, size_t size, KMemor
 Result KPageTableBase::MapRegion(KMemoryRegionType region_type, KMemoryPermission perm) {
     // Get the memory region.
     const KMemoryRegion* region =
-        m_system.Kernel().MemoryLayout().GetPhysicalMemoryRegionTree().FindFirstDerived(region_type);
+        m_system.Kernel().MemoryLayout().GetPhysicalMemoryRegionTree().FindFirstDerived(
+            region_type);
     R_UNLESS(region != nullptr, ResultOutOfRange);
 
     // Check that the region is valid.
@@ -3051,7 +3070,8 @@ Result KPageTableBase::InvalidateProcessDataCache(KProcessAddress address, size_
             // Invalidate the block.
             if (cur_size > 0) {
                 // NOTE: Nintendo does not check the result of invalidation.
-                InvalidateDataCache(GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr), cur_size);
+                InvalidateDataCache(GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr),
+                                    cur_size);
             }
 
             // Advance.
@@ -3083,7 +3103,8 @@ Result KPageTableBase::InvalidateProcessDataCache(KProcessAddress address, size_
 
 Result KPageTableBase::InvalidateCurrentProcessDataCache(KProcessAddress address, size_t size) {
     // Check pre-condition: this is being called on the current process.
-    ASSERT(this == std::addressof(GetCurrentProcess(m_system.Kernel()).GetPageTable().GetBasePageTable()));
+    ASSERT(this ==
+           std::addressof(GetCurrentProcess(m_system.Kernel()).GetPageTable().GetBasePageTable()));
 
     // Check that the region is in range.
     R_UNLESS(this->Contains(address, size), ResultInvalidCurrentMemory);
@@ -3379,7 +3400,8 @@ Result KPageTableBase::ReadDebugIoMemory(KProcessAddress dst_address, KProcessAd
 
     // We need to lock both this table, and the current process's table, so set up some aliases.
     KPageTableBase& src_page_table = *this;
-    KPageTableBase& dst_page_table = GetCurrentProcess(m_system.Kernel()).GetPageTable().GetBasePageTable();
+    KPageTableBase& dst_page_table =
+        GetCurrentProcess(m_system.Kernel()).GetPageTable().GetBasePageTable();
 
     // Acquire the table locks.
     KScopedLightLockPair lk(src_page_table.m_general_lock, dst_page_table.m_general_lock);
@@ -3421,7 +3443,8 @@ Result KPageTableBase::WriteDebugIoMemory(KProcessAddress dst_address, KProcessA
 
     // We need to lock both this table, and the current process's table, so set up some aliases.
     KPageTableBase& src_page_table = *this;
-    KPageTableBase& dst_page_table = GetCurrentProcess(m_system.Kernel()).GetPageTable().GetBasePageTable();
+    KPageTableBase& dst_page_table =
+        GetCurrentProcess(m_system.Kernel()).GetPageTable().GetBasePageTable();
 
     // Acquire the table locks.
     KScopedLightLockPair lk(src_page_table.m_general_lock, dst_page_table.m_general_lock);
@@ -3744,9 +3767,9 @@ Result KPageTableBase::CopyMemoryFromLinearToUser(
             // Copy as much aligned data as we can.
             if (cur_size >= sizeof(u32)) {
                 const size_t copy_size = Common::AlignDown(cur_size, sizeof(u32));
-                R_UNLESS(dst_memory.WriteBlock(dst_addr,
-                                               GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr),
-                                               copy_size),
+                R_UNLESS(dst_memory.WriteBlock(
+                             dst_addr, GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr),
+                             copy_size),
                          ResultInvalidCurrentMemory);
 
                 dst_addr += copy_size;
@@ -3757,7 +3780,8 @@ Result KPageTableBase::CopyMemoryFromLinearToUser(
             // Copy remaining data.
             if (cur_size > 0) {
                 R_UNLESS(dst_memory.WriteBlock(
-                             dst_addr, GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr), cur_size),
+                             dst_addr, GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr),
+                             cur_size),
                          ResultInvalidCurrentMemory);
             }
 
@@ -3836,7 +3860,8 @@ Result KPageTableBase::CopyMemoryFromLinearToKernel(
             R_UNLESS(IsLinearMappedPhysicalAddress(cur_addr), ResultInvalidCurrentMemory);
 
             // Copy the data.
-            std::memcpy(buffer, GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr), cur_size);
+            std::memcpy(buffer, GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr),
+                        cur_size);
 
             R_SUCCEED();
         };
@@ -3918,9 +3943,9 @@ Result KPageTableBase::CopyMemoryFromUserToLinear(
             // Copy as much aligned data as we can.
             if (cur_size >= sizeof(u32)) {
                 const size_t copy_size = Common::AlignDown(cur_size, sizeof(u32));
-                R_UNLESS(src_memory.ReadBlock(src_addr,
-                                              GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr),
-                                              copy_size),
+                R_UNLESS(src_memory.ReadBlock(
+                             src_addr, GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr),
+                             copy_size),
                          ResultInvalidCurrentMemory);
                 src_addr += copy_size;
                 cur_addr += copy_size;
@@ -3930,7 +3955,8 @@ Result KPageTableBase::CopyMemoryFromUserToLinear(
             // Copy remaining data.
             if (cur_size > 0) {
                 R_UNLESS(src_memory.ReadBlock(
-                             src_addr, GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr), cur_size),
+                             src_addr, GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr),
+                             cur_size),
                          ResultInvalidCurrentMemory);
             }
 
@@ -4011,7 +4037,8 @@ Result KPageTableBase::CopyMemoryFromKernelToLinear(KProcessAddress dst_addr, si
             R_UNLESS(IsLinearMappedPhysicalAddress(cur_addr), ResultInvalidCurrentMemory);
 
             // Copy the data.
-            std::memcpy(GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr), buffer, cur_size);
+            std::memcpy(GetLinearMappedVirtualPointer(m_system.Kernel(), cur_addr), buffer,
+                        cur_size);
 
             R_SUCCEED();
         };
@@ -4493,8 +4520,9 @@ Result KPageTableBase::SetupForIpcServer(KProcessAddress* out_addr, size_t size,
 
     // Reserve space for any partial pages we allocate.
     const size_t unmapped_size = aligned_src_size - mapping_src_size;
-    KScopedResourceReservation memory_reservation(m_system.Kernel(),
-        m_resource_limit, Svc::LimitableResource::PhysicalMemoryMax, unmapped_size);
+    KScopedResourceReservation memory_reservation(m_system.Kernel(), m_resource_limit,
+                                                  Svc::LimitableResource::PhysicalMemoryMax,
+                                                  unmapped_size);
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
     // Ensure that we manage page references correctly.
@@ -5168,8 +5196,9 @@ Result KPageTableBase::MapPhysicalMemory(KProcessAddress address, size_t size) {
         // Allocate and map the memory.
         {
             // Reserve the memory from the process resource limit.
-            KScopedResourceReservation memory_reservation(m_system.Kernel(),
-                m_resource_limit, Svc::LimitableResource::PhysicalMemoryMax, size - mapped_size);
+            KScopedResourceReservation memory_reservation(m_system.Kernel(), m_resource_limit,
+                                                          Svc::LimitableResource::PhysicalMemoryMax,
+                                                          size - mapped_size);
             R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
             // Allocate pages for the new memory.
@@ -5283,7 +5312,7 @@ Result KPageTableBase::MapPhysicalMemory(KProcessAddress address, size_t size) {
                                     DisableMergeAttribute::None};
                                 const size_t cur_pages =
                                     (std::min)(KProcessAddress(info.GetEndAddress()) - cur_address,
-                                             last_unmap_address + 1 - cur_address) /
+                                               last_unmap_address + 1 - cur_address) /
                                     PageSize;
 
                                 // Unmap.
@@ -5308,8 +5337,9 @@ Result KPageTableBase::MapPhysicalMemory(KProcessAddress address, size_t size) {
                     m_system.Kernel().MemoryManager().Close(pg_phys_addr, pg_pages);
                     for (++pg_it; pg_it != pg.end(); ++pg_it) {
                         m_system.Kernel().MemoryManager().OpenFirst(pg_it->GetAddress(),
-                                                           pg_it->GetNumPages());
-                        m_system.Kernel().MemoryManager().Close(pg_it->GetAddress(), pg_it->GetNumPages());
+                                                                    pg_it->GetNumPages());
+                        m_system.Kernel().MemoryManager().Close(pg_it->GetAddress(),
+                                                                pg_it->GetNumPages());
                     }
                 };
 
@@ -5331,7 +5361,7 @@ Result KPageTableBase::MapPhysicalMemory(KProcessAddress address, size_t size) {
                                 : DisableMergeAttribute::None};
                         size_t map_pages =
                             (std::min)(KProcessAddress(info.GetEndAddress()) - cur_address,
-                                     last_address + 1 - cur_address) /
+                                       last_address + 1 - cur_address) /
                             PageSize;
 
                         // While we have pages to map, map them.
@@ -5521,7 +5551,7 @@ Result KPageTableBase::UnmapPhysicalMemory(KProcessAddress address, size_t size)
             const KPageProperties unmap_properties = {KMemoryPermission::None, false, false,
                                                       DisableMergeAttribute::None};
             const size_t cur_pages = (std::min)(KProcessAddress(info.GetEndAddress()) - cur_address,
-                                              last_address + 1 - cur_address) /
+                                                last_address + 1 - cur_address) /
                                      PageSize;
 
             // Unmap.
@@ -5541,7 +5571,8 @@ Result KPageTableBase::UnmapPhysicalMemory(KProcessAddress address, size_t size)
 
     // Release the memory resource.
     m_mapped_physical_memory_size -= mapped_size;
-    m_resource_limit->Release(m_system.Kernel(), Svc::LimitableResource::PhysicalMemoryMax, mapped_size);
+    m_resource_limit->Release(m_system.Kernel(), Svc::LimitableResource::PhysicalMemoryMax,
+                              mapped_size);
 
     // Update memory blocks.
     m_memory_block_manager.Update(std::addressof(allocator), address, size / PageSize,

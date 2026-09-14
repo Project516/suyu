@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/mcl/bit.hpp"
 #include <oaknut/oaknut.hpp>
 
 #include "dynarmic/backend/arm64/a32_jitstate.h"
@@ -20,6 +19,7 @@
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::Backend::Arm64 {
 

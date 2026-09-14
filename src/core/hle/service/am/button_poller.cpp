@@ -39,12 +39,13 @@ ButtonPressDuration ClassifyPressDuration(std::chrono::steady_clock::time_point 
 ButtonPoller::ButtonPoller(Core::System& system, WindowSystem& window_system) {
     // TODO: am reads this from the home button state in hid, which is controller-agnostic.
     Core::HID::ControllerUpdateCallback engine_callback{
-        .on_change = [this, &window_system](Core::HID::ControllerTriggerType type) {
-            if (type == Core::HID::ControllerTriggerType::Button) {
-                std::unique_lock lk{m_mutex};
-                OnButtonStateChanged(window_system);
-            }
-        },
+        .on_change =
+            [this, &window_system](Core::HID::ControllerTriggerType type) {
+                if (type == Core::HID::ControllerTriggerType::Button) {
+                    std::unique_lock lk{m_mutex};
+                    OnButtonStateChanged(window_system);
+                }
+            },
         .is_npad_service = true,
     };
 
@@ -78,10 +79,10 @@ ButtonPoller::~ButtonPoller() {
 }
 
 void ButtonPoller::OnButtonStateChanged(WindowSystem& window_system) {
-    auto const home_button = m_handheld->GetHomeButtons().home.Value()
-        || m_player1->GetHomeButtons().home.Value();
-    auto const capture_button = m_handheld->GetCaptureButtons().capture.Value()
-        || m_player1->GetCaptureButtons().capture.Value();
+    auto const home_button =
+        m_handheld->GetHomeButtons().home.Value() || m_player1->GetHomeButtons().home.Value();
+    auto const capture_button = m_handheld->GetCaptureButtons().capture.Value() ||
+                                m_player1->GetCaptureButtons().capture.Value();
 
     // Buttons pressed which were not previously pressed
     if (home_button && !m_home_button_press_start) {
@@ -104,22 +105,23 @@ void ButtonPoller::OnButtonStateChanged(WindowSystem& window_system) {
             window_system.OnSystemButtonPress(SystemButtonType::HomeButtonLongPressing);
             m_home_button_long_sent = true;
         }
-     }
+    }
 
     if (capture_button && m_capture_button_press_start && !m_capture_button_long_sent) {
-         const auto duration = ClassifyPressDuration(*m_capture_button_press_start);
-         if (duration != ButtonPressDuration::ShortPressing) {
-             window_system.OnSystemButtonPress(SystemButtonType::CaptureButtonLongPressing);
-             m_capture_button_long_sent = true;
-         }
-     }
+        const auto duration = ClassifyPressDuration(*m_capture_button_press_start);
+        if (duration != ButtonPressDuration::ShortPressing) {
+            window_system.OnSystemButtonPress(SystemButtonType::CaptureButtonLongPressing);
+            m_capture_button_long_sent = true;
+        }
+    }
 
     // Buttons released which were previously held
     if (!home_button && m_home_button_press_start) {
-        if(!m_home_button_long_sent) {
+        if (!m_home_button_long_sent) {
             const auto duration = ClassifyPressDuration(*m_home_button_press_start);
             window_system.OnSystemButtonPress(duration == ButtonPressDuration::ShortPressing
-                ? SystemButtonType::HomeButtonShortPressing : SystemButtonType::HomeButtonLongPressing);
+                                                  ? SystemButtonType::HomeButtonShortPressing
+                                                  : SystemButtonType::HomeButtonLongPressing);
         }
         m_home_button_press_start = std::nullopt;
         m_home_button_long_sent = false;
@@ -128,7 +130,8 @@ void ButtonPoller::OnButtonStateChanged(WindowSystem& window_system) {
         if (!m_capture_button_long_sent) {
             const auto duration = ClassifyPressDuration(*m_capture_button_press_start);
             window_system.OnSystemButtonPress(duration == ButtonPressDuration::ShortPressing
-                ? SystemButtonType::CaptureButtonShortPressing : SystemButtonType::CaptureButtonLongPressing);
+                                                  ? SystemButtonType::CaptureButtonShortPressing
+                                                  : SystemButtonType::CaptureButtonLongPressing);
         }
         m_capture_button_press_start = std::nullopt;
         m_capture_button_long_sent = false;

@@ -3,9 +3,9 @@
 
 #pragma once
 
+#include "core/hle/service/am/service/overlay_functions.h"
 #include "core/hle/service/cmif_types.h"
 #include "core/hle/service/service.h"
-#include "core/hle/service/am/service/overlay_functions.h"
 
 namespace Service::AM {
 

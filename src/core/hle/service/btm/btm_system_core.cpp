@@ -93,7 +93,9 @@ Result IBtmSystemCore::AcquireRadioEvent(Out<bool> out_is_valid,
     R_SUCCEED();
 }
 
-Result IBtmSystemCore::GetDiscoveredAudioDevice(OutArray<std::array<u8, 0xFF>, BufferAttr_HipcPointer> out_audio_devices, s32 count, Out<s32> out_total) {
+Result IBtmSystemCore::GetDiscoveredAudioDevice(
+    OutArray<std::array<u8, 0xFF>, BufferAttr_HipcPointer> out_audio_devices, s32 count,
+    Out<s32> out_total) {
     LOG_WARNING(Service_BTM, "(STUBBED) called");
     R_SUCCEED();
 }

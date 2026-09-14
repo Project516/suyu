@@ -15,10 +15,10 @@
 #include "common/settings.h"
 #include "video_core/framebuffer_config.h"
 #include "video_core/renderer_vulkan/present/fsr.h"
-#include "video_core/renderer_vulkan/present/sgsr.h"
 #include "video_core/renderer_vulkan/present/fxaa.h"
 #include "video_core/renderer_vulkan/present/layer.h"
 #include "video_core/renderer_vulkan/present/present_push_constants.h"
+#include "video_core/renderer_vulkan/present/sgsr.h"
 #include "video_core/renderer_vulkan/present/smaa.h"
 #include "video_core/renderer_vulkan/present/util.h"
 #include "video_core/renderer_vulkan/vk_blit_screen.h"
@@ -56,13 +56,11 @@ VkFormat GetFormat(const Tegra::FramebufferConfig& framebuffer) {
 
 } // Anonymous namespace
 
-Layer::Layer(const Device& device, MemoryAllocator& memory_allocator_, Scheduler& scheduler_, Tegra::MaxwellDeviceMemoryManager& device_memory_, size_t image_count_, VkExtent2D output_size, VkDescriptorSetLayout layout, const PresentFilters& filters_)
-    : memory_allocator(memory_allocator_)
-    , scheduler(scheduler_)
-    , device_memory(device_memory_)
-    , filters(filters_)
-    , image_count(image_count_)
-{
+Layer::Layer(const Device& device, MemoryAllocator& memory_allocator_, Scheduler& scheduler_,
+             Tegra::MaxwellDeviceMemoryManager& device_memory_, size_t image_count_,
+             VkExtent2D output_size, VkDescriptorSetLayout layout, const PresentFilters& filters_)
+    : memory_allocator(memory_allocator_), scheduler(scheduler_), device_memory(device_memory_),
+      filters(filters_), image_count(image_count_) {
     CreateDescriptorPool(device);
     CreateDescriptorSets(device, layout);
     if (filters.get_scaling_filter() == Settings::ScalingFilter::Fsr) {
@@ -122,10 +120,12 @@ void Layer::ConfigureDraw(const Device& device, PresentPushConstants* out_push_c
     };
 
     if (auto* fsr = std::get_if<FSR>(&sr_filter)) {
-        source_image_view = fsr->Draw(device, scheduler, image_index, source_image, source_image_view, render_extent, crop_rect);
+        source_image_view = fsr->Draw(device, scheduler, image_index, source_image,
+                                      source_image_view, render_extent, crop_rect);
         crop_rect = {0, 0, 1, 1};
     } else if (auto* sgsr = std::get_if<SGSR>(&sr_filter)) {
-        source_image_view = sgsr->Draw(device, scheduler, image_index, source_image, source_image_view, render_extent, crop_rect);
+        source_image_view = sgsr->Draw(device, scheduler, image_index, source_image,
+                                       source_image_view, render_extent, crop_rect);
         crop_rect = {0, 0, 1, 1};
     }
 
@@ -191,7 +191,8 @@ void Layer::RefreshResources(const Device& device, const Tegra::FramebufferConfi
 }
 
 void Layer::SetAntiAliasPass(const Device& device) {
-    if (!std::holds_alternative<std::monostate>(anti_alias) && anti_alias_setting == filters.get_anti_aliasing())
+    if (!std::holds_alternative<std::monostate>(anti_alias) &&
+        anti_alias_setting == filters.get_anti_aliasing())
         return;
 
     anti_alias_setting = filters.get_anti_aliasing();
@@ -231,11 +232,15 @@ u64 Layer::GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer,
     return GetSizeInBytes(framebuffer) * image_index;
 }
 
-void Layer::SetMatrixData(const Device& device, PresentPushConstants& data, const Layout::FramebufferLayout& layout) const {
-    data.modelview_matrix = MakeOrthographicMatrix(f32(layout.width), static_cast<f32>(layout.height));
+void Layer::SetMatrixData(const Device& device, PresentPushConstants& data,
+                          const Layout::FramebufferLayout& layout) const {
+    data.modelview_matrix =
+        MakeOrthographicMatrix(f32(layout.width), static_cast<f32>(layout.height));
 }
 
-void Layer::SetVertexData(const Device& device, PresentPushConstants& data, const Layout::FramebufferLayout& layout, const Common::Rectangle<f32>& crop) const {
+void Layer::SetVertexData(const Device& device, PresentPushConstants& data,
+                          const Layout::FramebufferLayout& layout,
+                          const Common::Rectangle<f32>& crop) const {
     // Map the coordinates to the screen.
     const auto& screen = layout.screen;
     const auto x = f32(screen.left);
@@ -249,7 +254,8 @@ void Layer::SetVertexData(const Device& device, PresentPushConstants& data, cons
     data.vertices[3] = ScreenRectVertex(x + w, y + h, crop.right, crop.bottom);
 }
 
-void Layer::UpdateDescriptorSet(const Device& device, VkImageView image_view, VkSampler sampler, size_t image_index) {
+void Layer::UpdateDescriptorSet(const Device& device, VkImageView image_view, VkSampler sampler,
+                                size_t image_index) {
     const VkDescriptorImageInfo image_info{
         .sampler = sampler,
         .imageView = image_view,
@@ -290,7 +296,7 @@ void Layer::UpdateRawImage(const Tegra::FramebufferConfig& framebuffer, size_t i
         Tegra::Texture::UnswizzleTexture(
             mapped_span.subspan(image_offset, linear_size), std::span(host_ptr, tiled_size),
             bytes_per_pixel, framebuffer.width, framebuffer.height, 1, block_height_log2, 0);
-        buffer.Flush();  // Ensure host writes are visible before the GPU copy.
+        buffer.Flush(); // Ensure host writes are visible before the GPU copy.
     }
 
     const VkBufferImageCopy copy{

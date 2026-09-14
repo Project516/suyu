@@ -165,16 +165,15 @@ void ConfigureCpu::UpdateAvailabilityUi() {
     const QString nce_unavailable =
         tr("NCE requires a compatible ARM64 host build and is unavailable here.");
 
-    SetOptionEnabled(
-        backend_combobox,
-        FindComboboxIndex(Settings::EnumMetadata<Settings::CpuBackend>::Index(),
-                          static_cast<u32>(Settings::CpuBackend::Nce)),
+    SetOptionEnabled(backend_combobox,
+                     FindComboboxIndex(Settings::EnumMetadata<Settings::CpuBackend>::Index(),
+                                       static_cast<u32>(Settings::CpuBackend::Nce)),
 #ifdef HAS_NCE
-        true,
+                     true,
 #else
-        false,
+                      false,
 #endif
-        nce_unavailable);
+                     nce_unavailable);
 
     EnsureCurrentSelectionEnabled(backend_combobox);
 

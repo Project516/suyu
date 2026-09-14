@@ -413,7 +413,8 @@ Result IParentalControlService::GetPlayTimerSettingsOld(
     R_SUCCEED();
 }
 
-Result IParentalControlService::GetPlayTimerSettings(Out<PlayTimerSettings> out_play_timer_settings) {
+Result IParentalControlService::GetPlayTimerSettings(
+    Out<PlayTimerSettings> out_play_timer_settings) {
     LOG_WARNING(Service_PCTL, "(STUBBED) called");
     *out_play_timer_settings = raw_play_timer_settings;
     R_SUCCEED();

@@ -426,7 +426,7 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value, [[maybe_un
     static constexpr IR::Attribute cd7 = IR::Attribute::ClipDistance7;
 
     if (attr >= cd0 && attr <= cd7) {
-        const u32 idx = (u32) attr - (u32) cd0;
+        const u32 idx = (u32)attr - (u32)cd0;
         clip_distance_written.set(idx);
     }
     ctx.OpStore(output->pointer, value);
@@ -569,9 +569,12 @@ Id EmitInvocationInfo(EmitContext& ctx) {
     switch (ctx.stage) {
     case Stage::TessellationControl:
     case Stage::TessellationEval:
-        return ctx.OpShiftLeftLogical(ctx.U32[1], ctx.OpLoad(ctx.U32[1], ctx.patch_vertices_in), ctx.Const(16u));
+        return ctx.OpShiftLeftLogical(ctx.U32[1], ctx.OpLoad(ctx.U32[1], ctx.patch_vertices_in),
+                                      ctx.Const(16u));
     case Stage::Geometry:
-        return ctx.OpShiftLeftLogical(ctx.U32[1], ctx.Const(InputTopologyVertices::vertices(ctx.runtime_info.input_topology)), ctx.Const(16u));
+        return ctx.OpShiftLeftLogical(
+            ctx.U32[1], ctx.Const(InputTopologyVertices::vertices(ctx.runtime_info.input_topology)),
+            ctx.Const(16u));
     default:
         LOG_WARNING(Shader, "(STUBBED) called");
         return ctx.Const(0x00ff0000u);

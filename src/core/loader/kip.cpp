@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cstring>
-#include "common/settings.h"
 #include "common/random.h"
+#include "common/settings.h"
 #include "core/file_sys/kernel_executable.h"
 #include "core/file_sys/program_metadata.h"
 #include "core/hle/kernel/code_set.h"
@@ -77,7 +77,8 @@ AppLoader::LoadResult AppLoader_KIP::Load(Kernel::KProcess& process,
 
     Kernel::CodeSet codeset;
     codeset.memory.resize(PageAlignSize(kip->GetBSSOffset()) + kip->GetBSSSize());
-    const auto load_segment = [&codeset](Kernel::CodeSet::Segment& segment, std::span<const u8> data, u32 offset) {
+    const auto load_segment = [&codeset](Kernel::CodeSet::Segment& segment,
+                                         std::span<const u8> data, u32 offset) {
         segment.addr = offset;
         segment.offset = offset;
         segment.size = PageAlignSize(u32(data.size()));
@@ -89,11 +90,17 @@ AppLoader::LoadResult AppLoader_KIP::Load(Kernel::KProcess& process,
     codeset.DataSegment().size += kip->GetBSSSize();
 
     // TODO: this is bad form of ASLR, it sucks
-    std::uintptr_t aslr_offset = ((::Settings::values.rng_seed_enabled.GetValue()
-        ? ::Settings::values.rng_seed.GetValue() : Common::Random::Random64(0)) << 12) & 0xfff000;
+    std::uintptr_t aslr_offset =
+        ((::Settings::values.rng_seed_enabled.GetValue() ? ::Settings::values.rng_seed.GetValue()
+                                                         : Common::Random::Random64(0))
+         << 12) &
+        0xfff000;
 
     // Setup the process code layout
-    if (process.LoadFromMetadata(system.Kernel(), FileSys::ProgramMetadata::GetDefault(), codeset.memory.size(), 0, aslr_offset).IsError()) {
+    if (process
+            .LoadFromMetadata(system.Kernel(), FileSys::ProgramMetadata::GetDefault(),
+                              codeset.memory.size(), 0, aslr_offset)
+            .IsError()) {
         return {ResultStatus::ErrorNotInitialized, {}};
     }
     const VAddr base_address = GetInteger(process.GetEntryPoint());

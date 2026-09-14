@@ -28,7 +28,9 @@ typedef void* HANDLE;
 #endif
 // Stub the symbols bootmanager.cpp calls unconditionally
 #define MicroProfileOnThreadCreate(name) (void)(name)
-#define MicroProfileOnThreadExit() do {} while(0)
+#define MicroProfileOnThreadExit()                                                                 \
+    do {                                                                                           \
+    } while (0)
 #define MICROPROFILE_DECLARE(x)
 #define MICROPROFILE_DEFINE(x, a, b, c)
 #define MICROPROFILE_SCOPE(x)
@@ -38,7 +40,9 @@ typedef void* HANDLE;
 #define MicroProfileFlip(ctx)
 #define MicroProfileTogglePause()
 #define MicroProfileShutdown()
-#define MicroProfileSetForceEnable(x) do {} while(0)
+#define MicroProfileSetForceEnable(x)                                                              \
+    do {                                                                                           \
+    } while (0)
 #define MicroProfileForceEnable() 0
 #endif
 

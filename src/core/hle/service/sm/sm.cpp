@@ -230,7 +230,8 @@ void SM::RegisterServiceImpl(HLERequestContext& ctx, std::string name, u32 max_s
               max_session_count, is_light);
 
     Kernel::KServerPort* server_port{};
-    if (const auto result = service_manager.RegisterService(std::addressof(server_port), name, max_session_count, nullptr);
+    if (const auto result = service_manager.RegisterService(std::addressof(server_port), name,
+                                                            max_session_count, nullptr);
         result.IsError()) {
         LOG_ERROR(Service_SM, "failed to register service with error_code={:08X}", result.raw);
         IPC::ResponseBuilder rb{ctx, 2};
@@ -264,10 +265,8 @@ void SM::AtmosphereHasService(HLERequestContext& ctx) {
 }
 
 SM::SM(ServiceManager& service_manager_, Core::System& system_)
-    : ServiceFramework{system_, "sm:", 4}
-    , service_manager{service_manager_}
-    , kernel{system_.Kernel()}
-{
+    : ServiceFramework{system_, "sm:", 4},
+      service_manager{service_manager_}, kernel{system_.Kernel()} {
     RegisterHandlers({
         {0, &SM::Initialize, "Initialize"},
         {1, &SM::GetServiceCmif, "GetService"},

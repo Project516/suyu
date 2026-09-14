@@ -17,9 +17,9 @@
 
 #include "common/common_types.h"
 #include "core/file_sys/vfs/vfs_types.h"
-#include "network/network.h"
-#include "core/hle/service/os/event.h"
 #include "core/hle/service/kernel_helpers.h"
+#include "core/hle/service/os/event.h"
+#include "network/network.h"
 
 namespace Core::Frontend {
 class EmuWindow;
@@ -359,7 +359,8 @@ public:
     [[nodiscard]] Service::FileSystem::FileSystemController& GetFileSystemController();
     [[nodiscard]] const Service::FileSystem::FileSystemController& GetFileSystemController() const;
 
-    void RegisterContentProvider(FileSys::ContentProviderUnionSlot slot, FileSys::ContentProvider* provider);
+    void RegisterContentProvider(FileSys::ContentProviderUnionSlot slot,
+                                 FileSys::ContentProvider* provider);
 
     [[nodiscard]] const Reporter& GetReporter() const;
 

@@ -91,8 +91,7 @@ public:
 
     void SetVerifyOption(u32 option) override {
         skip_cert_verification = (option == 0);
-        LOG_WARNING(Service_SSL, "option={} skip_verification={}", option,
-                    skip_cert_verification);
+        LOG_WARNING(Service_SSL, "option={} skip_verification={}", option, skip_cert_verification);
     }
 
     Result DoHandshake() override {
@@ -181,9 +180,8 @@ public:
     }
 
     Result CallInitializeSecurityContext() {
-        unsigned long req = ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_CONFIDENTIALITY |
-                            ISC_REQ_INTEGRITY | ISC_REQ_REPLAY_DETECT |
-                            ISC_REQ_SEQUENCE_DETECT | ISC_REQ_STREAM |
+        unsigned long req = ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_CONFIDENTIALITY | ISC_REQ_INTEGRITY |
+                            ISC_REQ_REPLAY_DETECT | ISC_REQ_SEQUENCE_DETECT | ISC_REQ_STREAM |
                             ISC_REQ_USE_SUPPLIED_CREDS;
 
         if (skip_cert_verification) {

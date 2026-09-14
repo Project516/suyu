@@ -4,8 +4,8 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "core/hle/service/bcat/news/news_data_service.h"
 #include "core/hle/service/bcat/news/builtin_news.h"
+#include "core/hle/service/bcat/news/news_data_service.h"
 #include "core/hle/service/bcat/news/news_storage.h"
 #include "core/hle/service/cmif_serialization.h"
 

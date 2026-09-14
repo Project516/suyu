@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <bit>
 #include <limits>
 #include <optional>
-#include <bit>
 #include <ankerl/unordered_dense.h>
 #include <boost/container/small_vector.hpp>
 
@@ -66,10 +66,10 @@ TextureCache<P>::TextureCache(Runtime& runtime_, Tegra::MaxwellDeviceMemoryManag
         const s64 min_vacancy_critical = (2 * mem_threshold) / 10;
         expected_memory = static_cast<u64>(
             (std::max)((std::min)(device_local_memory - min_vacancy_expected, min_spacing_expected),
-                     DEFAULT_EXPECTED_MEMORY));
+                       DEFAULT_EXPECTED_MEMORY));
         critical_memory = static_cast<u64>(
             (std::max)((std::min)(device_local_memory - min_vacancy_critical, min_spacing_critical),
-                     DEFAULT_CRITICAL_MEMORY));
+                       DEFAULT_CRITICAL_MEMORY));
         minimum_memory = static_cast<u64>((device_local_memory - mem_threshold) / 2);
     } else {
         expected_memory = DEFAULT_EXPECTED_MEMORY + 512_MiB;
@@ -81,30 +81,64 @@ TextureCache<P>::TextureCache(Runtime& runtime_, Tegra::MaxwellDeviceMemoryManag
 
     if (gpu_unswizzle_enabled) {
         switch (Settings::values.gpu_unswizzle_texture_size.GetValue()) {
-            case Settings::GpuUnswizzleSize::VerySmall:    gpu_unswizzle_maxsize = 16_MiB; break;
-            case Settings::GpuUnswizzleSize::Small:        gpu_unswizzle_maxsize = 32_MiB; break;
-            case Settings::GpuUnswizzleSize::Normal:       gpu_unswizzle_maxsize = 128_MiB; break;
-            case Settings::GpuUnswizzleSize::Large:        gpu_unswizzle_maxsize = 256_MiB; break;
-            case Settings::GpuUnswizzleSize::VeryLarge:    gpu_unswizzle_maxsize = 512_MiB; break;
-            default:                                       gpu_unswizzle_maxsize = 128_MiB; break;
+        case Settings::GpuUnswizzleSize::VerySmall:
+            gpu_unswizzle_maxsize = 16_MiB;
+            break;
+        case Settings::GpuUnswizzleSize::Small:
+            gpu_unswizzle_maxsize = 32_MiB;
+            break;
+        case Settings::GpuUnswizzleSize::Normal:
+            gpu_unswizzle_maxsize = 128_MiB;
+            break;
+        case Settings::GpuUnswizzleSize::Large:
+            gpu_unswizzle_maxsize = 256_MiB;
+            break;
+        case Settings::GpuUnswizzleSize::VeryLarge:
+            gpu_unswizzle_maxsize = 512_MiB;
+            break;
+        default:
+            gpu_unswizzle_maxsize = 128_MiB;
+            break;
         }
 
         switch (Settings::values.gpu_unswizzle_stream_size.GetValue()) {
-            case Settings::GpuUnswizzle::VeryLow: swizzle_chunk_size = 4_MiB; break;
-            case Settings::GpuUnswizzle::Low:     swizzle_chunk_size = 8_MiB; break;
-            case Settings::GpuUnswizzle::Normal:  swizzle_chunk_size = 16_MiB; break;
-            case Settings::GpuUnswizzle::Medium:  swizzle_chunk_size = 32_MiB; break;
-            case Settings::GpuUnswizzle::High:    swizzle_chunk_size = 64_MiB; break;
-            default:                              swizzle_chunk_size = 16_MiB;
+        case Settings::GpuUnswizzle::VeryLow:
+            swizzle_chunk_size = 4_MiB;
+            break;
+        case Settings::GpuUnswizzle::Low:
+            swizzle_chunk_size = 8_MiB;
+            break;
+        case Settings::GpuUnswizzle::Normal:
+            swizzle_chunk_size = 16_MiB;
+            break;
+        case Settings::GpuUnswizzle::Medium:
+            swizzle_chunk_size = 32_MiB;
+            break;
+        case Settings::GpuUnswizzle::High:
+            swizzle_chunk_size = 64_MiB;
+            break;
+        default:
+            swizzle_chunk_size = 16_MiB;
         }
 
         switch (Settings::values.gpu_unswizzle_chunk_size.GetValue()) {
-            case Settings::GpuUnswizzleChunk::VeryLow: swizzle_slices_per_batch = 32; break;
-            case Settings::GpuUnswizzleChunk::Low:     swizzle_slices_per_batch = 64; break;
-            case Settings::GpuUnswizzleChunk::Normal:  swizzle_slices_per_batch = 128; break;
-            case Settings::GpuUnswizzleChunk::Medium:  swizzle_slices_per_batch = 256; break;
-            case Settings::GpuUnswizzleChunk::High:    swizzle_slices_per_batch = 512; break;
-            default:                                   swizzle_slices_per_batch = 128;
+        case Settings::GpuUnswizzleChunk::VeryLow:
+            swizzle_slices_per_batch = 32;
+            break;
+        case Settings::GpuUnswizzleChunk::Low:
+            swizzle_slices_per_batch = 64;
+            break;
+        case Settings::GpuUnswizzleChunk::Normal:
+            swizzle_slices_per_batch = 128;
+            break;
+        case Settings::GpuUnswizzleChunk::Medium:
+            swizzle_slices_per_batch = 256;
+            break;
+        case Settings::GpuUnswizzleChunk::High:
+            swizzle_slices_per_batch = 512;
+            break;
+        default:
+            swizzle_slices_per_batch = 128;
         }
     } else {
         gpu_unswizzle_maxsize = 0;
@@ -125,7 +159,8 @@ void TextureCache<P>::RunGarbageCollector() {
         ticks_to_destroy = aggressive_mode ? 10ULL : high_priority_mode ? 25ULL : 50ULL;
         num_iterations = aggressive_mode ? 40 : (high_priority_mode ? 20 : 10);
     };
-    const auto Cleanup = [this, &num_iterations, &high_priority_mode, &aggressive_mode](ImageId image_id) {
+    const auto Cleanup = [this, &num_iterations, &high_priority_mode,
+                          &aggressive_mode](ImageId image_id) {
         if (num_iterations == 0) {
             return true;
         }
@@ -134,8 +169,10 @@ void TextureCache<P>::RunGarbageCollector() {
         if (True(image.flags & ImageFlagBits::IsDecoding)) {
             return false;
         }
-        const bool must_download = image.IsSafeDownload() && False(image.flags & ImageFlagBits::BadOverlap);
-        if ((!aggressive_mode && True(image.flags & ImageFlagBits::CostlyLoad)) || (!high_priority_mode && must_download)) {
+        const bool must_download =
+            image.IsSafeDownload() && False(image.flags & ImageFlagBits::BadOverlap);
+        if ((!aggressive_mode && True(image.flags & ImageFlagBits::CostlyLoad)) ||
+            (!high_priority_mode && must_download)) {
             return false;
         }
         if (must_download) {
@@ -143,7 +180,8 @@ void TextureCache<P>::RunGarbageCollector() {
             const auto copies = FixSmallVectorADL(FullDownloadCopies(image.info));
             image.DownloadMemory(map, copies);
             runtime.Finish();
-            SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span, swizzle_data_buffer);
+            SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span,
+                         swizzle_data_buffer);
         }
         if (True(image.flags & ImageFlagBits::Tracked)) {
             UntrackImage(image, image_id);
@@ -216,7 +254,8 @@ void TextureCache<P>::MarkModification(ImageId id) noexcept {
 }
 
 template <class P>
-void TextureCache<P>::FillImageViews(std::span<ImageViewInOut> views, bool compute, bool blacklist) {
+void TextureCache<P>::FillImageViews(std::span<ImageViewInOut> views, bool compute,
+                                     bool blacklist) {
     bool has_blacklisted = false;
     do {
         has_deleted_images = false;
@@ -269,7 +308,8 @@ void TextureCache<P>::CheckFeedbackLoop(std::span<const ImageViewInOut> views) {
             {
                 bool is_continue = false;
                 for (size_t i = 0; i < 8; ++i)
-                    is_continue |= (rt_active_mask & (1u << i)) && view.id == render_targets.color_buffer_ids[i];
+                    is_continue |= (rt_active_mask & (1u << i)) &&
+                                   view.id == render_targets.color_buffer_ids[i];
                 if (is_continue)
                     continue;
             }
@@ -308,7 +348,8 @@ typename P::Sampler* TextureCache<P>::GetSampler(u32 index, bool compute) {
 
 template <class P>
 SamplerId TextureCache<P>::GetSamplerId(u32 index, bool compute) {
-    auto& table = compute ? channel_state->compute_sampler_table : channel_state->graphics_sampler_table;
+    auto& table =
+        compute ? channel_state->compute_sampler_table : channel_state->graphics_sampler_table;
     if (index > table.current_limit) {
         LOG_DEBUG(HW_GPU, "Invalid sampler index={}", index);
         return NULL_SAMPLER_ID;
@@ -340,21 +381,26 @@ void TextureCache<P>::SynchronizeDescriptors(bool compute) {
         const u32 tic_limit = kepler_compute->regs.tic.limit;
         const u32 tsc_limit = linked_tsc ? tic_limit : kepler_compute->regs.tsc.limit;
         bool bindings_changed = false;
-        if (channel_state->compute_sampler_table.Synchronize(kepler_compute->regs.tsc.Address(), tsc_limit))
+        if (channel_state->compute_sampler_table.Synchronize(kepler_compute->regs.tsc.Address(),
+                                                             tsc_limit))
             bindings_changed = true;
-        if (channel_state->compute_image_table.Synchronize(kepler_compute->regs.tic.Address(), tic_limit))
+        if (channel_state->compute_image_table.Synchronize(kepler_compute->regs.tic.Address(),
+                                                           tic_limit))
             bindings_changed = true;
         if (bindings_changed) {
             ++texture_bindings_serial;
         }
     } else {
-        const bool linked_tsc = maxwell3d->regs.sampler_binding == Tegra::Engines::Maxwell3D::Regs::SamplerBinding::ViaHeaderBinding;
+        const bool linked_tsc = maxwell3d->regs.sampler_binding ==
+                                Tegra::Engines::Maxwell3D::Regs::SamplerBinding::ViaHeaderBinding;
         const u32 tic_limit = maxwell3d->regs.tex_header.limit;
         const u32 tsc_limit = linked_tsc ? tic_limit : maxwell3d->regs.tex_sampler.limit;
         bool bindings_changed = false;
-        if (channel_state->graphics_sampler_table.Synchronize(maxwell3d->regs.tex_sampler.Address(), tsc_limit))
+        if (channel_state->graphics_sampler_table.Synchronize(maxwell3d->regs.tex_sampler.Address(),
+                                                              tsc_limit))
             bindings_changed = true;
-        if (channel_state->graphics_image_table.Synchronize(maxwell3d->regs.tex_header.Address(), tic_limit))
+        if (channel_state->graphics_image_table.Synchronize(maxwell3d->regs.tex_header.Address(),
+                                                            tic_limit))
             bindings_changed = true;
         if (bindings_changed) {
             ++texture_bindings_serial;
@@ -538,7 +584,8 @@ typename P::Framebuffer* TextureCache<P>::GetFramebuffer() {
 
 template <class P>
 ImageViewId TextureCache<P>::VisitImageView(u32 index, bool compute) {
-    auto& table = compute ? channel_state->compute_image_table : channel_state->graphics_image_table;
+    auto& table =
+        compute ? channel_state->compute_image_table : channel_state->graphics_image_table;
     if (index > table.current_limit) {
         LOG_DEBUG(HW_GPU, "Invalid image view index={}", index);
         return NULL_IMAGE_VIEW_ID;
@@ -573,10 +620,10 @@ FramebufferId TextureCache<P>::GetFramebufferId(const RenderTargets& key) {
         return framebuffer_id;
     }
     std::array<ImageView*, NUM_RT> color_buffers;
-    std::ranges::transform(key.color_buffer_ids, color_buffers.begin(), [this](ImageViewId id) {
-        return id ? &slot_image_views[id] : nullptr;
-    });
-    ImageView* const depth_buffer = key.depth_buffer_id ? &slot_image_views[key.depth_buffer_id] : nullptr;
+    std::ranges::transform(key.color_buffer_ids, color_buffers.begin(),
+                           [this](ImageViewId id) { return id ? &slot_image_views[id] : nullptr; });
+    ImageView* const depth_buffer =
+        key.depth_buffer_id ? &slot_image_views[key.depth_buffer_id] : nullptr;
     framebuffer_id = slot_framebuffers.insert(runtime, color_buffers, depth_buffer, key);
     return framebuffer_id;
 }
@@ -914,7 +961,8 @@ void TextureCache<P>::PopAsyncFlushes() {
                 download_buffer.offset -= Common::AlignUp(image.unswizzled_size_bytes, 64);
                 std::span<u8> download_span =
                     download_buffer.mapped_span.subspan(download_buffer.offset);
-                SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, download_span, swizzle_data_buffer);
+                SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, download_span,
+                             swizzle_data_buffer);
             } else {
                 const BufferDownload& buffer_info = slot_buffer_downloads[download_info.object_id];
                 std::span<u8> download_span =
@@ -962,7 +1010,8 @@ void TextureCache<P>::PopAsyncFlushes() {
             }
             const ImageBase& image = slot_images[download_info.object_id];
             const auto copies = FixSmallVectorADL(FullDownloadCopies(image.info));
-            SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, download_span, swizzle_data_buffer);
+            SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, download_span,
+                         swizzle_data_buffer);
             download_map.offset += image.unswizzled_size_bytes;
             download_span = download_span.subspan(image.unswizzled_size_bytes);
         }
@@ -1118,12 +1167,9 @@ void TextureCache<P>::RefreshContents(Image& image, ImageId image_id) {
 
     const bool gpu_unswizzle_enabled = Settings::values.gpu_unswizzle_enabled.GetValue();
 
-    if (gpu_unswizzle_enabled &&
-        IsPixelFormatBCn(image.info.format) &&
-        image.info.type == ImageType::e3D &&
-        image.info.resources.levels == 1 &&
-        image.info.resources.layers == 1 &&
-        MapSizeBytes(image) >= gpu_unswizzle_maxsize &&
+    if (gpu_unswizzle_enabled && IsPixelFormatBCn(image.info.format) &&
+        image.info.type == ImageType::e3D && image.info.resources.levels == 1 &&
+        image.info.resources.layers == 1 && MapSizeBytes(image) >= gpu_unswizzle_maxsize &&
         False(image.flags & ImageFlagBits::GpuModified)) {
 
         QueueAsyncUnswizzle(image, image_id);
@@ -1152,11 +1198,13 @@ void TextureCache<P>::UploadImageContents(Image& image, StagingBuffer& staging) 
         *gpu_memory, gpu_addr, image.guest_size_bytes, &swizzle_data_buffer);
     if (True(image.flags & ImageFlagBits::Converted)) {
         unswizzle_data_buffer.resize_destructive(image.unswizzled_size_bytes);
-        auto copies = FixSmallVectorADL(UnswizzleImage(*gpu_memory, gpu_addr, image.info, swizzle_data, unswizzle_data_buffer));
+        auto copies = FixSmallVectorADL(
+            UnswizzleImage(*gpu_memory, gpu_addr, image.info, swizzle_data, unswizzle_data_buffer));
         ConvertImage(unswizzle_data_buffer, image.info, mapped_span, copies);
         image.UploadMemory(staging, copies);
     } else {
-        const auto copies = FixSmallVectorADL(UnswizzleImage(*gpu_memory, gpu_addr, image.info, swizzle_data, mapped_span));
+        const auto copies = FixSmallVectorADL(
+            UnswizzleImage(*gpu_memory, gpu_addr, image.info, swizzle_data, mapped_span));
         image.UploadMemory(staging, copies);
     }
 }
@@ -1337,8 +1385,10 @@ void TextureCache<P>::QueueAsyncDecode(Image& image, ImageId image_id) {
     async_decodes.push_back(std::move(decode));
 
     std::vector<u8> local_unswizzle_data_buffer(image.unswizzled_size_bytes, 0);
-    Tegra::Memory::GpuGuestMemory<u8, Tegra::Memory::GuestMemoryFlags::UnsafeRead> swizzle_data(*gpu_memory, image.gpu_addr, image.guest_size_bytes, &swizzle_data_buffer);
-    auto copies = UnswizzleImage(*gpu_memory, image.gpu_addr, image.info, swizzle_data, local_unswizzle_data_buffer);
+    Tegra::Memory::GpuGuestMemory<u8, Tegra::Memory::GuestMemoryFlags::UnsafeRead> swizzle_data(
+        *gpu_memory, image.gpu_addr, image.guest_size_bytes, &swizzle_data_buffer);
+    auto copies = UnswizzleImage(*gpu_memory, image.gpu_addr, image.info, swizzle_data,
+                                 local_unswizzle_data_buffer);
     const size_t out_size = MapSizeBytes(image);
 
     auto func = [out_size, copies, info = image.info,
@@ -1364,10 +1414,7 @@ void TextureCache<P>::QueueAsyncUnswizzle(Image& image, ImageId image_id) {
 
     image.flags |= ImageFlagBits::IsDecoding;
 
-    unswizzle_queue.push_back({
-        .image_id = image_id,
-        .info = image.info
-    });
+    unswizzle_queue.push_back({.image_id = image_id, .info = image.info});
 }
 
 template <class P>
@@ -1401,7 +1448,7 @@ void TextureCache<P>::TickAsyncUnswizzle() {
         return;
     }
 
-    if(current_unswizzle_frame > 0) {
+    if (current_unswizzle_frame > 0) {
         current_unswizzle_frame--;
         return;
     }
@@ -1433,7 +1480,8 @@ void TextureCache<P>::TickAsyncUnswizzle() {
 
         if (remaining > swizzle_chunk_size) {
             copy_amount = (copy_amount / task.bytes_per_slice) * task.bytes_per_slice;
-            if (copy_amount == 0) copy_amount = task.bytes_per_slice;
+            if (copy_amount == 0)
+                copy_amount = task.bytes_per_slice;
         }
 
         gpu_memory->ReadBlock(image.gpu_addr + task.current_offset,
@@ -1453,13 +1501,15 @@ void TextureCache<P>::TickAsyncUnswizzle() {
 
         if (z_count > 0) {
             const auto uploads = FullUploadSwizzles(task.info);
-            runtime.AccelerateImageUpload(image, task.staging_buffer, FixSmallVectorADL(uploads), z_start, z_count);
+            runtime.AccelerateImageUpload(image, task.staging_buffer, FixSmallVectorADL(uploads),
+                                          z_start, z_count);
             task.last_submitted_offset += (static_cast<size_t>(z_count) * task.bytes_per_slice);
         }
     }
 
     // Check if complete
-    const u32 slices_submitted = static_cast<u32>(task.last_submitted_offset / task.bytes_per_slice);
+    const u32 slices_submitted =
+        static_cast<u32>(task.last_submitted_offset / task.bytes_per_slice);
     const bool all_slices_submitted = slices_submitted >= image.info.size.depth;
 
     if (is_final_batch && all_slices_submitted) {
@@ -1921,7 +1971,8 @@ void TextureCache<P>::TrimInactiveSamplers(size_t budget) {
             const SamplerId sampler_id = it->second;
             if (!sampler_id || sampler_id == CORRUPT_ID) {
                 it = channel_state->samplers.erase(it);
-            } else if (std::ranges::find(active_sampler_ids, sampler_id) != active_sampler_ids.end()) {
+            } else if (std::ranges::find(active_sampler_ids, sampler_id) !=
+                       active_sampler_ids.end()) {
                 ++it;
             } else {
                 slot_samplers.erase(sampler_id);
@@ -1933,7 +1984,10 @@ void TextureCache<P>::TrimInactiveSamplers(size_t budget) {
             }
         }
         if (removed != 0) {
-            LOG_WARNING(HW_GPU, "Sampler cache exceeded {} entries on this driver; reclaimed {} inactive samplers", budget, removed);
+            LOG_WARNING(
+                HW_GPU,
+                "Sampler cache exceeded {} entries on this driver; reclaimed {} inactive samplers",
+                budget, removed);
         }
     }
 }
@@ -2174,7 +2228,8 @@ ImageViewId TextureCache<P>::FindOrEmplaceImageView(ImageId image_id, const Imag
     if (const ImageViewId image_view_id = image.FindView(info); image_view_id) {
         return image_view_id;
     }
-    const ImageViewId image_view_id = slot_image_views.insert(runtime, info, image_id, image, slot_images);
+    const ImageViewId image_view_id =
+        slot_image_views.insert(runtime, info, image_id, image, slot_images);
     image.InsertView(info, image_view_id);
     return image_view_id;
 }
@@ -2228,7 +2283,9 @@ void TextureCache<P>::UnregisterImage(ImageId image_id) {
     image.flags &= ~ImageFlagBits::BadOverlap;
     lru_cache.Free(image.lru_index);
     const auto& clear_page_table =
-        [image_id](u64 page, ankerl::unordered_dense::map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>& selected_page_table) {
+        [image_id](u64 page,
+                   ankerl::unordered_dense::map<u64, std::vector<ImageId>,
+                                                Common::IdentityHash<u64>>& selected_page_table) {
             const auto page_it = selected_page_table.find(page);
             if (page_it == selected_page_table.end()) {
                 ASSERT_MSG(false, "Unregistering unregistered page=0x{:x}", page << YUZU_PAGEBITS);

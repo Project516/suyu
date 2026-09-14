@@ -8,9 +8,9 @@
 // https://cs.android.com/android/platform/superproject/+/android-5.1.1_r38:frameworks/native/libs/gui/BufferQueueProducer.cpp
 
 #include "common/assert.h"
+#include "common/cpu_features.h"
 #include "common/logging.h"
 #include "common/settings.h"
-#include "common/cpu_features.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/kernel/k_readable_event.h"
 #include "core/hle/kernel/kernel.h"
@@ -27,10 +27,8 @@ namespace Service::android {
 BufferQueueProducer::BufferQueueProducer(Service::KernelHelpers::ServiceContext& service_context_,
                                          std::shared_ptr<BufferQueueCore> buffer_queue_core_,
                                          Service::Nvidia::NvCore::NvMap& nvmap_)
-    : service_context{service_context_}, core{std::move(buffer_queue_core_)}
-    , slots(core->slots)
-    , nvmap(nvmap_)
-{
+    : service_context{service_context_}, core{std::move(buffer_queue_core_)}, slots(core->slots),
+      nvmap(nvmap_) {
     buffer_wait_event = service_context.CreateEvent("BufferQueue:WaitEvent");
 }
 
@@ -432,7 +430,8 @@ Status BufferQueueProducer::AttachBuffer(s32* out_slot,
     return return_flags;
 }
 
-Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input, QueueBufferOutput* output) {
+Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
+                                        QueueBufferOutput* output) {
     s64 timestamp{};
     bool is_auto_timestamp{};
     Common::Rectangle<s32> crop;
@@ -443,7 +442,8 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
     s32 swap_interval{};
     Fence fence{};
 
-    input.Deflate(&timestamp, &is_auto_timestamp, &crop, &scaling_mode, &transform, &sticky_transform_, &async, &swap_interval, &fence);
+    input.Deflate(&timestamp, &is_auto_timestamp, &crop, &scaling_mode, &transform,
+                  &sticky_transform_, &async, &swap_interval, &fence);
 
     switch (scaling_mode) {
     case NativeWindowScalingMode::Freeze:
@@ -498,7 +498,8 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
         item.is_auto_timestamp = is_auto_timestamp;
         item.crop = crop;
         item.transform = transform & ~NativeWindowTransform::InverseDisplay;
-        item.transform_to_display_inverse = (transform & NativeWindowTransform::InverseDisplay) != NativeWindowTransform::None;
+        item.transform_to_display_inverse =
+            (transform & NativeWindowTransform::InverseDisplay) != NativeWindowTransform::None;
         item.scaling_mode = static_cast<u32>(scaling_mode);
         item.fence = fence;
         item.is_droppable = core->dequeue_buffer_cannot_block || async;
@@ -530,13 +531,15 @@ Status BufferQueueProducer::QueueBuffer(s32 slot, const QueueBufferInput& input,
         }
 
         if (Settings::values.enable_buffer_history.GetValue()) {
-            core->PushHistory(core->frame_counter, slots[slot].queue_time, slots[slot].presentation_time, BufferState::Queued);
+            core->PushHistory(core->frame_counter, slots[slot].queue_time,
+                              slots[slot].presentation_time, BufferState::Queued);
         }
 
         core->buffer_has_been_queued = true;
         core->SignalDequeueCondition();
 
-        output->Inflate(core->default_width, core->default_height, core->transform_hint, static_cast<u32>(core->queue.size()));
+        output->Inflate(core->default_width, core->default_height, core->transform_hint,
+                        static_cast<u32>(core->queue.size()));
     }
 
     item.graphic_buffer.reset();
@@ -916,9 +919,8 @@ void BufferQueueProducer::Transact(u32 code, std::span<const u8> parcel_data,
             }
         }
 
-        std::sort(snapshot.begin(), snapshot.end(), [](auto& a, auto& b){
-            return a.frame_number > b.frame_number;
-        });
+        std::sort(snapshot.begin(), snapshot.end(),
+                  [](auto& a, auto& b) { return a.frame_number > b.frame_number; });
 
         const s32 limit = std::min(request, (s32)snapshot.size());
         parcel_out.Write(Status::NoError);

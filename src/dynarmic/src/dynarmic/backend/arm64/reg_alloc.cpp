@@ -10,18 +10,17 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <iterator>
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
-#include <bit>
 #include "common/common_types.h"
-
 #include "dynarmic/backend/arm64/abi.h"
 #include "dynarmic/backend/arm64/emit_context.h"
 #include "dynarmic/backend/arm64/fpsr_manager.h"
 #include "dynarmic/backend/arm64/verbose_debugging_output.h"
 #include "dynarmic/common/always_false.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::Backend::Arm64 {
 
@@ -325,7 +324,7 @@ int RegAlloc::RealizeReadImpl(const IR::Value& value) {
 
         switch (current_location->kind) {
         case HostLoc::Kind::Gpr:
-            UNREACHABLE(); //logic error
+            UNREACHABLE();  // logic error
         case HostLoc::Kind::Fpr:
             code.FMOV(oaknut::XReg{new_location_index}, oaknut::DReg{current_location->index});
             // ASSERT size fits
@@ -350,7 +349,7 @@ int RegAlloc::RealizeReadImpl(const IR::Value& value) {
             code.FMOV(oaknut::DReg{new_location_index}, oaknut::XReg{current_location->index});
             break;
         case HostLoc::Kind::Fpr:
-            UNREACHABLE(); //logic error
+            UNREACHABLE();  // logic error
         case HostLoc::Kind::Spill:
             code.LDR(oaknut::QReg{new_location_index}, SP, spill_offset + current_location->index * spill_slot_size);
             break;
@@ -363,7 +362,7 @@ int RegAlloc::RealizeReadImpl(const IR::Value& value) {
         fprs[new_location_index].realized = true;
         return new_location_index;
     } else if constexpr (required_kind == HostLoc::Kind::Flags) {
-        UNREACHABLE(); //A simple read from flags is likely a logic error
+        UNREACHABLE();  // A simple read from flags is likely a logic error
     } else {
         UNREACHABLE();
     }
@@ -479,7 +478,7 @@ void RegAlloc::ReadWriteFlags(Argument& read, IR::Inst* write) {
         code.LDR(Wscratch0, SP, spill_offset + current_location->index * spill_slot_size);
         code.MSR(oaknut::SystemReg::NZCV, Xscratch0);
     } else {
-        UNREACHABLE(); //ASSERT(false && "Invalid current location for flags");
+        UNREACHABLE();  // ASSERT(false && "Invalid current location for flags");
     }
 
     if (write) {
@@ -551,7 +550,7 @@ void RegAlloc::LoadCopyInto(const IR::Value& value, oaknut::QReg reg) {
         code.LDR(reg, SP, spill_offset + current_location->index * spill_slot_size);
         break;
     case HostLoc::Kind::Flags:
-        UNREACHABLE(); //ASSERT(false && "Moving from flags into fprs is not currently supported");
+        UNREACHABLE();  // ASSERT(false && "Moving from flags into fprs is not currently supported");
     }
 }
 

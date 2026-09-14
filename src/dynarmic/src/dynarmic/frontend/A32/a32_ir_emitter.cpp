@@ -9,7 +9,6 @@
 #include "dynarmic/frontend/A32/a32_ir_emitter.h"
 
 #include "common/assert.h"
-
 #include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/interface/A32/arch_version.h"
 #include "dynarmic/ir/opcodes.h"

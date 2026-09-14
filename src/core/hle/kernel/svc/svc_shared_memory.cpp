@@ -49,7 +49,8 @@ Result MapSharedMemory(Core::System& system, Handle shmem_handle, u64 address, u
     auto& page_table = process.GetPageTable();
 
     // Get the shared memory.
-    KScopedAutoObject shmem = process.GetHandleTable().GetObject<KSharedMemory>(system.Kernel(), shmem_handle);
+    KScopedAutoObject shmem =
+        process.GetHandleTable().GetObject<KSharedMemory>(system.Kernel(), shmem_handle);
     R_UNLESS(shmem.IsNotNull(), ResultInvalidHandle);
 
     // Verify that the mapping is in range.
@@ -79,7 +80,8 @@ Result UnmapSharedMemory(Core::System& system, Handle shmem_handle, u64 address,
     auto& page_table = process.GetPageTable();
 
     // Get the shared memory.
-    KScopedAutoObject shmem = process.GetHandleTable().GetObject<KSharedMemory>(system.Kernel(), shmem_handle);
+    KScopedAutoObject shmem =
+        process.GetHandleTable().GetObject<KSharedMemory>(system.Kernel(), shmem_handle);
     R_UNLESS(shmem.IsNotNull(), ResultInvalidHandle);
 
     // Verify that the mapping is in range.

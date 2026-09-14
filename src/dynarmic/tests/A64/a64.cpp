@@ -9,11 +9,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <oaknut/oaknut.hpp>
 
-#include "dynarmic/tests/A64/testenv.h"
-#include "dynarmic/tests/native/testenv.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/interface/exclusive_monitor.h"
 #include "dynarmic/interface/optimization_flags.h"
+#include "dynarmic/tests/A64/testenv.h"
+#include "dynarmic/tests/native/testenv.h"
 
 using namespace Dynarmic;
 using namespace oaknut::util;
@@ -1788,14 +1788,14 @@ TEST_CASE("A64: rand3", "[a64]") {
     memset(backing_memory, 0, memory_size);
 
     // cat rand2.txt | awk '{print "env.code_mem.emplace_back(0x"$2"); // "$0}' > rand2-out.tx
-    env.MemoryWrite32(100, 0x58028edd); // 0000000000000084  58028edd      ldr     x29, #20952
-    env.MemoryWrite32(104, 0x14000000); // 0000000000000ea4  14000000      b       #0
+    env.MemoryWrite32(100, 0x58028edd);  // 0000000000000084  58028edd      ldr     x29, #20952
+    env.MemoryWrite32(104, 0x14000000);  // 0000000000000ea4  14000000      b       #0
 
     jit.SetPC(100);
     jit.SetPstate(0xb0000000);
     jit.SetFpcr(0x01000000);
     env.ticks_left = 110;
-    //fmt::print("{}", jit.Disassemble());
+    // fmt::print("{}", jit.Disassemble());
     CheckedRun([&]() { jit.Run(); });
 }
 
@@ -2527,8 +2527,8 @@ TEST_CASE("A64: RBIT{16b}", "[a64]") {
     oaknut::VectorCodeGenerator code{env.code_mem, nullptr};
     code.RBIT(V1.B16(), V2.B16());
     code.RBIT(V2.B16(), V1.B16());
-    jit.SetVector(2, { 0xcafedead, 0xbabebeef });
-    jit.SetPC(0); // at _start
+    jit.SetVector(2, {0xcafedead, 0xbabebeef});
+    jit.SetPC(0);  // at _start
     env.ticks_left = env.code_mem.size();
     CheckedRun([&]() { jit.Run(); });
     REQUIRE(jit.GetVector(1)[0] == 0x537f7bb5);
@@ -2549,7 +2549,7 @@ TEST_CASE("A64: CLZ{X}", "[a64]") {
     jit.SetRegister(3, 0xfffffffffffffff0);
     jit.SetRegister(4, 0x0fffffff0ffffff0);
     jit.SetRegister(5, 0x07fffffeffeffef0);
-    jit.SetPC(0); // at _start
+    jit.SetPC(0);  // at _start
     env.ticks_left = env.code_mem.size();
     CheckedRun([&]() { jit.Run(); });
     REQUIRE(jit.GetRegister(0) == 0);
@@ -2569,7 +2569,7 @@ TEST_CASE("A64: CLZ{W}", "[a64]") {
     jit.SetRegister(3, 0xffff1110);
     jit.SetRegister(4, 0x0fff1110);
     jit.SetRegister(5, 0x07fffffe);
-    jit.SetPC(0); // at _start
+    jit.SetPC(0);  // at _start
     env.ticks_left = env.code_mem.size();
     CheckedRun([&]() { jit.Run(); });
     REQUIRE(jit.GetRegister(0) == 0);
@@ -2586,12 +2586,12 @@ TEST_CASE("A64: Manual Vector Min/Max U64 (Optimizer Test)", "[a64]") {
     oaknut::VectorCodeGenerator code{env.code_mem, nullptr};
 
     // MaxU64 pattern: (a > b) ? a : b
-    code.CMHI(V2.D2(), V0.D2(), V1.D2());   // V2 = Mask (A > B)
-    code.BSL(V2.B16(), V0.B16(), V1.B16()); // V2 = Result
+    code.CMHI(V2.D2(), V0.D2(), V1.D2());    // V2 = Mask (A > B)
+    code.BSL(V2.B16(), V0.B16(), V1.B16());  // V2 = Result
 
     // MinU64 pattern: (a > b) ? b : a
-    code.CMHI(V3.D2(), V0.D2(), V1.D2());   // V3 = Mask (A > B)
-    code.BSL(V3.B16(), V1.B16(), V0.B16()); // V3 = Result
+    code.CMHI(V3.D2(), V0.D2(), V1.D2());    // V3 = Mask (A > B)
+    code.BSL(V3.B16(), V1.B16(), V0.B16());  // V3 = Result
 
     jit.SetPC(0);
     jit.SetVector(0, {100, 20});
@@ -2612,12 +2612,12 @@ TEST_CASE("A64: Rounding", "[a64]") {
 
     oaknut::VectorCodeGenerator code{env.code_mem, nullptr};
 
-    code.FRINTN(V1.S4(), V0.S4()); // ToNearest_TieEven
-    code.FRINTM(V2.S4(), V0.S4()); // TowardsMinusInfinity
-    code.FRINTP(V3.S4(), V0.S4()); // TowardsPlusInfinity
-    code.FRINTZ(V4.S4(), V0.S4()); // TowardsZero
-    code.FRINTA(V5.S4(), V0.S4()); // ToNearest_TieAwayFromZero
-    code.FRINTX(V6.S4(), V0.S4()); // ToNearest_TieAwayFromZero
+    code.FRINTN(V1.S4(), V0.S4());  // ToNearest_TieEven
+    code.FRINTM(V2.S4(), V0.S4());  // TowardsMinusInfinity
+    code.FRINTP(V3.S4(), V0.S4());  // TowardsPlusInfinity
+    code.FRINTZ(V4.S4(), V0.S4());  // TowardsZero
+    code.FRINTA(V5.S4(), V0.S4());  // ToNearest_TieAwayFromZero
+    code.FRINTX(V6.S4(), V0.S4());  // ToNearest_TieAwayFromZero
 
     jit.SetPC(0);
     jit.SetVector(0, {0x4001e17c4001e17c, 0x4001e17c4001e17c});

@@ -18,7 +18,8 @@ class ThreadQueueImplForKLightLock final : public KThreadQueue {
 public:
     explicit ThreadQueueImplForKLightLock(KernelCore& kernel) : KThreadQueue(kernel) {}
 
-    void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
+    void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result,
+                    bool cancel_timer_task) override {
         // Remove the thread as a waiter from its owner.
         if (KThread* owner = waiting_thread->GetLockOwner(kernel); owner != nullptr) {
             owner->RemoveWaiter(kernel, waiting_thread);
@@ -35,7 +36,8 @@ void KLightLock::Lock() {
     const uintptr_t cur_thread = uintptr_t(GetCurrentThreadPointer(m_kernel));
     while (true) {
         uintptr_t old_tag = m_tag.load(std::memory_order_relaxed);
-        while (!m_tag.compare_exchange_weak(old_tag, (old_tag == 0) ? cur_thread : (old_tag | 1), std::memory_order_acquire))
+        while (!m_tag.compare_exchange_weak(old_tag, (old_tag == 0) ? cur_thread : (old_tag | 1),
+                                            std::memory_order_acquire))
             ;
         if (old_tag == 0 || this->LockSlowPath(old_tag | 1, cur_thread)) {
             break;
@@ -90,8 +92,8 @@ void KLightLock::UnlockSlowPath(uintptr_t _cur_thread) {
 
         // Get the next owner.
         bool has_waiters;
-        KThread* next_owner = owner_thread->RemoveKernelWaiterByKey(m_kernel,
-            std::addressof(has_waiters), uintptr_t(std::addressof(m_tag)));
+        KThread* next_owner = owner_thread->RemoveKernelWaiterByKey(
+            m_kernel, std::addressof(has_waiters), uintptr_t(std::addressof(m_tag)));
 
         // Pass the lock to the next owner.
         uintptr_t next_tag = 0;

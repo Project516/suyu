@@ -8,6 +8,7 @@
 #pragma once
 
 #include <bitset>
+
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "dynarmic/backend/x64/xbyak.h"
@@ -133,7 +134,7 @@ const std::bitset<32> any_gpr = BuildRegSet({
     HostLoc::R12,
     HostLoc::R13,
     HostLoc::R14,
-    //HostLoc::R15,
+    // HostLoc::R15,
 });
 
 // XMM0 is reserved for use by instructions that implicitly use it as an argument
@@ -141,8 +142,8 @@ const std::bitset<32> any_gpr = BuildRegSet({
 // XMM2 is also used by that (and other stuff)
 // Basically dont use either XMM0, XMM1 or XMM2 ever; they're left for the regsel
 const std::bitset<32> any_xmm = BuildRegSet({
-    //HostLoc::XMM1,
-    //HostLoc::XMM2,
+    // HostLoc::XMM1,
+    // HostLoc::XMM2,
     HostLoc::XMM3,
     HostLoc::XMM4,
     HostLoc::XMM5,

@@ -38,10 +38,9 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
     const std::string window_title = fmt::format("suyu {} | {}-{} (Vulkan)", Common::g_build_name,
                                                  Common::g_scm_branch, Common::g_scm_desc);
 #endif
-    render_window =
-        SDL_CreateWindow(window_title.c_str(),
-                         Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height,
-                         SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    render_window = SDL_CreateWindow(window_title.c_str(), Layout::ScreenUndocked::Width,
+                                     Layout::ScreenUndocked::Height,
+                                     SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
     if (render_window == nullptr) {
         LOG_CRITICAL(Frontend, "Failed to create SDL3 window: {}", SDL_GetError());
@@ -60,9 +59,11 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
 
 #if defined(SDL_PLATFORM_WIN32)
     window_info.type = Core::Frontend::WindowSystemType::Windows;
-    window_info.render_surface = SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+    window_info.render_surface =
+        SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
     if (!window_info.render_surface) {
-        LOG_CRITICAL(Frontend, "Failed to get Win32 HWND from window properties: {}", SDL_GetError());
+        LOG_CRITICAL(Frontend, "Failed to get Win32 HWND from window properties: {}",
+                     SDL_GetError());
         std::exit(EXIT_FAILURE);
     }
 #elif defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_FREEBSD)
@@ -70,16 +71,16 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
         const char* driver = SDL_GetCurrentVideoDriver();
         if (driver && SDL_strcmp(driver, "x11") == 0) {
             window_info.type = Core::Frontend::WindowSystemType::X11;
-            window_info.display_connection = SDL_GetPointerProperty(
-                props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
+            window_info.display_connection =
+                SDL_GetPointerProperty(props, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
             window_info.render_surface = reinterpret_cast<void*>(
                 SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
         } else if (driver && SDL_strcmp(driver, "wayland") == 0) {
             window_info.type = Core::Frontend::WindowSystemType::Wayland;
-            window_info.display_connection = SDL_GetPointerProperty(
-                props, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr);
-            window_info.render_surface = SDL_GetPointerProperty(
-                props, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
+            window_info.display_connection =
+                SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr);
+            window_info.render_surface =
+                SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
         } else {
             LOG_CRITICAL(Frontend, "Unsupported video driver: {}", driver ? driver : "(null)");
             std::exit(EXIT_FAILURE);
@@ -90,8 +91,8 @@ EmuWindow_SDL2_VK::EmuWindow_SDL2_VK(InputCommon::InputSubsystem* input_subsyste
     window_info.render_surface = SDL_Metal_CreateView(render_window);
 #elif defined(SDL_PLATFORM_ANDROID)
     window_info.type = Core::Frontend::WindowSystemType::Android;
-    window_info.render_surface = SDL_GetPointerProperty(
-        props, SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
+    window_info.render_surface =
+        SDL_GetPointerProperty(props, SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
 #else
     LOG_CRITICAL(Frontend, "Window manager subsystem not implemented for this platform");
     std::exit(EXIT_FAILURE);

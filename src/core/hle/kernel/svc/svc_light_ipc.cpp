@@ -16,9 +16,10 @@ namespace Kernel::Svc {
 
 Result SendSyncRequestLight(Core::System& system, Handle session_handle, u32* args) {
     // Get the light client session from its handle.
-    KScopedAutoObject session = GetCurrentProcess(system.Kernel())
-        .GetHandleTable()
-        .GetObject<KLightClientSession>(system.Kernel(), session_handle);
+    KScopedAutoObject session =
+        GetCurrentProcess(system.Kernel())
+            .GetHandleTable()
+            .GetObject<KLightClientSession>(system.Kernel(), session_handle);
     R_UNLESS(session.IsNotNull(), ResultInvalidHandle);
 
     // Send the request.
@@ -29,9 +30,10 @@ Result SendSyncRequestLight(Core::System& system, Handle session_handle, u32* ar
 
 Result ReplyAndReceiveLight(Core::System& system, Handle session_handle, u32* args) {
     // Get the light server session from its handle.
-    KScopedAutoObject session = GetCurrentProcess(system.Kernel())
-        .GetHandleTable()
-        .GetObject<KLightServerSession>(system.Kernel(), session_handle);
+    KScopedAutoObject session =
+        GetCurrentProcess(system.Kernel())
+            .GetHandleTable()
+            .GetObject<KLightServerSession>(system.Kernel(), session_handle);
     R_UNLESS(session.IsNotNull(), ResultInvalidHandle);
 
     // Handle the request.

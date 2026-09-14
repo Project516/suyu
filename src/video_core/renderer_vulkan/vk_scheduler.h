@@ -128,7 +128,8 @@ public:
         if (Settings::values.use_speed_limit.GetValue() && target_fps > 0.0) {
             auto now = std::chrono::steady_clock::now();
             if (last_target_fps != target_fps) {
-                frame_interval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(1.0 / target_fps));
+                frame_interval = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                    std::chrono::duration<double>(1.0 / target_fps));
                 max_frame_count = static_cast<int>(0.1 * target_fps);
                 last_target_fps = target_fps;
                 frame_counter = 0;

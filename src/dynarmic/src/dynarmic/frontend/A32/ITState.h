@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-
 #include "dynarmic/ir/cond.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::A32 {
 

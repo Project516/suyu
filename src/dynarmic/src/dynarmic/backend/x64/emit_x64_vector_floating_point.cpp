@@ -13,14 +13,11 @@
 #include <utility>
 
 #include "common/assert.h"
-#include "dynarmic/mcl/function_info.hpp"
-#include "dynarmic/mcl/integer_of_size.hpp"
-#include "dynarmic/backend/x64/xbyak.h"
-
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/constants.h"
 #include "dynarmic/backend/x64/emit_x64.h"
+#include "dynarmic/backend/x64/xbyak.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/info.h"
 #include "dynarmic/common/fp/op.h"
@@ -29,6 +26,8 @@
 #include "dynarmic/interface/optimization_flags.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
+#include "dynarmic/mcl/function_info.hpp"
+#include "dynarmic/mcl/integer_of_size.hpp"
 
 #define FCODE(NAME) [&](auto... args) { if (fsize == 32) code.NAME##s(args...); else code.NAME##d(args...); }
 #define ICODE(NAME) [&](auto... args) { if (fsize == 32) code.NAME##d(args...); else code.NAME##q(args...); }
@@ -1967,7 +1966,6 @@ void EmitX64::EmitFPVectorToHalf32(EmitContext& ctx, IR::Inst* inst) {
     }
 }
 
-
 // Assembly thunk; just remember not to specialise too much otherwise i-cache death!
 // template<typename FPT, size_t fbits, FP::RoundingMode rounding_mode>
 // static void EmitFPVectorToFixedThunk(VectorArray<FPT>& output, const VectorArray<FPT>& input, FP::FPCR fpcr, FP::FPSR& fpsr) {
@@ -2019,8 +2017,8 @@ void EmitFPVectorToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
             };
             if (fbits != 0) {
                 const u64 scale_factor = fsize == 32
-                    ? u64(fbits + 127) << 23
-                    : u64(fbits + 1023) << 52;
+                                           ? u64(fbits + 127) << 23
+                                           : u64(fbits + 1023) << 52;
                 FCODE(mulp)(src, GetVectorOf<fsize>(code, scale_factor));
             }
 
@@ -2091,9 +2089,10 @@ void EmitFPVectorToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
         ctx.reg_alloc.DefineValue(code, inst, src);
         return;
     }
-    auto const fpt_fn = [fbits, rounding]() -> void (*)(VectorArray<mcl::unsigned_integer_of_size<fsize>>& output, const VectorArray<mcl::unsigned_integer_of_size<fsize>>& input, FP::FPCR fpcr, FP::FPSR& fpsr) {
-#define ROUNDING_MODE_CASE(CASE, N) \
-    if (rounding == FP::RoundingMode::CASE && fsize >= (N) && fbits == (N)) return &EmitFPVectorToFixedThunk<fsize, unsigned_, FP::RoundingMode::CASE, N>;
+    auto const fpt_fn = [fbits, rounding]() -> void (*)(VectorArray<mcl::unsigned_integer_of_size<fsize>> & output, const VectorArray<mcl::unsigned_integer_of_size<fsize>>& input, FP::FPCR fpcr, FP::FPSR& fpsr) {
+#define ROUNDING_MODE_CASE(CASE, N)                                         \
+    if (rounding == FP::RoundingMode::CASE && fsize >= (N) && fbits == (N)) \
+        return &EmitFPVectorToFixedThunk<fsize, unsigned_, FP::RoundingMode::CASE, N>;
 #define ROUNDING_MODE_SWITCH(CASE) \
     ROUNDING_MODE_CASE(CASE, 0x00) \
     ROUNDING_MODE_CASE(CASE, 0x01) \
@@ -2159,7 +2158,6 @@ void EmitFPVectorToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
     ROUNDING_MODE_CASE(CASE, 0x3d) \
     ROUNDING_MODE_CASE(CASE, 0x3e) \
     ROUNDING_MODE_CASE(CASE, 0x3f)
-
         // FUCK YOU MSVC, FUCKING DEPTH CANT EVEN HANDLE 8+16+32+64 DEPTH OF A ELSE STATMENT YOU FUCKING STUPID
         // BURN MSVC BURN IT STUPID COMPILER CAN'T EVEN COMPILE THE MOST BASIC C++
         ROUNDING_MODE_SWITCH(ToNearest_TieEven)

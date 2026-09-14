@@ -106,18 +106,20 @@ template <>
 
 #else
 
-// Some architectures lack u128, there is no definitive way to check them all without even more macro magic
-// so let's just... do this; add your favourite arches once they get u128 support :)
-#if (defined(__clang__) || defined(__GNUC__)) && (defined(ARCHITECTURE_x86_64) || defined(ARCHITECTURE_arm64))
+// Some architectures lack u128, there is no definitive way to check them all without even more
+// macro magic so let's just... do this; add your favourite arches once they get u128 support :)
+#if (defined(__clang__) || defined(__GNUC__)) &&                                                   \
+    (defined(ARCHITECTURE_x86_64) || defined(ARCHITECTURE_arm64))
 using RealU128 = unsigned __int128;
-#   define SYNC_VAL_COMPARE_AND_SWAP(p, e, v) __sync_val_compare_and_swap(p, e, v)
-#   define SYNC_BOOL_COMPARE_AND_SWAP(p, e, v) __sync_bool_compare_and_swap(p, e, v)
-#   define U128_ZERO_INIT 0
+#define SYNC_VAL_COMPARE_AND_SWAP(p, e, v) __sync_val_compare_and_swap(p, e, v)
+#define SYNC_BOOL_COMPARE_AND_SWAP(p, e, v) __sync_bool_compare_and_swap(p, e, v)
+#define U128_ZERO_INIT 0
 #else
 using RealU128 = u128;
-#   define SYNC_VAL_COMPARE_AND_SWAP(p, e, v) ((*p == e) ? *p = v : *p)
-#   define SYNC_BOOL_COMPARE_AND_SWAP(p, e, v) ((*p == e) ? (void)(*p = v) : (void)0), true
-#   define U128_ZERO_INIT {}
+#define SYNC_VAL_COMPARE_AND_SWAP(p, e, v) ((*p == e) ? * p = v : *p)
+#define SYNC_BOOL_COMPARE_AND_SWAP(p, e, v) ((*p == e) ? (void)(*p = v) : (void)0), true
+#define U128_ZERO_INIT                                                                             \
+    {}
 #endif
 
 template <typename T>
@@ -139,7 +141,8 @@ template <typename T>
     return actual == expected;
 }
 
-[[nodiscard]] inline bool AtomicCompareAndSwap(u64* pointer, u128 value, u128 expected, u128& actual) {
+[[nodiscard]] inline bool AtomicCompareAndSwap(u64* pointer, u128 value, u128 expected,
+                                               u128& actual) {
     RealU128 value_a;
     RealU128 expected_a;
     RealU128 actual_a;

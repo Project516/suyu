@@ -141,8 +141,7 @@ public:
         pointer m_node{};
     };
 
-    explicit KPageGroup(KernelCore& kernel, KBlockInfoManager* m)
-        : m_manager{m} {}
+    explicit KPageGroup(KernelCore& kernel, KBlockInfoManager* m) : m_manager{m} {}
     ~KPageGroup() {
         this->Finalize();
     }
@@ -186,9 +185,7 @@ private:
 class KScopedPageGroup {
 public:
     explicit KScopedPageGroup(KernelCore& kernel, const KPageGroup* gp, bool not_first = true)
-        : m_kernel{kernel}
-        , m_pg{gp}
-    {
+        : m_kernel{kernel}, m_pg{gp} {
         if (m_pg) {
             if (not_first) {
                 m_pg->Open(kernel);

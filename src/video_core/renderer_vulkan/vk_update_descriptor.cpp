@@ -16,9 +16,7 @@
 
 namespace Vulkan {
 
-UpdateDescriptorQueue::UpdateDescriptorQueue(const Device& device_)
-    : device{device_}
-{
+UpdateDescriptorQueue::UpdateDescriptorQueue(const Device& device_) : device{device_} {
     payload_start = payload.data();
     payload_cursor = payload.data();
 }
@@ -40,8 +38,8 @@ void UpdateDescriptorQueue::Acquire(Scheduler& scheduler, size_t required_entrie
                reserve, FRAME_PAYLOAD_SIZE);
     const size_t used = static_cast<size_t>(std::distance(payload_start, payload_cursor));
     if (used + reserve >= FRAME_PAYLOAD_SIZE) {
-        LOG_WARNING(Render_Vulkan, "Payload overflow (used={}, reserve={}, capacity={})",
-                    used, reserve, FRAME_PAYLOAD_SIZE);
+        LOG_WARNING(Render_Vulkan, "Payload overflow (used={}, reserve={}, capacity={})", used,
+                    reserve, FRAME_PAYLOAD_SIZE);
         scheduler.WaitWorker();
         payload_cursor = payload_start;
     }

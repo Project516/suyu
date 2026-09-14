@@ -300,10 +300,12 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         if (uses_geometry_passthrough) {
             // Passthru REQUIRES the layout to be defined with a corresponding name, for our sanity
             // we will just use `gl_in[]`, if you don't the driver will complain with:
-            // 0(56) : error C7593: Builtin block member gl_Position not found in redeclaration of in gl_PerVertex
+            // 0(56) : error C7593: Builtin block member gl_Position not found in redeclaration of
+            // in gl_PerVertex
             header += "layout(passthrough)in gl_PerVertex{vec4 gl_Position;}gl_in[];";
             break;
-        } else if (program.is_geometry_passthrough && !profile.support_geometry_shader_passthrough) {
+        } else if (program.is_geometry_passthrough &&
+                   !profile.support_geometry_shader_passthrough) {
             LOG_WARNING(Shader_GLSL, "Passthrough geometry program used but not supported");
         }
         header += fmt::format(

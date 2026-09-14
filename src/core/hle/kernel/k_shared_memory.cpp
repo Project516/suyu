@@ -18,8 +18,8 @@ namespace Kernel {
 KSharedMemory::KSharedMemory(KernelCore& kernel) : KAutoObjectWithSlabHeapAndContainer{kernel} {}
 KSharedMemory::~KSharedMemory() = default;
 
-Result KSharedMemory::Initialize(KernelCore& kernel, Core::DeviceMemory& device_memory, KProcess* owner_process,
-                                 Svc::MemoryPermission owner_permission,
+Result KSharedMemory::Initialize(KernelCore& kernel, Core::DeviceMemory& device_memory,
+                                 KProcess* owner_process, Svc::MemoryPermission owner_permission,
                                  Svc::MemoryPermission user_permission, std::size_t size) {
     // Set members.
     m_owner_process = owner_process;
@@ -34,7 +34,8 @@ Result KSharedMemory::Initialize(KernelCore& kernel, Core::DeviceMemory& device_
     KResourceLimit* reslimit = kernel.GetSystemResourceLimit();
 
     // Reserve memory for ourselves.
-    KScopedResourceReservation memory_reservation(kernel, reslimit, LimitableResource::PhysicalMemoryMax, size);
+    KScopedResourceReservation memory_reservation(kernel, reslimit,
+                                                  LimitableResource::PhysicalMemoryMax, size);
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
     // Allocate the memory.
@@ -46,7 +47,8 @@ Result KSharedMemory::Initialize(KernelCore& kernel, Core::DeviceMemory& device_
     R_UNLESS(m_physical_address != 0, ResultOutOfMemory);
 
     //! Insert the result into our page group.
-    m_page_group.emplace(kernel, std::addressof(kernel.GetSystemSystemResource().GetBlockInfoManager()));
+    m_page_group.emplace(kernel,
+                         std::addressof(kernel.GetSystemSystemResource().GetBlockInfoManager()));
     m_page_group->AddBlock(m_physical_address, num_pages);
 
     // Commit our reservation.

@@ -9,8 +9,8 @@
 #include <catch2/benchmark/catch_benchmark.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <fmt/printf.h>
-#include "common/common_types.h"
 
+#include "common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/op/FPRSqrtEstimate.h"

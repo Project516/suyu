@@ -17,8 +17,7 @@
 namespace Service::HID {
 
 NpadAbstractBatteryHandler::NpadAbstractBatteryHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+    : kernel{kernel_} {}
 
 NpadAbstractBatteryHandler::~NpadAbstractBatteryHandler() = default;
 

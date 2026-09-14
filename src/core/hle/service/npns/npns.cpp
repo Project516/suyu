@@ -19,7 +19,8 @@ class INpnsSystem final : public ServiceFramework<INpnsSystem> {
 public:
     explicit INpnsSystem(Core::System& system_)
         : ServiceFramework{system_, "npns:s"}, service_context{system, "npns:s"},
-          get_receive_event{service_context}, get_request_change_state_cancel_event{service_context} {
+          get_receive_event{service_context}, get_request_change_state_cancel_event{
+                                                  service_context} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {1, nullptr, "ListenAll"},
@@ -148,7 +149,8 @@ private:
 class INpnsUser final : public ServiceFramework<INpnsUser> {
 public:
     explicit INpnsUser(Core::System& system_)
-        : ServiceFramework{system_, "npns:u"}, service_context{system, "npns:u"}, get_receive_event{service_context} {
+        : ServiceFramework{system_, "npns:u"}, service_context{system, "npns:u"},
+          get_receive_event{service_context} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {1, nullptr, "ListenAll"},
@@ -180,7 +182,8 @@ public:
 
 private:
     Result ListenToByName(InBuffer<BufferAttr_HipcMapAlias> name_buffer) {
-        const std::string name(reinterpret_cast<const char*>(name_buffer.data()), name_buffer.size());
+        const std::string name(reinterpret_cast<const char*>(name_buffer.data()),
+                               name_buffer.size());
         LOG_DEBUG(Service_NPNS, "called, name={}", name);
 
         // Store the name for future use if needed

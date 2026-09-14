@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <type_traits>
 #include <bitset>
 #include <initializer_list>
+#include <type_traits>
 #include "common/assert.h"
 
 // xbyak hates human beings
@@ -198,13 +198,11 @@ inline ABIFrameInfo ABI_CalculateFrameSize(std::bitset<32> regs, size_t rsp_alig
     rsp_alignment -= subtraction;
     subtraction += rsp_alignment & 0xF;
 
-    return ABIFrameInfo{
-        s32(subtraction),
-        s32(subtraction - xmm_base_subtraction)
-    };
+    return ABIFrameInfo{s32(subtraction), s32(subtraction - xmm_base_subtraction)};
 }
 
-inline size_t ABI_PushRegistersAndAdjustStack(Xbyak::CodeGenerator& code, std::bitset<32> regs, size_t rsp_alignment, size_t needed_frame_size = 0) {
+inline size_t ABI_PushRegistersAndAdjustStack(Xbyak::CodeGenerator& code, std::bitset<32> regs,
+                                              size_t rsp_alignment, size_t needed_frame_size = 0) {
     auto frame_info = ABI_CalculateFrameSize(regs, rsp_alignment, needed_frame_size);
 
     for (size_t i = 0; i < regs.size(); ++i) {
@@ -227,7 +225,8 @@ inline size_t ABI_PushRegistersAndAdjustStack(Xbyak::CodeGenerator& code, std::b
     return ABI_SHADOW_SPACE;
 }
 
-inline void ABI_PopRegistersAndAdjustStack(Xbyak::CodeGenerator& code, std::bitset<32> regs, size_t rsp_alignment, size_t needed_frame_size = 0) {
+inline void ABI_PopRegistersAndAdjustStack(Xbyak::CodeGenerator& code, std::bitset<32> regs,
+                                           size_t rsp_alignment, size_t needed_frame_size = 0) {
     auto frame_info = ABI_CalculateFrameSize(regs, rsp_alignment, needed_frame_size);
 
     for (size_t i = 0; i < regs.size(); ++i) {

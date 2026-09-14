@@ -43,7 +43,8 @@ void Manager::ReleaseSessionId(const size_t session_id) {
 Result Manager::LinkToManager() {
     std::scoped_lock l{mutex};
     if (!linked_to_manager) {
-        system.AudioCore().GetAudioManager().SetOutManager(std::bind(&Manager::BufferReleaseAndRegister, this));
+        system.AudioCore().GetAudioManager().SetOutManager(
+            std::bind(&Manager::BufferReleaseAndRegister, this));
         linked_to_manager = true;
     }
 

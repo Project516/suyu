@@ -9,15 +9,14 @@
 #include <limits>
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-#include "dynarmic/mcl/integer_of_size.hpp"
-
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/emit_x64.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/mcl/bit.hpp"
+#include "dynarmic/mcl/integer_of_size.hpp"
 
 namespace Dynarmic::Backend::X64 {
 

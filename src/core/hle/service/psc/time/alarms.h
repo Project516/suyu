@@ -74,7 +74,8 @@ struct Alarm : public Common::IntrusiveListBaseNode<Alarm> {
 
 class Alarms {
 public:
-    explicit Alarms(Core::System& system, StandardSteadyClockCore& steady_clock, PowerStateRequestManager& power_state_request_manager);
+    explicit Alarms(Core::System& system, StandardSteadyClockCore& steady_clock,
+                    PowerStateRequestManager& power_state_request_manager);
     ~Alarms();
 
     Kernel::KEvent& GetEvent() {

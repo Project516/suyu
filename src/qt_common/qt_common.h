@@ -57,7 +57,5 @@ const QString tr(const std::string& str);
  */
 [[nodiscard]] QPixmap CreateCirclePixmapFromColor(const QColor& color);
 
-
-
 std::filesystem::path GetSuyuCommand();
 } // namespace QtCommon

@@ -39,7 +39,7 @@ std::vector<Asset> Release::GetPlatformAssets() const {
     // FIXME: This is mildly inefficient.
     // Finds assets based on a hierarchy of regex search strings.
     const auto find_asset = [&found_assets, this](const std::string& name,
-                                                       const std::vector<std::string>& suffixes) {
+                                                  const std::vector<std::string>& suffixes) {
         for (const std::string& asset : assets) {
             for (const auto& suffix : suffixes) {
                 if (asset.ends_with(suffix)) {
@@ -64,7 +64,7 @@ std::vector<Asset> Release::GetPlatformAssets() const {
 #ifdef ARCHITECTURE_x86_64
 #ifdef _MSC_VER
     find_asset("Standard", {"amd64-msvc-standard.exe", "amd64-msvc-standard.zip"});
-#else // _MSC_VER
+#else  // _MSC_VER
     find_asset("Standard", {BUILD_ID "-gcc-standard.exe", BUILD_ID "-gcc-standard.zip"});
     find_asset("PGO", {BUILD_ID "-clang-pgo.exe", BUILD_ID "-clang-pgo.zip"});
 #endif // _MSC_VER
@@ -145,7 +145,8 @@ std::optional<Release> Release::FromJson(const nlohmann::json& json, const std::
 
     // This is our own "fake" API.
     if (json.contains("base")) {
-        const auto base = json.value("base", fmt::format("https://{}", Common::g_build_auto_update_api));
+        const auto base =
+            json.value("base", fmt::format("https://{}", Common::g_build_auto_update_api));
         rel.base_download_url = fmt::format("{}/{}", base, rel.tag);
 
         // Assets are easy :)
@@ -158,7 +159,7 @@ std::optional<Release> Release::FromJson(const nlohmann::json& json, const std::
         // assets are a bit more complex here. :(
         std::vector<std::string> assets;
         const nlohmann::json& arr = json["assets"];
-        for (const auto &obj : arr) {
+        for (const auto& obj : arr) {
             const auto url = obj.value("browser_download_url", std::string{});
             assets.emplace_back(url);
         }
@@ -268,7 +269,7 @@ std::vector<Release> GetReleases() {
 }
 
 std::optional<Release> GetLatestRelease() {
-    const auto releases_path =  Common::g_build_auto_update_api_path;
+    const auto releases_path = Common::g_build_auto_update_api_path;
     const auto url = fmt::format("https://{}", Common::g_build_auto_update_api);
 
     const auto body = MakeRequest(url, releases_path);

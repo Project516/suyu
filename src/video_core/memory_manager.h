@@ -18,9 +18,9 @@
 #include "common/range_map.h"
 #include "common/scratch_buffer.h"
 #include "common/virtual_buffer.h"
-#include "video_core/invalidation_accumulator.h"
 #include "video_core/cache_types.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
+#include "video_core/invalidation_accumulator.h"
 #include "video_core/pte_kind.h"
 
 namespace VideoCore {

@@ -109,21 +109,23 @@ inline CommandHeader BuildCommandHeader(BufferMethods method, u32 arg_count, Sub
 struct CommandList final {
     CommandList() = default;
     explicit CommandList(std::size_t size) : command_lists(size) {}
-    explicit CommandList(boost::container::small_vector<CommandHeader, 512>&& prefetch_command_list_)
+    explicit CommandList(
+        boost::container::small_vector<CommandHeader, 512>&& prefetch_command_list_)
         : prefetch_command_list{std::move(prefetch_command_list_)} {}
 
     boost::container::small_vector<CommandListHeader, 512> command_lists;
     boost::container::small_vector<CommandHeader, 512> prefetch_command_list;
 };
 
-/// @brief The DmaPusher class implements DMA submission to FIFOs, providing an area of memory that the
-/// emulated app fills with commands and tells PFIFO to process. The pushbuffers are then assembled
-/// into a "command stream" consisting of 32-bit words that make up "commands".
-/// See https://envytools.readthedocs.io/en/latest/hw/fifo/dma-pusher.html#fifo-dma-pusher for
-/// details on this implementation.
+/// @brief The DmaPusher class implements DMA submission to FIFOs, providing an area of memory that
+/// the emulated app fills with commands and tells PFIFO to process. The pushbuffers are then
+/// assembled into a "command stream" consisting of 32-bit words that make up "commands". See
+/// https://envytools.readthedocs.io/en/latest/hw/fifo/dma-pusher.html#fifo-dma-pusher for details
+/// on this implementation.
 class DmaPusher final {
 public:
-    explicit DmaPusher(Core::System& system_, MemoryManager& memory_manager_, Control::ChannelState& channel_state_);
+    explicit DmaPusher(Core::System& system_, MemoryManager& memory_manager_,
+                       Control::ChannelState& channel_state_);
     ~DmaPusher();
 
     void Push(CommandList&& entries) {
@@ -132,7 +134,8 @@ public:
 
     void DispatchCalls();
 
-    void BindSubchannel(Engines::EngineInterface* engine, u32 subchannel_id, Engines::EngineTypes engine_type) {
+    void BindSubchannel(Engines::EngineInterface* engine, u32 subchannel_id,
+                        Engines::EngineTypes engine_type) {
         subchannels[subchannel_id] = engine;
         subchannel_type[subchannel_id] = engine_type;
     }
@@ -151,7 +154,8 @@ private:
     void CallMultiMethod(const u32* base_start, u32 num_methods);
 
 public:
-    Common::ScratchBuffer<CommandHeader> command_headers; ///< Buffer for list of commands fetched at once
+    Common::ScratchBuffer<CommandHeader>
+        command_headers; ///< Buffer for list of commands fetched at once
 
     std::queue<CommandList> dma_pushbuffer; ///< Queue of command lists to be processed
     std::size_t dma_pushbuffer_subindex{};  ///< Index within a command list within the pushbuffer

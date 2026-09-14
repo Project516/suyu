@@ -18,9 +18,10 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/ranges.h>
-#include "dynarmic/mcl/bit.hpp"
-#include "common/common_types.h"
 
+#include "./A32/testenv.h"
+#include "./A64/testenv.h"
+#include "common/common_types.h"
 #include "dynarmic/common/llvm_disassemble.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/decoder/arm.h"
@@ -36,9 +37,7 @@
 #include "dynarmic/interface/A32/config.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/opt_passes.h"
-
-#include "./A32/testenv.h"
-#include "./A64/testenv.h"
+#include "dynarmic/mcl/bit.hpp"
 
 using namespace Dynarmic;
 

@@ -7,6 +7,7 @@
  */
 
 #include <bit>
+
 #include <oaknut/oaknut.hpp>
 
 #include "dynarmic/backend/arm64/a64_jitstate.h"

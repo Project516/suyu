@@ -10,10 +10,10 @@
 
 #include <initializer_list>
 
-#include "common/common_types.h"
-#include "common/assert.h"
 #include <oaknut/oaknut.hpp>
 
+#include "common/assert.h"
+#include "common/common_types.h"
 
 namespace Dynarmic::Backend::Arm64 {
 
@@ -33,7 +33,7 @@ constexpr auto Rscratch0() {
     } else if constexpr (bitsize == 64) {
         return Xscratch0;
     } else {
-        return Xscratch0; //UNREACHABLE();
+        return Xscratch0;  // UNREACHABLE();
     }
 }
 
@@ -44,7 +44,7 @@ constexpr auto Rscratch1() {
     } else if constexpr (bitsize == 64) {
         return Xscratch1;
     } else {
-        return Xscratch1; //UNREACHABLE();
+        return Xscratch1;  // UNREACHABLE();
     }
 }
 

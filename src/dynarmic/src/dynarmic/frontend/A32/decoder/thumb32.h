@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "common/common_types.h"
-
 #include "dynarmic/frontend/decoder/decoder_detail.h"
 #include "dynarmic/frontend/decoder/matcher.h"
 
@@ -24,10 +23,11 @@ using Thumb32Matcher = Decoder::Matcher<Visitor, u32>;
 
 template<typename V, typename ReturnType>
 static std::optional<ReturnType> DecodeThumb32(V& visitor, u32 instruction) {
-#define INST(fn, name, bitstring) \
-    do { \
+#define INST(fn, name, bitstring)                                                                                                          \
+    do {                                                                                                                                   \
         auto const [mask, expect] = DYNARMIC_DECODER_GET_MATCHER(Thumb32Matcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)); \
-        if ((instruction & mask) == expect) return DYNARMIC_DECODER_GET_MATCHER_FUNCTION(Thumb32Matcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)); \
+        if ((instruction & mask) == expect)                                                                                                \
+            return DYNARMIC_DECODER_GET_MATCHER_FUNCTION(Thumb32Matcher, fn, name, Decoder::detail::StringToArray<32>(bitstring));         \
     } while (0);
 #include "./thumb32.inc"
 #undef INST
@@ -37,7 +37,7 @@ static std::optional<ReturnType> DecodeThumb32(V& visitor, u32 instruction) {
 template<typename V>
 static std::optional<std::string_view> GetNameThumb32(u32 inst) noexcept {
     std::vector<std::pair<std::string_view, Thumb32Matcher<V>>> list = {
-#define INST(fn, name, bitstring) { name, DYNARMIC_DECODER_GET_MATCHER(Thumb32Matcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)) },
+#define INST(fn, name, bitstring) {name, DYNARMIC_DECODER_GET_MATCHER(Thumb32Matcher, fn, name, Decoder::detail::StringToArray<32>(bitstring))},
 #include "./thumb32.inc"
 #undef INST
     };

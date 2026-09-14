@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "common/android/android_common.h"
-#include "common/android/id_cache.h"
 #include "common/android/applets/web_browser.h"
+#include "common/android/id_cache.h"
 #include "common/logging.h"
 
 static jclass s_native_library_class = nullptr;
@@ -15,7 +15,8 @@ void InitJNI(JNIEnv* env) {
     const jclass local = env->FindClass("org/yuzu/yuzu_emu/NativeLibrary");
     s_native_library_class = static_cast<jclass>(env->NewGlobalRef(local));
     env->DeleteLocalRef(local);
-    s_open_external_url = env->GetStaticMethodID(s_native_library_class, "openExternalUrl", "(Ljava/lang/String;)V");
+    s_open_external_url =
+        env->GetStaticMethodID(s_native_library_class, "openExternalUrl", "(Ljava/lang/String;)V");
 }
 
 void CleanupJNI(JNIEnv* env) {
@@ -26,12 +27,15 @@ void CleanupJNI(JNIEnv* env) {
     s_open_external_url = nullptr;
 }
 
-void AndroidWebBrowser::OpenLocalWebPage(const std::string& local_url, ExtractROMFSCallback extract_romfs_callback, OpenWebPageCallback callback) const {
+void AndroidWebBrowser::OpenLocalWebPage(const std::string& local_url,
+                                         ExtractROMFSCallback extract_romfs_callback,
+                                         OpenWebPageCallback callback) const {
     LOG_WARNING(Frontend, "(STUBBED)");
     callback(Service::AM::Frontend::WebExitReason::WindowClosed, "");
 }
 
-void AndroidWebBrowser::OpenExternalWebPage(const std::string& external_url, OpenWebPageCallback callback) const {
+void AndroidWebBrowser::OpenExternalWebPage(const std::string& external_url,
+                                            OpenWebPageCallback callback) const {
     // do a dedicated thread, calling from the this thread crashed CPU fiber.
     Common::Android::RunJNIOnFiber<void>([&](JNIEnv* env) {
         if (env != nullptr && s_native_library_class != nullptr && s_open_external_url != nullptr) {

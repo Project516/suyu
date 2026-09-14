@@ -15,9 +15,10 @@ Applet::Applet(Core::System& system, std::unique_ptr<Process> process_, bool is_
       process(std::move(process_)), hid_registration(system, *process), overlay_event(context),
       gpu_error_detected_event(context), friend_invitation_storage_channel_event(context),
       notification_storage_channel_event(context), health_warning_disappeared_system_event(context),
-      unknown_event(context), acquired_sleep_lock_event(context), pop_from_general_channel_event(context),
-      library_applet_launchable_event(context), accumulated_suspended_tick_changed_event(context),
-      sleep_lock_event(context), state_changed_event(context) {
+      unknown_event(context), acquired_sleep_lock_event(context),
+      pop_from_general_channel_event(context), library_applet_launchable_event(context),
+      accumulated_suspended_tick_changed_event(context), sleep_lock_event(context),
+      state_changed_event(context) {
 
     aruid.pid = process->GetProcessId();
     program_id = process->GetProgramId();
@@ -29,7 +30,7 @@ void Applet::UpdateSuspensionStateLocked(bool force_message) {
     // Remove any forced resumption.
     lifecycle_manager.RemoveForceResumeIfPossible();
 
-	const bool update_requested_focus_state = lifecycle_manager.UpdateRequestedFocusState();
+    const bool update_requested_focus_state = lifecycle_manager.UpdateRequestedFocusState();
     const bool curr_activity_runnable = lifecycle_manager.IsRunnable();
     const bool prev_activity_runnable = is_activity_runnable;
     const bool was_changed = curr_activity_runnable != prev_activity_runnable;
@@ -39,7 +40,7 @@ void Applet::UpdateSuspensionStateLocked(bool force_message) {
             process->Suspend(false);
         } else {
             process->Suspend(true);
-			lifecycle_manager.RequestResumeNotification();
+            lifecycle_manager.RequestResumeNotification();
         }
 
         is_activity_runnable = curr_activity_runnable;
@@ -67,8 +68,11 @@ void Applet::SetInteractibleLocked(bool interactible) {
     const bool input_enabled = interactible && !exit_requested;
 
     if (applet_id == AppletId::OverlayDisplay || applet_id == AppletId::Application) {
-        LOG_DEBUG(Service_AM, "called, applet={} interactible={} exit_requested={} input_enabled={} overlay_in_foreground={}",
-                 static_cast<u32>(applet_id), interactible, exit_requested, input_enabled, overlay_in_foreground);
+        LOG_DEBUG(Service_AM,
+                  "called, applet={} interactible={} exit_requested={} input_enabled={} "
+                  "overlay_in_foreground={}",
+                  static_cast<u32>(applet_id), interactible, exit_requested, input_enabled,
+                  overlay_in_foreground);
     }
 
     hid_registration.EnableAppletToGetInput(input_enabled);

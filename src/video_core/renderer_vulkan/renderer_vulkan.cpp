@@ -14,8 +14,8 @@
 
 #include <fmt/ranges.h>
 
-#include "common/logging.h"
 #include <ranges>
+#include "common/logging.h"
 #include "common/scope_exit.h"
 #include "common/settings.h"
 #include "core/core_timing.h"
@@ -89,7 +89,8 @@ std::string BuildCommaSeparatedExtensions(
 
 } // Anonymous namespace
 
-Device CreateDevice(const vk::Instance& instance, const vk::InstanceDispatch& dld, VkSurfaceKHR surface) {
+Device CreateDevice(const vk::Instance& instance, const vk::InstanceDispatch& dld,
+                    VkSurfaceKHR surface) {
     const std::vector<VkPhysicalDevice> devices = instance.EnumeratePhysicalDevices();
     const u32 device_index = Settings::values.vulkan_device.GetValue();
     if (device_index >= u32(devices.size())) {
@@ -101,63 +102,38 @@ Device CreateDevice(const vk::Instance& instance, const vk::InstanceDispatch& dl
 }
 
 RendererVulkan::RendererVulkan(Core::Frontend::EmuWindow& emu_window,
-                               Tegra::MaxwellDeviceMemoryManager& device_memory_,
-                               Tegra::GPU& gpu_,
-                               std::unique_ptr<Core::Frontend::GraphicsContext> context_)
-try
-    : RendererBase(emu_window, std::move(context_))
-    , device_memory(device_memory_)
-    , gpu(gpu_)
-    , library(OpenLibrary(context.get()))
-    , dld()
-    // Create raw Vulkan instance first
-    , instance(CreateInstance(*library,
-                            dld,
-                            VK_API_VERSION_1_1,
-                            render_window.GetWindowInfo().type,
-                            Settings::values.renderer_debug.GetValue()))
-    // Create debug messenger if debug is enabled
-    , debug_messenger(Settings::values.renderer_debug ? CreateDebugUtilsCallback(instance)
-                                                    : vk::DebugUtilsMessenger{})
-    // Create surface
-    , surface(CreateSurface(instance, render_window.GetWindowInfo()))
-    , device(CreateDevice(instance, dld, *surface))
-    , memory_allocator(device)
-    , state_tracker()
-    , scheduler(device, state_tracker)
-    , swapchain(*surface,
-                device,
-                scheduler,
-               render_window.GetFramebufferLayout().width,
-               render_window.GetFramebufferLayout().height)
-    , present_manager(instance,
-                      render_window,
-                      device,
-                      memory_allocator,
-                      scheduler,
-                      swapchain,
-                      surface)
-    , blit_swapchain(device_memory,
-                   device,
-                   memory_allocator,
-                   present_manager,
-                   scheduler,
-                   PresentFiltersForDisplay)
-    , blit_capture(device_memory,
-                   device,
-                   memory_allocator,
-                   present_manager,
-                   scheduler,
-                   PresentFiltersForDisplay)
-    , blit_applet(device_memory,
-                  device,
-                  memory_allocator,
-                  present_manager,
-                  scheduler,
-                  PresentFiltersForAppletCapture)
-    , rasterizer(render_window, gpu, device_memory, device, memory_allocator, state_tracker, scheduler) {
+                               Tegra::MaxwellDeviceMemoryManager& device_memory_, Tegra::GPU& gpu_,
+                               std::unique_ptr<Core::Frontend::GraphicsContext> context_) try
+    : RendererBase(emu_window, std::move(context_)), device_memory(device_memory_), gpu(gpu_),
+      library(OpenLibrary(context.get())), dld()
+      // Create raw Vulkan instance first
+      ,
+      instance(CreateInstance(*library, dld, VK_API_VERSION_1_1, render_window.GetWindowInfo().type,
+                              Settings::values.renderer_debug.GetValue()))
+      // Create debug messenger if debug is enabled
+      ,
+      debug_messenger(Settings::values.renderer_debug ? CreateDebugUtilsCallback(instance)
+                                                      : vk::DebugUtilsMessenger{})
+      // Create surface
+      ,
+      surface(CreateSurface(instance, render_window.GetWindowInfo())),
+      device(CreateDevice(instance, dld, *surface)), memory_allocator(device), state_tracker(),
+      scheduler(device, state_tracker),
+      swapchain(*surface, device, scheduler, render_window.GetFramebufferLayout().width,
+                render_window.GetFramebufferLayout().height),
+      present_manager(instance, render_window, device, memory_allocator, scheduler, swapchain,
+                      surface),
+      blit_swapchain(device_memory, device, memory_allocator, present_manager, scheduler,
+                     PresentFiltersForDisplay),
+      blit_capture(device_memory, device, memory_allocator, present_manager, scheduler,
+                   PresentFiltersForDisplay),
+      blit_applet(device_memory, device, memory_allocator, present_manager, scheduler,
+                  PresentFiltersForAppletCapture),
+      rasterizer(render_window, gpu, device_memory, device, memory_allocator, state_tracker,
+                 scheduler) {
 
-    is_headless = (render_window.GetWindowInfo().type == Core::Frontend::WindowSystemType::Headless);
+    is_headless =
+        (render_window.GetWindowInfo().type == Core::Frontend::WindowSystemType::Headless);
 
     if (Settings::values.renderer_force_max_clock.GetValue() && device.ShouldBoostClocks()) {
         turbo_mode.emplace(instance, dld);
@@ -201,8 +177,8 @@ void RendererVulkan::Composite(std::span<const Tegra::FramebufferConfig> framebu
             headless_height = layout.height;
             const VkDeviceSize buffer_size = headless_width * headless_height * 4;
 
-            auto dst_buffer = RenderToBuffer(framebuffers, layout,
-                                             VK_FORMAT_B8G8R8A8_UNORM, buffer_size);
+            auto dst_buffer =
+                RenderToBuffer(framebuffers, layout, VK_FORMAT_B8G8R8A8_UNORM, buffer_size);
             headless_frame_data.resize(buffer_size);
             std::memcpy(headless_frame_data.data(), dst_buffer.Mapped().data(), buffer_size);
         }
@@ -327,13 +303,13 @@ void RendererVulkan::RenderAppletCaptureLayer(
     if (!applet_frame.image) {
         applet_frame.image = CreateWrappedImage(memory_allocator, CaptureImageSize, CaptureFormat);
         applet_frame.image_view = CreateWrappedImageView(device, applet_frame.image, CaptureFormat);
-        applet_frame.framebuffer = blit_applet.CreateFramebuffer(device,
-            VideoCore::Capture::Layout, *applet_frame.image_view, CaptureFormat);
+        applet_frame.framebuffer = blit_applet.CreateFramebuffer(
+            device, VideoCore::Capture::Layout, *applet_frame.image_view, CaptureFormat);
     }
 
     scheduler.RequestOutsideRenderPassOperationContext();
-    blit_applet.DrawToFrame(device, rasterizer, &applet_frame, framebuffers, VideoCore::Capture::Layout, 1,
-                            CaptureFormat);
+    blit_applet.DrawToFrame(device, rasterizer, &applet_frame, framebuffers,
+                            VideoCore::Capture::Layout, 1, CaptureFormat);
 }
 
 } // namespace Vulkan

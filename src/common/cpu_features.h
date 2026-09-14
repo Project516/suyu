@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <optional>
-#include <string_view>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <ratio>
+#include <string_view>
 
 #include "common/common_types.h"
 
@@ -96,7 +96,7 @@ public:
     u64 ns_rdtsc_factor;
     u64 us_rdtsc_factor;
     u64 ms_rdtsc_factor;
-    u64 rdtsc_ns_factor;      // fractional fixed-point: (rdtsc_freq % 10^9) * 2^64 / 10^9
+    u64 rdtsc_ns_factor;       // fractional fixed-point: (rdtsc_freq % 10^9) * 2^64 / 10^9
     u64 rdtsc_ns_ticks_per_ns; // integer: rdtsc_freq / 10^9
     u64 cntpct_rdtsc_factor;
     u64 gputick_rdtsc_factor;

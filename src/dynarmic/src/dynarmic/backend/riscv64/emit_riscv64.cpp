@@ -12,7 +12,6 @@
 
 #include <biscuit/assembler.hpp>
 #include <fmt/ostream.h>
-#include "dynarmic/mcl/bit.hpp"
 
 #include "dynarmic/backend/riscv64/a32_jitstate.h"
 #include "dynarmic/backend/riscv64/abi.h"
@@ -21,6 +20,7 @@
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::Backend::RV64 {
 

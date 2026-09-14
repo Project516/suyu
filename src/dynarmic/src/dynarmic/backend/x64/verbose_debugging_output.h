@@ -11,7 +11,6 @@
 #include <array>
 
 #include "common/common_types.h"
-
 #include "dynarmic/backend/x64/stack_layout.h"
 
 namespace Dynarmic::Backend::X64 {

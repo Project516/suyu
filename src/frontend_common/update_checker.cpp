@@ -19,7 +19,8 @@
 
 std::optional<Common::Net::Release> UpdateChecker::GetUpdate() {
     const auto latest = Common::Net::GetLatestRelease();
-    if (!latest) return std::nullopt;
+    if (!latest)
+        return std::nullopt;
 
     LOG_INFO(Frontend, "Received update {}", latest->title);
 

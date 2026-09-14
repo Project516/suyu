@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <QWidget>
-#include <QString>
 #include <memory>
+#include <QString>
+#include <QWidget>
 
 class QLabel;
 class QProgressBar;

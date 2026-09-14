@@ -9,13 +9,12 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#include <bit>
 #include <cstring>
 #include <vector>
 
 #include "common/assert.h"
-#include <bit>
 #include "common/common_types.h"
-
 #include "dynarmic/backend/exception_handler.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/common/safe_ops.h"

@@ -97,11 +97,9 @@ EmuWindow_SDL3_GL::EmuWindow_SDL3_GL(InputCommon::InputSubsystem* input_subsyste
 
     std::string window_title = fmt::format("{} | {}-{}", Common::g_build_fullname,
                                            Common::g_scm_branch, Common::g_scm_desc);
-    render_window =
-        SDL_CreateWindow(window_title.c_str(), Layout::ScreenUndocked::Width,
-                         Layout::ScreenUndocked::Height,
-                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
-                             SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    render_window = SDL_CreateWindow(
+        window_title.c_str(), Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height,
+        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
     if (render_window == nullptr) {
         LOG_CRITICAL(Frontend, "Failed to create SDL3 window! {}", SDL_GetError());

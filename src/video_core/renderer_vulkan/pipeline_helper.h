@@ -230,8 +230,10 @@ inline void PushImageDescriptors(TextureCache& texture_cache,
             ImageView& image_view{texture_cache.GetImageView(image_view_id)};
             VkImageView vk_image_view{image_view.Handle(desc.type)};
             if (vk_image_view == VK_NULL_HANDLE) {
-                const VkImageView null_image_view{texture_cache.GetImageView(VideoCommon::NULL_IMAGE_VIEW_ID).Handle(desc.type)};
-                if (null_image_view != VK_NULL_HANDLE) vk_image_view = null_image_view;
+                const VkImageView null_image_view{
+                    texture_cache.GetImageView(VideoCommon::NULL_IMAGE_VIEW_ID).Handle(desc.type)};
+                if (null_image_view != VK_NULL_HANDLE)
+                    vk_image_view = null_image_view;
             }
             const Sampler& sampler{texture_cache.GetSampler(sampler_id)};
             const bool use_fallback_sampler{sampler.HasAddedAnisotropy() &&

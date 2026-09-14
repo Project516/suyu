@@ -10,9 +10,9 @@
 #include <mutex>
 
 #include <boost/icl/interval_set.hpp>
+
 #include "common/assert.h"
 #include "common/common_types.h"
-
 #include "dynarmic/backend/arm64/a32_address_space.h"
 #include "dynarmic/backend/arm64/a32_core.h"
 #include "dynarmic/backend/arm64/a32_jitstate.h"

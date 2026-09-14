@@ -19,9 +19,9 @@
 #include <deque>
 #include <map>
 #include <span>
-#include <ankerl/unordered_dense.h>
 #include <variant>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 
 #include "shader_recompiler/frontend/ir/basic_block.h"
 #include "shader_recompiler/frontend/ir/opcodes.h"
@@ -53,7 +53,8 @@ struct IndirectBranchVariable {
     auto operator<=>(const IndirectBranchVariable&) const noexcept = default;
 };
 
-using Variant = std::variant<IR::Reg, IR::Pred, ZeroFlagTag, SignFlagTag, CarryFlagTag, OverflowFlagTag, GotoVariable, IndirectBranchVariable>;
+using Variant = std::variant<IR::Reg, IR::Pred, ZeroFlagTag, SignFlagTag, CarryFlagTag,
+                             OverflowFlagTag, GotoVariable, IndirectBranchVariable>;
 // TODO: majority of these require stable iterators, test with XC beforehand
 using ValueMap = std::unordered_map<IR::Block*, IR::Value>;
 

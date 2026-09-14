@@ -148,8 +148,9 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
               "Higher resolutions require more VRAM and bandwidth.\n"
               "Options lower than 1X can cause artifacts."));
     INSERT(Settings, scaling_filter, tr("Window Adapting Filter:"), QString());
-    INSERT(Settings, fsr_sharpening_slider, tr("FSR Sharpness:"),
-           tr("Determines how sharpened the image will look using FSR's or SGSR's dynamic contrast."));
+    INSERT(
+        Settings, fsr_sharpening_slider, tr("FSR Sharpness:"),
+        tr("Determines how sharpened the image will look using FSR's or SGSR's dynamic contrast."));
     INSERT(Settings, anti_aliasing, tr("Anti-Aliasing Method:"),
            tr("The anti-aliasing method to use.\nSMAA offers the best quality.\nFXAA "
               "can produce a more stable picture in lower resolutions."));
@@ -220,14 +221,21 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
            tr("Controls the quality of texture rendering at oblique angles.\nSafe to set at 16x on "
               "most GPUs."));
     INSERT(Settings, gpu_accuracy, tr("GPU Mode:"),
-           tr("Controls the GPU emulation mode.\nMost games render fine with Fast, but Accurate is still "
+           tr("Controls the GPU emulation mode.\nMost games render fine with Fast, but Accurate is "
+              "still "
               "required for some.\nParticles tend to only render correctly with Accurate mode."));
     INSERT(Settings, dma_accuracy, tr("DMA Accuracy:"),
-           tr("Controls the DMA read mode.\nUnsafe is faster, while Safe is more stable and can fix issues in some games.\nDefault follows the GPU Accuracy setting."));
+           tr("Controls the DMA read mode.\nUnsafe is faster, while Safe is more stable and can "
+              "fix issues in some games.\nDefault follows the GPU Accuracy setting."));
     INSERT(Settings, gpu_fence_behavior, tr("GPU Fence Behavior:"),
-           tr("Controls the GPU fence synchronization behavior.\nImmediate is the fastest option, but can introduce some issues.\nBalanced offers better compatibility and may fix issues in some games.\nAccurate further improves compatibility at the cost of some performance.\nStrict is the slowest option, but can fix issues that require stricter synchronization.\nDefault follows the GPU Accuracy setting."));
+           tr("Controls the GPU fence synchronization behavior.\nImmediate is the fastest option, "
+              "but can introduce some issues.\nBalanced offers better compatibility and may fix "
+              "issues in some games.\nAccurate further improves compatibility at the cost of some "
+              "performance.\nStrict is the slowest option, but can fix issues that require "
+              "stricter synchronization.\nDefault follows the GPU Accuracy setting."));
     INSERT(Settings, enable_gpu_buffer_readback, tr("Enable GPU buffer readback"),
-           tr("Preserves GPU-modified data by reading it back before uploading.\nSome games require this to render certain effects properly."));
+           tr("Preserves GPU-modified data by reading it back before uploading.\nSome games "
+              "require this to render certain effects properly."));
     INSERT(Settings, use_asynchronous_shaders, tr("Enable asynchronous shader compilation"),
            tr("May reduce shader stutter."));
     INSERT(Settings, fast_gpu_time, tr("Fast GPU Time"),
@@ -485,24 +493,25 @@ std::unique_ptr<ComboboxTranslationMap> ComboboxEnumeration(QObject* parent) {
              PAIR(ResolutionSetup, Res7X, tr("7X (5040p/7560p)")),
              PAIR(ResolutionSetup, Res8X, tr("8X (5760p/8640p)")),
          }});
-    translations->insert({Settings::EnumMetadata<Settings::ScalingFilter>::Index(),
-                          {
-                              PAIR(ScalingFilter, NearestNeighbor, tr("Nearest Neighbor")),
-                              PAIR(ScalingFilter, Bilinear, tr("Bilinear")),
-                              PAIR(ScalingFilter, Bicubic, tr("Bicubic")),
-                              PAIR(ScalingFilter, Gaussian, tr("Gaussian")),
-                              PAIR(ScalingFilter, Lanczos, tr("Lanczos")),
-                              PAIR(ScalingFilter, ScaleForce, tr("ScaleForce")),
-                              PAIR(ScalingFilter, Fsr, tr("AMD FidelityFX Super Resolution")),
-                              PAIR(ScalingFilter, Area, tr("Area")),
-                              PAIR(ScalingFilter, Mmpx, tr("MMPX")),
-                              PAIR(ScalingFilter, ZeroTangent, tr("Zero-Tangent")),
-                              PAIR(ScalingFilter, BSpline, tr("B-Spline")),
-                              PAIR(ScalingFilter, Mitchell, tr("Mitchell")),
-                              PAIR(ScalingFilter, Spline1, tr("Spline-1")),
-                              PAIR(ScalingFilter, Sgsr, tr("Snapdragon Game Super Resolution")),
-                              PAIR(ScalingFilter, SgsrEdge, tr("Snapdragon Game Super Resolution EdgeDir")),
-                          }});
+    translations->insert(
+        {Settings::EnumMetadata<Settings::ScalingFilter>::Index(),
+         {
+             PAIR(ScalingFilter, NearestNeighbor, tr("Nearest Neighbor")),
+             PAIR(ScalingFilter, Bilinear, tr("Bilinear")),
+             PAIR(ScalingFilter, Bicubic, tr("Bicubic")),
+             PAIR(ScalingFilter, Gaussian, tr("Gaussian")),
+             PAIR(ScalingFilter, Lanczos, tr("Lanczos")),
+             PAIR(ScalingFilter, ScaleForce, tr("ScaleForce")),
+             PAIR(ScalingFilter, Fsr, tr("AMD FidelityFX Super Resolution")),
+             PAIR(ScalingFilter, Area, tr("Area")),
+             PAIR(ScalingFilter, Mmpx, tr("MMPX")),
+             PAIR(ScalingFilter, ZeroTangent, tr("Zero-Tangent")),
+             PAIR(ScalingFilter, BSpline, tr("B-Spline")),
+             PAIR(ScalingFilter, Mitchell, tr("Mitchell")),
+             PAIR(ScalingFilter, Spline1, tr("Spline-1")),
+             PAIR(ScalingFilter, Sgsr, tr("Snapdragon Game Super Resolution")),
+             PAIR(ScalingFilter, SgsrEdge, tr("Snapdragon Game Super Resolution EdgeDir")),
+         }});
     translations->insert({Settings::EnumMetadata<Settings::AntiAliasing>::Index(),
                           {
                               PAIR(AntiAliasing, None, tr("None")),

@@ -24,9 +24,7 @@ public:
     //     "with the current allocator");
 
     constexpr VirtualBuffer() = default;
-    explicit VirtualBuffer(std::size_t count) noexcept
-        : alloc_size{count * sizeof(T)}
-    {
+    explicit VirtualBuffer(std::size_t count) noexcept : alloc_size{count * sizeof(T)} {
         base_ptr = reinterpret_cast<T*>(AllocateMemoryPages(alloc_size));
     }
 
@@ -38,9 +36,8 @@ public:
     VirtualBuffer& operator=(const VirtualBuffer&) = delete;
 
     VirtualBuffer(VirtualBuffer&& other) noexcept
-        : alloc_size{std::exchange(other.alloc_size, 0)}
-        , base_ptr{std::exchange(other.base_ptr, nullptr)}
-    {}
+        : alloc_size{std::exchange(other.alloc_size, 0)}, base_ptr{std::exchange(other.base_ptr,
+                                                                                 nullptr)} {}
 
     VirtualBuffer& operator=(VirtualBuffer&& other) noexcept {
         alloc_size = std::exchange(other.alloc_size, 0);

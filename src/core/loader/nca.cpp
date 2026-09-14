@@ -9,6 +9,7 @@
 #include <openssl/evp.h>
 
 #include "common/hex_util.h"
+#include "common/literals.h"
 #include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/file_sys/content_archive.h"
@@ -19,7 +20,6 @@
 #include "core/hle/service/filesystem/filesystem.h"
 #include "core/loader/deconstructed_rom_directory.h"
 #include "core/loader/nca.h"
-#include "common/literals.h"
 
 namespace Loader {
 
@@ -109,7 +109,8 @@ AppLoader_NCA::LoadResult AppLoader_NCA::Load(Kernel::KProcess& process, Core::S
         return load_result;
     }
 
-    LOG_INFO(Loader, "Set pointer buffer size to {:#x} bytes for ProgramID {:#018x} (Heap size: {:#x})",
+    LOG_INFO(Loader,
+             "Set pointer buffer size to {:#x} bytes for ProgramID {:#018x} (Heap size: {:#x})",
              process.GetPointerBufferSize(), nca->GetTitleId(), heap_size);
 
     // Register the process in the file system controller

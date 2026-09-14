@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
-#include <vector>
 #include <optional>
 #include <string>
+#include <vector>
 
 #define STBI_ONLY_JPEG 1
 #include <stb_image.h>
@@ -20,12 +20,12 @@
 #include "core/file_sys/vfs/vfs.h"
 #include "core/hle/kernel/k_transfer_memory.h"
 #include "core/hle/service/cmif_serialization.h"
+#include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/ns/language.h"
-#include "core/hle/service/ns/ns_types.h"
 #include "core/hle/service/ns/ns_results.h"
+#include "core/hle/service/ns/ns_types.h"
 #include "core/hle/service/ns/read_only_application_control_data_interface.h"
 #include "core/hle/service/set/settings_server.h"
-#include "core/hle/service/kernel_helpers.h"
 
 namespace Service::NS {
 
@@ -72,10 +72,10 @@ void SanitizeJPEGImageSize(std::vector<u8>& image) {
 
 } // namespace
 
-
 // IAsyncValue implementation for ListApplicationTitle
 // https://switchbrew.org/wiki/NS_services#ListApplicationTitle
-class IAsyncValueForListApplicationTitle final : public ServiceFramework<IAsyncValueForListApplicationTitle> {
+class IAsyncValueForListApplicationTitle final
+    : public ServiceFramework<IAsyncValueForListApplicationTitle> {
 public:
     explicit IAsyncValueForListApplicationTitle(Core::System& system_, s32 offset, s32 size)
         : ServiceFramework{system_, "IAsyncValue"}, service_context{system_, "IAsyncValue"},
@@ -248,7 +248,8 @@ Result IReadOnlyApplicationControlDataInterface::ConvertApplicationLanguageToLan
 Result IReadOnlyApplicationControlDataInterface::GetApplicationControlData2(
     OutBuffer<BufferAttr_HipcMapAlias> out_buffer, Out<u64> out_total_size,
     ApplicationControlSource application_control_source, u8 flag1, u8 flag2, u64 application_id) {
-    LOG_INFO(Service_NS, "called with control_source={}, flags=({:02X},{:02X}), application_id={:016X}",
+    LOG_INFO(Service_NS,
+             "called with control_source={}, flags=({:02X},{:02X}), application_id={:016X}",
              application_control_source, flag1, flag2, application_id);
 
     const FileSys::PatchManager pm{application_id, system.GetFileSystemController(),
@@ -266,7 +267,8 @@ Result IReadOnlyApplicationControlDataInterface::GetApplicationControlData2(
 
     if (control.first != nullptr) {
         const auto bytes = control.first->GetRawBytes();
-        const auto copy_len = (std::min)(static_cast<size_t>(bytes.size()), static_cast<size_t>(nacp_size));
+        const auto copy_len =
+            (std::min)(static_cast<size_t>(bytes.size()), static_cast<size_t>(nacp_size));
         std::memcpy(out_buffer.data(), bytes.data(), copy_len);
         if (copy_len < nacp_size) {
             std::memset(out_buffer.data() + copy_len, 0, nacp_size - copy_len);
@@ -310,7 +312,6 @@ Result IReadOnlyApplicationControlDataInterface::GetApplicationControlData2(
     *out_total_size = (static_cast<u64>(total_available) << 32) | static_cast<u64>(flag1);
     R_SUCCEED();
 }
-
 
 void IReadOnlyApplicationControlDataInterface::ListApplicationTitle(HLERequestContext& ctx) {
     /*
@@ -366,9 +367,11 @@ void IReadOnlyApplicationControlDataInterface::ListApplicationTitle(HLERequestCo
 }
 
 Result IReadOnlyApplicationControlDataInterface::GetApplicationControlData3(
-   OutBuffer<BufferAttr_HipcMapAlias> out_buffer, Out<u32> out_flags_a, Out<u32> out_flags_b,
-   Out<u32> out_actual_size, ApplicationControlSource application_control_source, u8 flag1, u8 flag2, u64 application_id) {
-    LOG_INFO(Service_NS, "called with control_source={}, flags=({:02X},{:02X}), application_id={:016X}",
+    OutBuffer<BufferAttr_HipcMapAlias> out_buffer, Out<u32> out_flags_a, Out<u32> out_flags_b,
+    Out<u32> out_actual_size, ApplicationControlSource application_control_source, u8 flag1,
+    u8 flag2, u64 application_id) {
+    LOG_INFO(Service_NS,
+             "called with control_source={}, flags=({:02X},{:02X}), application_id={:016X}",
              application_control_source, flag1, flag2, application_id);
 
     const FileSys::PatchManager pm{application_id, system.GetFileSystemController(),
@@ -386,7 +389,8 @@ Result IReadOnlyApplicationControlDataInterface::GetApplicationControlData3(
 
     if (control.first != nullptr) {
         const auto bytes = control.first->GetRawBytes();
-        const auto copy_len = (std::min)(static_cast<size_t>(bytes.size()), static_cast<size_t>(nacp_size));
+        const auto copy_len =
+            (std::min)(static_cast<size_t>(bytes.size()), static_cast<size_t>(nacp_size));
         std::memcpy(out_buffer.data(), bytes.data(), copy_len);
         if (copy_len < nacp_size) {
             std::memset(out_buffer.data() + copy_len, 0, nacp_size - copy_len);

@@ -13,7 +13,8 @@
 namespace Dynarmic::A64 {
 
 struct Jit::Impl final {
-    explicit Impl(UserConfig conf_) : conf(std::move(conf_)) {}
+    explicit Impl(UserConfig conf_)
+            : conf(std::move(conf_)) {}
 
     HaltReason Run() {
         UNIMPLEMENTED();
@@ -149,7 +150,8 @@ struct Jit::Impl final {
     HaltReason halt_reason{};
 };
 
-Jit::Jit(UserConfig conf) : impl(std::make_unique<Impl>(std::move(conf))) {}
+Jit::Jit(UserConfig conf)
+        : impl(std::make_unique<Impl>(std::move(conf))) {}
 
 Jit::~Jit() = default;
 

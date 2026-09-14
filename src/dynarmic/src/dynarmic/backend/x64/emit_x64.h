@@ -17,16 +17,16 @@
 #include <vector>
 
 #include <ankerl/unordered_dense.h>
-#include <boost/container/stable_vector.hpp>
 #include <boost/container/small_vector.hpp>
+#include <boost/container/stable_vector.hpp>
 
-#include "dynarmic/backend/x64/xbyak.h"
-#include "dynarmic/mcl/bit.hpp"
 #include "dynarmic/backend/exception_handler.h"
 #include "dynarmic/backend/x64/reg_alloc.h"
+#include "dynarmic/backend/x64/xbyak.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/ir/location_descriptor.h"
 #include "dynarmic/ir/terminal.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::IR {
 class Block;
@@ -90,8 +90,8 @@ public:
     /// Invalidates a selection of basic blocks.
     void InvalidateBasicBlocks(const ankerl::unordered_dense::set<IR::LocationDescriptor>& locations);
 
-//protected:
-    // Microinstruction emitters
+// protected:
+//  Microinstruction emitters
 #define OPCODE(name, type, ...) void Emit##name(EmitContext& ctx, IR::Inst* inst);
 #define A32OPC(...)
 #define A64OPC(...)
@@ -115,10 +115,10 @@ public:
 
     // Patching
     struct PatchInformation {
-        boost::container::small_vector<CodePtr, 4> jg; //4*8=32
-        boost::container::small_vector<CodePtr, 4> jz; //4*8=32
-        boost::container::small_vector<CodePtr, 4> jmp; //4*8=32
-        boost::container::small_vector<CodePtr, 4> mov_rcx; //4*8=32
+        boost::container::small_vector<CodePtr, 4> jg;       // 4*8=32
+        boost::container::small_vector<CodePtr, 4> jz;       // 4*8=32
+        boost::container::small_vector<CodePtr, 4> jmp;      // 4*8=32
+        boost::container::small_vector<CodePtr, 4> mov_rcx;  // 4*8=32
     };
     void Patch(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr);
     virtual void Unpatch(const IR::LocationDescriptor& target_desc);

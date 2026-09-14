@@ -7,7 +7,6 @@
  */
 
 #include "common/common_types.h"
-
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/emit_x64.h"

@@ -383,7 +383,6 @@ Result InfoUpdater::UpdateMixes(MixContext& mix_context, const u32 mix_buffer_co
     input_mix_size = static_cast<u32>(mix_count * sizeof(MixInfo::InParameter));
     consumed_input_size += input_mix_size;
 
-
     if (mix_buffer_count == 0) {
         return Service::Audio::ResultInvalidUpdateInfo;
     }

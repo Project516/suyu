@@ -10,12 +10,11 @@
 
 #include <iterator>
 
-#include "common/assert.h"
-#include <boost/variant/detail/apply_visitor_binary.hpp>
-#include "dynarmic/mcl/bit.hpp"
-#include "common/common_types.h"
 #include <ankerl/unordered_dense.h>
+#include <boost/variant/detail/apply_visitor_binary.hpp>
 
+#include "common/assert.h"
+#include "common/common_types.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/nzcv_util.h"
 #include "dynarmic/backend/x64/perf_map.h"
@@ -24,6 +23,7 @@
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/mcl/bit.hpp"
 
 // TODO: Have ARM flags in host flags and not have them use up GPR registers unless necessary.
 // TODO: Actually implement that proper instruction selector you've always wanted to sweetheart.
@@ -33,10 +33,9 @@ namespace Dynarmic::Backend::X64 {
 using namespace Xbyak::util;
 
 EmitContext::EmitContext(RegAlloc& reg_alloc, IR::Block& block, boost::container::stable_vector<Xbyak::Label>& shared_labels)
-    : reg_alloc(reg_alloc)
-    , block(block)
-    , shared_labels(shared_labels)
-{}
+        : reg_alloc(reg_alloc)
+        , block(block)
+        , shared_labels(shared_labels) {}
 
 EmitContext::~EmitContext() = default;
 
@@ -83,7 +82,7 @@ void EmitX64::EmitCallHostFunction(EmitContext& ctx, IR::Inst* inst) {
     ctx.reg_alloc.HostCall(code, nullptr, args[1], args[2], args[3]);
     auto target = args[0].GetImmediateU64();
     if (IsWithin2G(uintptr_t(code.getCurr()), target)) {
-        auto const f = std::bit_cast<void(*)(void)>(target);
+        auto const f = std::bit_cast<void (*)(void)>(target);
         code.call(f);
     } else {
         code.mov(rax, target);
@@ -107,8 +106,8 @@ void EmitX64::PushRSBHelper(Xbyak::Reg64 loc_desc_reg, Xbyak::Reg64 index_reg, I
     code.mov(qword[code.ABI_JIT_PTR + index_reg * 8 + code.GetJitStateInfo().offsetof_rsb_codeptrs], rcx);
     // Byte size hack
     DEBUG_ASSERT(code.GetJitStateInfo().rsb_ptr_mask <= 0xFF);
-    code.add(index_reg.cvt32(), 1); //flags trashed, 1 single byte, haswell doesn't care
-    code.and_(index_reg.cvt32(), u32(code.GetJitStateInfo().rsb_ptr_mask)); //trashes flags
+    code.add(index_reg.cvt32(), 1);                                          // flags trashed, 1 single byte, haswell doesn't care
+    code.and_(index_reg.cvt32(), u32(code.GetJitStateInfo().rsb_ptr_mask));  // trashes flags
     // Results ready and sort by least needed: give OOO some break
     code.mov(dword[code.ABI_JIT_PTR + code.GetJitStateInfo().offsetof_rsb_ptr], index_reg.cvt32());
 }

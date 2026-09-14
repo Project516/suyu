@@ -5,16 +5,16 @@
 #include <mutex>
 
 #include <boost/icl/interval_set.hpp>
+
 #include "common/assert.h"
 #include "common/common_types.h"
-
-#include "dynarmic/frontend/A64/a64_location_descriptor.h"
-#include "dynarmic/frontend/A64/translate/a64_translate.h"
-#include "dynarmic/interface/A64/config.h"
 #include "dynarmic/backend/riscv64/a32_core.h"
 #include "dynarmic/common/atomic.h"
-#include "dynarmic/ir/opt_passes.h"
+#include "dynarmic/frontend/A64/a64_location_descriptor.h"
+#include "dynarmic/frontend/A64/translate/a64_translate.h"
 #include "dynarmic/interface/A64/a64.h"
+#include "dynarmic/interface/A64/config.h"
+#include "dynarmic/ir/opt_passes.h"
 
 namespace Dynarmic::A64 {
 
@@ -23,9 +23,9 @@ using CodePtr = std::uint32_t*;
 
 struct Jit::Impl final {
     Impl(Jit* jit_interface, A64::UserConfig conf)
-        : conf(conf)
-        //, current_address_space(conf)
-        , jit_interface(jit_interface) {}
+            : conf(conf)
+            //, current_address_space(conf)
+            , jit_interface(jit_interface) {}
 
     HaltReason Run() {
         ASSERT(false);
@@ -52,99 +52,99 @@ struct Jit::Impl final {
 
     void Reset() {
         ASSERT(!is_executing);
-        //jit_state = {};
+        // jit_state = {};
     }
 
     void HaltExecution(HaltReason hr) {
-        //Atomic::Or(&jit_state.halt_reason, u32(hr));
+        // Atomic::Or(&jit_state.halt_reason, u32(hr));
     }
 
     void ClearHalt(HaltReason hr) {
-        //Atomic::And(&jit_state.halt_reason, ~u32(hr));
+        // Atomic::And(&jit_state.halt_reason, ~u32(hr));
     }
 
     u64 GetSP() const {
-        return 0;//jit_state.sp;
+        return 0;  // jit_state.sp;
     }
 
     void SetSP(u64 value) {
-        //jit_state.sp = value;
+        // jit_state.sp = value;
     }
 
     u64 GetPC() const {
-        return 0;//jit_state.pc;
+        return 0;  // jit_state.pc;
     }
 
     void SetPC(u64 value) {
-        //jit_state.pc = value;
+        // jit_state.pc = value;
     }
 
     u64 GetRegister(size_t index) const {
-        return 0;//index == 31 ? GetSP() : jit_state.regs.at(index);
+        return 0;  // index == 31 ? GetSP() : jit_state.regs.at(index);
     }
 
     void SetRegister(size_t index, u64 value) {
         if (index == 31)
             return SetSP(value);
-        //jit_state.regs.at(index) = value;
+        // jit_state.regs.at(index) = value;
     }
 
     std::array<u64, 31> GetRegisters() const {
-        return {};//jit_state.regs;
+        return {};  // jit_state.regs;
     }
 
     void SetRegisters(const std::array<u64, 31>& value) {
-        //jit_state.regs = value;
+        // jit_state.regs = value;
     }
 
     Vector GetVector(size_t index) const {
-        //return {jit_state.vec.at(index * 2), jit_state.vec.at(index * 2 + 1)};
+        // return {jit_state.vec.at(index * 2), jit_state.vec.at(index * 2 + 1)};
         return Vector{};
     }
 
     void SetVector(size_t index, Vector value) {
-        //jit_state.vec.at(index * 2) = value[0];
-        //jit_state.vec.at(index * 2 + 1) = value[1];
+        // jit_state.vec.at(index * 2) = value[0];
+        // jit_state.vec.at(index * 2 + 1) = value[1];
     }
 
     std::array<Vector, 32> GetVectors() const {
         std::array<Vector, 32> ret;
-        //static_assert(sizeof(ret) == sizeof(jit_state.vec));
-        //std::memcpy(ret.data(), jit_state.vec.data(), sizeof(jit_state.vec));
+        // static_assert(sizeof(ret) == sizeof(jit_state.vec));
+        // std::memcpy(ret.data(), jit_state.vec.data(), sizeof(jit_state.vec));
         return ret;
     }
 
     void SetVectors(const std::array<Vector, 32>& value) {
-        //static_assert(sizeof(value) == sizeof(jit_state.vec));
-        //std::memcpy(jit_state.vec.data(), value.data(), sizeof(jit_state.vec));
+        // static_assert(sizeof(value) == sizeof(jit_state.vec));
+        // std::memcpy(jit_state.vec.data(), value.data(), sizeof(jit_state.vec));
     }
 
     u32 GetFpcr() const {
-        return 0;//jit_state.fpcr;
+        return 0;  // jit_state.fpcr;
     }
 
     void SetFpcr(u32 value) {
-        //jit_state.fpcr = value;
+        // jit_state.fpcr = value;
     }
 
     u32 GetFpsr() const {
-        return 0;//jit_state.fpsr;
+        return 0;  // jit_state.fpsr;
     }
 
     void SetFpsr(u32 value) {
-        //jit_state.fpsr = value;
+        // jit_state.fpsr = value;
     }
 
     u32 GetPstate() const {
-        return 0;//jit_state.pstate;
+        return 0;  // jit_state.pstate;
     }
 
     void SetPstate(u32 value) {
-        //jit_state.pstate = value;
+        // jit_state.pstate = value;
     }
 
     void ClearExclusiveState() {
-        //jit_state.exclusive_state = 0;
+        // jit_state.exclusive_state = 0;
     }
 
     bool IsExecuting() const {
@@ -166,8 +166,8 @@ private:
     }
 
     A64::UserConfig conf;
-    //A64JitState jit_state{};
-    //A64AddressSpace current_address_space;
+    // A64JitState jit_state{};
+    // A64AddressSpace current_address_space;
     Jit* jit_interface;
     volatile u32 halt_reason = 0;
     bool is_executing = false;
@@ -177,7 +177,8 @@ private:
     std::mutex invalidation_mutex;
 };
 
-Jit::Jit(UserConfig conf) : impl(std::make_unique<Jit::Impl>(this, conf)) {}
+Jit::Jit(UserConfig conf)
+        : impl(std::make_unique<Jit::Impl>(this, conf)) {}
 Jit::~Jit() = default;
 
 HaltReason Jit::Run() {

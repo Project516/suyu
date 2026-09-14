@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <chrono>
 #include <algorithm>
+#include <chrono>
 #include <type_traits>
 #include <fmt/ranges.h>
 #include "common/swap.h"
@@ -38,40 +38,43 @@ struct fmt::formatter<SwapStructT<T, U>> {
 };
 
 #ifdef _DEBUG
-#define LOG_TRACE(log_class, ...) \
-    Common::Log::FmtLogMessage(Common::Log::Class::log_class, Common::Log::Level::Trace, \
-       __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_TRACE(log_class, ...)                                                                  \
+    Common::Log::FmtLogMessage(Common::Log::Class::log_class, Common::Log::Level::Trace, __FILE__, \
+                               __LINE__, __func__, __VA_ARGS__)
 #else
 #define LOG_TRACE(log_class, fmt, ...) (void(0))
 #endif
 
-#define LOG_DEBUG(log_class, ...) \
-    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Debug, \
-       __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_INFO(log_class, ...) \
-    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Info, \
-       __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_WARNING(log_class, ...) \
-    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Warning, \
-       __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_ERROR(log_class, ...) \
-    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Error, \
-       __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define LOG_CRITICAL(log_class, ...) \
-    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Critical, \
-       __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_DEBUG(log_class, ...)                                                                  \
+    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Debug,     \
+                                 __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_INFO(log_class, ...)                                                                   \
+    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Info,      \
+                                 __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_WARNING(log_class, ...)                                                                \
+    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Warning,   \
+                                 __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_ERROR(log_class, ...)                                                                  \
+    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Error,     \
+                                 __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_CRITICAL(log_class, ...)                                                               \
+    ::Common::Log::FmtLogMessage(::Common::Log::Class::log_class, ::Common::Log::Level::Critical,  \
+                                 __FILE__, __LINE__, __func__, __VA_ARGS__)
 
 namespace Common::Log {
 
 /// Specifies the severity or level of detail of the log message.
 enum class Level : u8 {
-    Trace, ///< Extremely detailed and repetitive debugging information that is likely to pollute logs.
-    Debug, ///< Less detailed debugging information.
-    Info, ///< Status information from important points during execution.
-    Warning, ///< Minor or potential problems found during execution of a task.
-    Error, ///< Major problems found during execution of a task that prevent it from being completed.
-    Critical, ///< Major problems during execution that threaten the stability of the entire application.
-    Count ///< Total number of logging levels
+    Trace,    ///< Extremely detailed and repetitive debugging information that is likely to pollute
+              ///< logs.
+    Debug,    ///< Less detailed debugging information.
+    Info,     ///< Status information from important points during execution.
+    Warning,  ///< Minor or potential problems found during execution of a task.
+    Error,    ///< Major problems found during execution of a task that prevent it from being
+              ///< completed.
+    Critical, ///< Major problems during execution that threaten the stability of the entire
+              ///< application.
+    Count     ///< Total number of logging levels
 };
 
 /// Specifies the sub-system that generated the log message.
@@ -85,11 +88,15 @@ enum class Class : u8 {
 };
 
 /// Logs a message to the global logger, using fmt
-void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename, unsigned int line_num, const char* function, fmt::string_view format, const fmt::format_args& args);
+void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename,
+                       unsigned int line_num, const char* function, fmt::string_view format,
+                       const fmt::format_args& args);
 
 template <typename... Args>
-void FmtLogMessage(Class log_class, Level log_level, const char* filename, unsigned int line_num, const char* function, fmt::format_string<Args...> format, const Args&... args) {
-    FmtLogMessageImpl(log_class, log_level, filename, line_num, function, format.get(), fmt::make_format_args(args...));
+void FmtLogMessage(Class log_class, Level log_level, const char* filename, unsigned int line_num,
+                   const char* function, fmt::format_string<Args...> format, const Args&... args) {
+    FmtLogMessageImpl(log_class, log_level, filename, line_num, function, format.get(),
+                      fmt::make_format_args(args...));
 }
 
 /// Implements a log message filter which allows different log classes to have different minimum
@@ -121,9 +128,8 @@ struct Filter {
     }
     /// Returns true if any logging classes are set to debug
     [[nodiscard]] bool IsDebug() const {
-        return std::any_of(class_levels.begin(), class_levels.end(), [](const Level& l) {
-            return u8(l) <= u8(Level::Debug);
-        });
+        return std::any_of(class_levels.begin(), class_levels.end(),
+                           [](const Level& l) { return u8(l) <= u8(Level::Debug); });
     }
     std::array<Level, std::size_t(Class::Count)> class_levels;
 };

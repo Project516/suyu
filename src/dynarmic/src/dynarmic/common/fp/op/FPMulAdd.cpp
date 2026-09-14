@@ -9,7 +9,6 @@
 #include "dynarmic/common/fp/op/FPMulAdd.h"
 
 #include "common/common_types.h"
-
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/fused.h"

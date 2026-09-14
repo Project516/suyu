@@ -8,9 +8,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "dynarmic/interface/A64/a64.h"
 #include "dynarmic/tests/A64/testenv.h"
 #include "dynarmic/tests/native/testenv.h"
-#include "dynarmic/interface/A64/a64.h"
 
 using namespace Dynarmic;
 

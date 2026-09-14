@@ -10,11 +10,11 @@
 #include "network/network.h"
 #include "qt_common.h"
 
+#include "common/cpu_features.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
 #include "common/logging.h"
 #include "common/scm_rev.h"
-#include "common/cpu_features.h"
 #include "core/memory.h"
 
 #include <QGuiApplication>

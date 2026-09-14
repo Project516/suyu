@@ -45,7 +45,8 @@ public:
     void StartProcessingDataList(Kernel::KernelCore& kernel);
 
     // Notifies the application that a file is starting to be downloaded.
-    void StartDownloadingFile(Kernel::KernelCore& kernel, std::string_view dir_name, std::string_view file_name, u64 file_size);
+    void StartDownloadingFile(Kernel::KernelCore& kernel, std::string_view dir_name,
+                              std::string_view file_name, u64 file_size);
     // Updates the progress of the current file to the size passed.
     void UpdateFileProgress(Kernel::KernelCore& kernel, u64 downloaded);
     // Notifies the application that the current file has completed download.
@@ -80,16 +81,21 @@ public:
     // Called when the backend is needed to synchronize the data for the game with title ID and
     // version in title. A ProgressServiceBackend object is provided to alert the application of
     // status.
-    virtual bool Synchronize(Kernel::KernelCore& kernel, TitleIDVersion title, ProgressServiceBackend& progress) = 0;
+    virtual bool Synchronize(Kernel::KernelCore& kernel, TitleIDVersion title,
+                             ProgressServiceBackend& progress) = 0;
     // Very similar to Synchronize, but only for the directory provided. Backends should not alter
     // the data for any other directories.
-    virtual bool SynchronizeDirectory(Kernel::KernelCore& kernel, TitleIDVersion title, std::string name, ProgressServiceBackend& progress) = 0;
+    virtual bool SynchronizeDirectory(Kernel::KernelCore& kernel, TitleIDVersion title,
+                                      std::string name, ProgressServiceBackend& progress) = 0;
     // Removes all cached data associated with title id provided.
     virtual bool Clear(Kernel::KernelCore& kernel, u64 title_id) = 0;
     // Sets the BCAT Passphrase to be used with the associated title ID.
-    virtual void SetPassphrase(Kernel::KernelCore& kernel, u64 title_id, const Passphrase& passphrase) = 0;
+    virtual void SetPassphrase(Kernel::KernelCore& kernel, u64 title_id,
+                               const Passphrase& passphrase) = 0;
     // Gets the launch parameter used by AM associated with the title ID and version provided.
-    virtual std::optional<std::vector<u8>> GetLaunchParameter(Kernel::KernelCore& kernel, TitleIDVersion title) = 0;
+    virtual std::optional<std::vector<u8>> GetLaunchParameter(Kernel::KernelCore& kernel,
+                                                              TitleIDVersion title) = 0;
+
 protected:
     DirectoryGetter dir_getter;
 };
@@ -100,13 +106,18 @@ public:
     explicit NullBcatBackend(DirectoryGetter getter);
     ~NullBcatBackend() override;
 
-    bool Synchronize(Kernel::KernelCore& kernel, TitleIDVersion title, ProgressServiceBackend& progress) override;
-    bool SynchronizeDirectory(Kernel::KernelCore& kernel, TitleIDVersion title, std::string name, ProgressServiceBackend& progress) override;
+    bool Synchronize(Kernel::KernelCore& kernel, TitleIDVersion title,
+                     ProgressServiceBackend& progress) override;
+    bool SynchronizeDirectory(Kernel::KernelCore& kernel, TitleIDVersion title, std::string name,
+                              ProgressServiceBackend& progress) override;
     bool Clear(Kernel::KernelCore& kernel, u64 title_id) override;
-    void SetPassphrase(Kernel::KernelCore& kernel, u64 title_id, const Passphrase& passphrase) override;
-    std::optional<std::vector<u8>> GetLaunchParameter(Kernel::KernelCore& kernel, TitleIDVersion title) override;
+    void SetPassphrase(Kernel::KernelCore& kernel, u64 title_id,
+                       const Passphrase& passphrase) override;
+    std::optional<std::vector<u8>> GetLaunchParameter(Kernel::KernelCore& kernel,
+                                                      TitleIDVersion title) override;
 };
 
-std::unique_ptr<BcatBackend> CreateBackendFromSettings(Core::System& system, DirectoryGetter getter);
+std::unique_ptr<BcatBackend> CreateBackendFromSettings(Core::System& system,
+                                                       DirectoryGetter getter);
 
 } // namespace Service::BCAT

@@ -37,12 +37,12 @@ consteval std::pair<u64, u64> MaskValueFromEncoding(const char data[20]) noexcep
         default:
             break;
         }
-    return { mask, value };
+    return {mask, value};
 }
 
 Opcode Decode(u64 insn) {
-#define INST(name, cute, encode) \
-    if (auto const p = MaskValueFromEncoding(encode); (insn & p.first) == p.second) \
+#define INST(name, cute, encode)                                                                   \
+    if (auto const p = MaskValueFromEncoding(encode); (insn & p.first) == p.second)                \
         return Opcode::name;
 #include "maxwell.inc"
 #undef INST

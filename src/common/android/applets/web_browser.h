@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <jni.h>
 #include <string>
+#include <jni.h>
 
 #include "core/frontend/applets/web_browser.h"
 
@@ -16,8 +16,7 @@ public:
 
     void Close() const override {}
 
-    void OpenLocalWebPage(const std::string& local_url,
-                          ExtractROMFSCallback extract_romfs_callback,
+    void OpenLocalWebPage(const std::string& local_url, ExtractROMFSCallback extract_romfs_callback,
                           OpenWebPageCallback callback) const override;
 
     void OpenExternalWebPage(const std::string& external_url,

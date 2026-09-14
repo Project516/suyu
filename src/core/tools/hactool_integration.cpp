@@ -14,8 +14,8 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
-#include <unistd.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #endif
 
 namespace Tools {
@@ -129,8 +129,7 @@ std::vector<ToolInfo> HactoolIntegration::GetAvailableTools() const {
 }
 
 bool HactoolIntegration::HasAnyTool() const {
-    return std::any_of(tools_.begin(), tools_.end(),
-                       [](const ToolInfo& t) { return t.available; });
+    return std::any_of(tools_.begin(), tools_.end(), [](const ToolInfo& t) { return t.available; });
 }
 
 bool HactoolIntegration::HasTool(const std::string& name) const {
@@ -147,8 +146,7 @@ std::optional<ToolInfo> HactoolIntegration::GetToolInfo(const std::string& name)
     return std::nullopt;
 }
 
-void HactoolIntegration::SetToolPath(const std::string& name,
-                                     const std::filesystem::path& path) {
+void HactoolIntegration::SetToolPath(const std::string& name, const std::filesystem::path& path) {
     auto it = std::find_if(tools_.begin(), tools_.end(),
                            [&name](const ToolInfo& t) { return t.name == name; });
     if (it != tools_.end()) {
@@ -170,8 +168,8 @@ void HactoolIntegration::SetToolPath(const std::string& name,
 }
 
 ExtractionResult HactoolIntegration::ExtractNCA(const std::filesystem::path& nca_path,
-                                                 const std::filesystem::path& keys_path,
-                                                 ProgressCallback progress) {
+                                                const std::filesystem::path& keys_path,
+                                                ProgressCallback progress) {
     ExtractionResult result;
 
     if (!HasTool("hactool") && !HasTool("hac2l")) {
@@ -235,8 +233,8 @@ ExtractionResult HactoolIntegration::ExtractNCA(const std::filesystem::path& nca
 }
 
 ExtractionResult HactoolIntegration::ExtractNSP(const std::filesystem::path& nsp_path,
-                                                 const std::filesystem::path& keys_path,
-                                                 ProgressCallback progress) {
+                                                const std::filesystem::path& keys_path,
+                                                ProgressCallback progress) {
     ExtractionResult result;
 
     if (!HasTool("hactool")) {
@@ -278,8 +276,8 @@ ExtractionResult HactoolIntegration::ExtractNSP(const std::filesystem::path& nsp
 }
 
 ExtractionResult HactoolIntegration::ExtractXCI(const std::filesystem::path& xci_path,
-                                                 const std::filesystem::path& keys_path,
-                                                 ProgressCallback progress) {
+                                                const std::filesystem::path& keys_path,
+                                                ProgressCallback progress) {
     ExtractionResult result;
 
     if (!HasTool("hactool")) {
@@ -320,8 +318,8 @@ ExtractionResult HactoolIntegration::ExtractXCI(const std::filesystem::path& xci
     return result;
 }
 
-std::optional<ExtractionType>
-HactoolIntegration::DetectExtractedContent(const std::filesystem::path& dir_path) {
+std::optional<ExtractionType> HactoolIntegration::DetectExtractedContent(
+    const std::filesystem::path& dir_path) {
     if (!DirectoryExists(dir_path)) {
         return std::nullopt;
     }
@@ -330,9 +328,8 @@ HactoolIntegration::DetectExtractedContent(const std::filesystem::path& dir_path
     const auto exefs_dir = dir_path / "exefs";
     const auto romfs_dir = dir_path / "romfs";
 
-    const bool has_exefs_subdir =
-        DirectoryExists(exefs_dir) && FileExists(exefs_dir / "main") &&
-        FileExists(exefs_dir / "main.npdm");
+    const bool has_exefs_subdir = DirectoryExists(exefs_dir) && FileExists(exefs_dir / "main") &&
+                                  FileExists(exefs_dir / "main.npdm");
 
     const bool has_romfs_subdir = DirectoryExists(romfs_dir);
 
@@ -362,9 +359,8 @@ HactoolIntegration::DetectExtractedContent(const std::filesystem::path& dir_path
     return std::nullopt;
 }
 
-FileSys::VirtualDir
-HactoolIntegration::CreateVfsFromExtracted(const std::filesystem::path& dir_path,
-                                           FileSys::VirtualFilesystem& vfs) {
+FileSys::VirtualDir HactoolIntegration::CreateVfsFromExtracted(
+    const std::filesystem::path& dir_path, FileSys::VirtualFilesystem& vfs) {
     auto content_type = DetectExtractedContent(dir_path);
     if (!content_type) {
         LOG_WARNING(Common, "Could not detect extracted content type in: {}",
@@ -409,8 +405,8 @@ void HactoolIntegration::CleanupExtractions() {
     }
 }
 
-std::optional<std::filesystem::path>
-HactoolIntegration::FindToolExecutable(const std::string& name) const {
+std::optional<std::filesystem::path> HactoolIntegration::FindToolExecutable(
+    const std::string& name) const {
     const std::string exe_name = name + EXE_SUFFIX;
 
     // Check in custom search paths first
@@ -528,8 +524,7 @@ ExtractionResult HactoolIntegration::RunTool(const std::filesystem::path& tool_p
 
     result.success = (exit_code == 0);
     if (!result.success) {
-        result.error_message =
-            "Tool exited with code " + std::to_string(exit_code) + ": " + output;
+        result.error_message = "Tool exited with code " + std::to_string(exit_code) + ": " + output;
         LOG_ERROR(Common, "{}", result.error_message);
     } else {
         LOG_INFO(Common, "Tool completed successfully");
@@ -547,8 +542,7 @@ ExtractionResult HactoolIntegration::RunTool(const std::filesystem::path& tool_p
     return result;
 }
 
-std::string
-HactoolIntegration::GetToolVersion(const std::filesystem::path& tool_path) const {
+std::string HactoolIntegration::GetToolVersion(const std::filesystem::path& tool_path) const {
     // Try --version flag
     std::string cmdline = "\"" + tool_path.generic_string() + "\" --version";
 

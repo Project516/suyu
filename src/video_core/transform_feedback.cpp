@@ -8,9 +8,9 @@
 #include <array>
 #include <vector>
 
+#include <ranges>
 #include "common/alignment.h"
 #include "common/assert.h"
-#include <ranges>
 #include "shader_recompiler/shader_info.h"
 #include "video_core/transform_feedback.h"
 
@@ -94,7 +94,7 @@ std::pair<std::array<Shader::TransformFeedbackVarying, 256>, u32> MakeTransformF
                 .offset = offset * 4,
                 .components = 1,
             };
-                varying.stream = layout.stream;
+            varying.stream = layout.stream;
             const u32 base_offset = offset;
             const auto attribute{get_attribute(offset)};
             if (std::ranges::find(VECTORS, Common::AlignDown(attribute, 4)) != VECTORS.end()) {

@@ -29,8 +29,8 @@ public:
     explicit KSharedMemory(KernelCore& kernel);
     ~KSharedMemory() override;
 
-    Result Initialize(KernelCore& kernel, Core::DeviceMemory& device_memory_, KProcess* owner_process_,
-                      Svc::MemoryPermission owner_permission_,
+    Result Initialize(KernelCore& kernel, Core::DeviceMemory& device_memory_,
+                      KProcess* owner_process_, Svc::MemoryPermission owner_permission_,
                       Svc::MemoryPermission user_permission_, std::size_t size_);
 
     /**

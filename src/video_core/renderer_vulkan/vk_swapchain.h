@@ -22,19 +22,12 @@ class Scheduler;
 
 class Swapchain {
 public:
-    explicit Swapchain(
-        VkSurfaceKHR_T* surface,
-        const Device& device,
-        Scheduler& scheduler,
-        u32 width,
-        u32 height);
+    explicit Swapchain(VkSurfaceKHR_T* surface, const Device& device, Scheduler& scheduler,
+                       u32 width, u32 height);
     ~Swapchain();
 
     /// Creates (or recreates) the swapchain with a given size.
-    void Create(
-        VkSurfaceKHR_T* surface,
-        u32 width,
-        u32 height);
+    void Create(VkSurfaceKHR_T* surface, u32 width, u32 height);
 
     /// Acquires the next image in the swapchain, waits as needed.
     bool AcquireNextImage();

@@ -48,13 +48,7 @@ public:
 
     // Known legitimate dump tool signatures
     std::unordered_set<std::string> legitimate_dump_signatures = {
-        "NXDumpTool",
-        "nxdumptool",
-        "Lockpick_RCM",
-        "TegraExplorer",
-        "SX Dumper",
-        "Goldleaf"
-    };
+        "NXDumpTool", "nxdumptool", "Lockpick_RCM", "TegraExplorer", "SX Dumper", "Goldleaf"};
 
     // Educational messages
     const std::string educational_message =
@@ -63,8 +57,7 @@ public:
         "For more information about legitimate game dumping, visit our documentation.";
 };
 
-AntiPiracyManager::AntiPiracyManager(Core::System& system)
-    : impl(std::make_unique<Impl>(system)) {}
+AntiPiracyManager::AntiPiracyManager(Core::System& system) : impl(std::make_unique<Impl>(system)) {}
 
 AntiPiracyManager::~AntiPiracyManager() {
     if (impl->initialized) {
@@ -81,7 +74,8 @@ bool AntiPiracyManager::Initialize() {
 
     // Initialize Nintendo Library
     if (!impl->nintendo_library->Initialize()) {
-        LOG_WARNING(Core, "Failed to initialize Nintendo Library - network features may be limited");
+        LOG_WARNING(Core,
+                    "Failed to initialize Nintendo Library - network features may be limited");
     }
 
     // Load configuration
@@ -128,7 +122,8 @@ ValidationConfig AntiPiracyManager::GetValidationConfig() const {
     return impl->config;
 }
 
-bool AntiPiracyManager::AuthenticateWithNintendo(const std::string& username, const std::string& password) {
+bool AntiPiracyManager::AuthenticateWithNintendo(const std::string& username,
+                                                 const std::string& password) {
     if (!impl->initialized) {
         LOG_ERROR(Core, "Anti-Piracy Manager not initialized");
         return false;
@@ -149,8 +144,8 @@ bool AntiPiracyManager::AuthenticateWithNintendo(const std::string& username, co
             }
         }
 
-        impl->nintendo_authenticated =
-            (impl->nintendo_library->GetAuthenticationState() == Nintendo::AuthenticationState::Authenticated);
+        impl->nintendo_authenticated = (impl->nintendo_library->GetAuthenticationState() ==
+                                        Nintendo::AuthenticationState::Authenticated);
 
         if (impl->nintendo_authenticated) {
             LOG_INFO(Core, "Nintendo account authentication successful");
@@ -183,8 +178,7 @@ std::vector<Nintendo::GameInfo> AntiPiracyManager::GetNintendoGameLibrary() {
     auto now = std::chrono::steady_clock::now();
     auto cache_duration = std::chrono::hours(1);
 
-    if (impl->nintendo_games.empty() ||
-        (now - impl->last_library_refresh) > cache_duration) {
+    if (impl->nintendo_games.empty() || (now - impl->last_library_refresh) > cache_duration) {
 
         LOG_INFO(Core, "Refreshing Nintendo game library");
         impl->nintendo_games = impl->nintendo_library->GetGameList();
@@ -199,7 +193,8 @@ std::vector<Nintendo::GameInfo> AntiPiracyManager::GetNintendoGameLibrary() {
 ValidationResult AntiPiracyManager::ValidateRom(const std::string& file_path) {
     // Note: This method requires the file to already be loaded as a VirtualFile
     // The file_path version is deprecated - use ValidateRom(FileSys::VirtualFile) instead
-    LOG_WARNING(Core, "ValidateRom(string) called - use ValidateRom(VirtualFile) for better results");
+    LOG_WARNING(Core,
+                "ValidateRom(string) called - use ValidateRom(VirtualFile) for better results");
     return ValidationResult::Unknown;
 }
 
@@ -254,18 +249,18 @@ ValidationResult AntiPiracyManager::ValidateRom(FileSys::VirtualFile file) {
 
     // Update statistics
     switch (result) {
-        case ValidationResult::Valid:
-        case ValidationResult::ValidLegitimateRip:
-            impl->stats.valid_roms++;
-            break;
-        case ValidationResult::Suspicious:
-            impl->stats.suspicious_roms++;
-            break;
-        case ValidationResult::Invalid:
-            impl->stats.invalid_roms++;
-            break;
-        default:
-            break;
+    case ValidationResult::Valid:
+    case ValidationResult::ValidLegitimateRip:
+        impl->stats.valid_roms++;
+        break;
+    case ValidationResult::Suspicious:
+        impl->stats.suspicious_roms++;
+        break;
+    case ValidationResult::Invalid:
+        impl->stats.invalid_roms++;
+        break;
+    default:
+        break;
     }
 
     // Cache the result
@@ -273,8 +268,8 @@ ValidationResult AntiPiracyManager::ValidateRom(FileSys::VirtualFile file) {
         CacheValidationResult(metadata.file_hash, result);
     }
 
-    LOG_INFO(Core, "ROM validation complete: {} - Result: {}",
-             metadata.title_name, static_cast<int>(result));
+    LOG_INFO(Core, "ROM validation complete: {} - Result: {}", metadata.title_name,
+             static_cast<int>(result));
 
     return result;
 }
@@ -314,7 +309,8 @@ RomMetadata AntiPiracyManager::ExtractRomMetadata(FileSys::VirtualFile file) {
     return metadata;
 }
 
-void AntiPiracyManager::ValidateRomAsync(const std::string& file_path, ValidationCallback callback) {
+void AntiPiracyManager::ValidateRomAsync(const std::string& file_path,
+                                         ValidationCallback callback) {
     // file_path version not supported - caller should use VirtualFile version
     std::thread validation_thread([callback]() {
         RomMetadata metadata;
@@ -342,7 +338,8 @@ bool AntiPiracyManager::IsRomCached(const std::string& file_hash) const {
     return impl->validation_cache.find(file_hash) != impl->validation_cache.end();
 }
 
-std::optional<ValidationResult> AntiPiracyManager::GetCachedResult(const std::string& file_hash) const {
+std::optional<ValidationResult> AntiPiracyManager::GetCachedResult(
+    const std::string& file_hash) const {
     auto it = impl->validation_cache.find(file_hash);
     if (it != impl->validation_cache.end()) {
         return it->second;
@@ -352,24 +349,24 @@ std::optional<ValidationResult> AntiPiracyManager::GetCachedResult(const std::st
 
 std::string AntiPiracyManager::GetValidationMessage(ValidationResult result) const {
     switch (result) {
-        case ValidationResult::Valid:
-            return "ROM validation successful - game appears legitimate.";
-        case ValidationResult::ValidNintendoLibrary:
-            return "ROM verified against Nintendo purchase history - legitimate copy confirmed.";
-        case ValidationResult::ValidLegitimateRip:
-            return "ROM appears to be a legitimate dump created with proper tools.";
-        case ValidationResult::Unknown:
-            return "ROM legitimacy could not be determined. This doesn't necessarily indicate piracy.";
-        case ValidationResult::Suspicious:
-            return "ROM has characteristics that may indicate piracy. Please ensure you own this game.";
-        case ValidationResult::Invalid:
-            return "ROM appears to be pirated or corrupted. Please use legitimate game copies.";
-        case ValidationResult::NetworkError:
-            return "Could not verify ROM due to network issues. Validation will be retried later.";
-        case ValidationResult::NotAuthenticated:
-            return "Nintendo account authentication required for full validation.";
-        default:
-            return "Unknown validation result.";
+    case ValidationResult::Valid:
+        return "ROM validation successful - game appears legitimate.";
+    case ValidationResult::ValidNintendoLibrary:
+        return "ROM verified against Nintendo purchase history - legitimate copy confirmed.";
+    case ValidationResult::ValidLegitimateRip:
+        return "ROM appears to be a legitimate dump created with proper tools.";
+    case ValidationResult::Unknown:
+        return "ROM legitimacy could not be determined. This doesn't necessarily indicate piracy.";
+    case ValidationResult::Suspicious:
+        return "ROM has characteristics that may indicate piracy. Please ensure you own this game.";
+    case ValidationResult::Invalid:
+        return "ROM appears to be pirated or corrupted. Please use legitimate game copies.";
+    case ValidationResult::NetworkError:
+        return "Could not verify ROM due to network issues. Validation will be retried later.";
+    case ValidationResult::NotAuthenticated:
+        return "Nintendo account authentication required for full validation.";
+    default:
+        return "Unknown validation result.";
     }
 }
 
@@ -378,13 +375,11 @@ std::string AntiPiracyManager::GetEducationalMessage() const {
 }
 
 std::vector<std::string> AntiPiracyManager::GetLegitimateSourceSuggestions() const {
-    return {
-        "Purchase games from the Nintendo eShop",
-        "Buy physical cartridges from authorized retailers",
-        "Use legitimate dumping tools like NXDumpTool for your own games",
-        "Ensure you have proper console keys from your own Switch",
-        "Visit our documentation for guidance on legitimate game dumping"
-    };
+    return {"Purchase games from the Nintendo eShop",
+            "Buy physical cartridges from authorized retailers",
+            "Use legitimate dumping tools like NXDumpTool for your own games",
+            "Ensure you have proper console keys from your own Switch",
+            "Visit our documentation for guidance on legitimate game dumping"};
 }
 
 AntiPiracyManager::ValidationStats AntiPiracyManager::GetValidationStats() const {
@@ -429,7 +424,8 @@ ValidationResult AntiPiracyManager::ValidateDumpTool(const RomMetadata& metadata
 
     if (!metadata.dump_tool_signature.empty()) {
         if (impl->legitimate_dump_signatures.count(metadata.dump_tool_signature) > 0) {
-            LOG_INFO(Core, "ROM created with legitimate dump tool: {}", metadata.dump_tool_signature);
+            LOG_INFO(Core, "ROM created with legitimate dump tool: {}",
+                     metadata.dump_tool_signature);
             return ValidationResult::ValidLegitimateRip;
         } else {
             LOG_WARNING(Core, "ROM created with unknown tool: {}", metadata.dump_tool_signature);
@@ -586,7 +582,8 @@ std::string AntiPiracyManager::DetectDumpToolSignature(FileSys::VirtualFile file
     }
 }
 
-void AntiPiracyManager::CacheValidationResult(const std::string& file_hash, ValidationResult result) {
+void AntiPiracyManager::CacheValidationResult(const std::string& file_hash,
+                                              ValidationResult result) {
     if (!file_hash.empty()) {
         impl->validation_cache[file_hash] = result;
     }

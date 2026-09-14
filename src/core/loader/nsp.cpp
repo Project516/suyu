@@ -34,7 +34,8 @@ AppLoader_NSP::AppLoader_NSP(FileSys::VirtualFile file_,
     }
 
     if (nsp->IsExtractedType()) {
-        secondary_loader = std::make_unique<AppLoader_DeconstructedRomDirectory>(nsp->GetExeFS(), false);
+        secondary_loader =
+            std::make_unique<AppLoader_DeconstructedRomDirectory>(nsp->GetExeFS(), false);
     } else {
         const auto control_nca =
             nsp->GetNCA(nsp->GetProgramTitleID(), FileSys::ContentRecordType::Control);

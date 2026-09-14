@@ -38,7 +38,8 @@ vk::SurfaceKHR CreateSurface(
             .flags = 0,
             .pLayer = static_cast<const CAMetalLayer*>(window_info.render_surface),
         };
-        const auto vkCreateMetalSurfaceEXT = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(dld.vkGetInstanceProcAddr(*instance, "vkCreateMetalSurfaceEXT"));
+        const auto vkCreateMetalSurfaceEXT = reinterpret_cast<PFN_vkCreateMetalSurfaceEXT>(
+            dld.vkGetInstanceProcAddr(*instance, "vkCreateMetalSurfaceEXT"));
         if (!vkCreateMetalSurfaceEXT ||
             vkCreateMetalSurfaceEXT(*instance, &metal_ci, nullptr, &unsafe_surface) != VK_SUCCESS) {
             LOG_ERROR(Render_Vulkan, "Failed to initialize Metal surface");
@@ -66,8 +67,7 @@ vk::SurfaceKHR CreateSurface(
             .pNext = nullptr,
             .flags = 0,
             .connection = static_cast<xcb_connection_t*>(window_info.display_connection),
-            .window = xcb_window_t(uintptr_t(window_info.render_surface))
-        };
+            .window = xcb_window_t(uintptr_t(window_info.render_surface))};
         const auto vkCreateXcbSurfaceKHR = reinterpret_cast<PFN_vkCreateXcbSurfaceKHR>(
             dld.vkGetInstanceProcAddr(*instance, "vkCreateXcbSurfaceKHR"));
         if (!vkCreateXcbSurfaceKHR ||

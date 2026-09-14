@@ -9,6 +9,7 @@
 #pragma once
 
 #include <ankerl/unordered_dense.h>
+
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "dynarmic/interface/A64/a64.h"
@@ -100,11 +101,11 @@ public:
     }
 
     void CallSVC(std::uint32_t swi) override {
-        UNREACHABLE(); //ASSERT(false && "CallSVC({})", swi);
+        UNREACHABLE();  // ASSERT(false && "CallSVC({})", swi);
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception /*exception*/) override {
-        UNREACHABLE(); //ASSERT(false && "ExceptionRaised({:016x})", pc);
+        UNREACHABLE();  // ASSERT(false && "ExceptionRaised({:016x})", pc);
     }
 
     void AddTicks(std::uint64_t ticks) override {
@@ -128,7 +129,8 @@ public:
     char* backing_memory = nullptr;
     bool ignore_invalid_insn = false;
 
-    explicit A64FastmemTestEnv(char* addr) : backing_memory(addr) {}
+    explicit A64FastmemTestEnv(char* addr)
+            : backing_memory(addr) {}
 
     template<typename T>
     T read(u64 vaddr) {
@@ -199,11 +201,11 @@ public:
     }
 
     void CallSVC(std::uint32_t swi) override {
-        UNREACHABLE(); //ASSERT(false && "CallSVC({})", swi);
+        UNREACHABLE();  // ASSERT(false && "CallSVC({})", swi);
     }
 
     void ExceptionRaised(u64 pc, Dynarmic::A64::Exception) override {
-        UNREACHABLE(); //ASSERT(false && "ExceptionRaised({:016x})", pc);
+        UNREACHABLE();  // ASSERT(false && "ExceptionRaised({:016x})", pc);
     }
 
     void AddTicks(std::uint64_t ticks) override {

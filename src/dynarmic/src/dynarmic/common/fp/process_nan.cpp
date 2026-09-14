@@ -11,13 +11,12 @@
 #include <optional>
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
-
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"
 #include "dynarmic/common/fp/process_exception.h"
 #include "dynarmic/common/fp/unpacked.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::FP {
 

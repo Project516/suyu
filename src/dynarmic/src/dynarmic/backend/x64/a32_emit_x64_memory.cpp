@@ -13,8 +13,6 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include "dynarmic/mcl/integer_of_size.hpp"
-#include "dynarmic/backend/x64/xbyak.h"
 
 #include "dynarmic/backend/x64/a32_emit_x64.h"
 #include "dynarmic/backend/x64/abi.h"
@@ -22,7 +20,9 @@
 #include "dynarmic/backend/x64/emit_x64_memory.h"
 #include "dynarmic/backend/x64/exclusive_monitor_friend.h"
 #include "dynarmic/backend/x64/perf_map.h"
+#include "dynarmic/backend/x64/xbyak.h"
 #include "dynarmic/interface/exclusive_monitor.h"
+#include "dynarmic/mcl/integer_of_size.hpp"
 
 namespace Dynarmic::Backend::X64 {
 

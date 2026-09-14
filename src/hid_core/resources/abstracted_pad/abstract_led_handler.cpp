@@ -15,9 +15,7 @@
 
 namespace Service::HID {
 
-NpadAbstractLedHandler::NpadAbstractLedHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+NpadAbstractLedHandler::NpadAbstractLedHandler(Kernel::KernelCore& kernel_) : kernel{kernel_} {}
 
 NpadAbstractLedHandler::~NpadAbstractLedHandler() = default;
 

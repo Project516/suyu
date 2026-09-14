@@ -10,9 +10,7 @@
 
 namespace Service::HID {
 
-NpadAbstractPalmaHandler::NpadAbstractPalmaHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+NpadAbstractPalmaHandler::NpadAbstractPalmaHandler(Kernel::KernelCore& kernel_) : kernel{kernel_} {}
 
 NpadAbstractPalmaHandler::~NpadAbstractPalmaHandler() = default;
 

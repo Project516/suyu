@@ -125,7 +125,9 @@ json GetFullDataAuto(const std::string& timestamp, u64 title_id, Core::System& s
 }
 
 template <bool read_value, typename DescriptorType>
-json GetHLEBufferDescriptorData(const boost::container::static_vector<DescriptorType, IPC::MAX_BUFFER_DESCRIPTORS>& buffer, Core::Memory::Memory& memory) {
+json GetHLEBufferDescriptorData(
+    const boost::container::static_vector<DescriptorType, IPC::MAX_BUFFER_DESCRIPTORS>& buffer,
+    Core::Memory::Memory& memory) {
     auto buffer_out = json::array();
     for (const auto& desc : buffer) {
         auto entry = json{

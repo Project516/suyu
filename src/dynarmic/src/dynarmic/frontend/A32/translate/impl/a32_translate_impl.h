@@ -9,14 +9,13 @@
 #pragma once
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
-
 #include "dynarmic/frontend/A32/a32_ir_emitter.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/frontend/A32/translate/a32_translate.h"
 #include "dynarmic/frontend/A32/translate/conditional_state.h"
 #include "dynarmic/frontend/imm.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::A32 {
 

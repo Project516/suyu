@@ -6,22 +6,22 @@
  * SPDX-License-Identifier: 0BSD
  */
 
+#include <bit>
 #include <cstring>
 #include <memory>
 #include <mutex>
 
 #include <boost/icl/interval_set.hpp>
-#include "common/assert.h"
-#include "dynarmic/common/fp/fpcr.h"
-#include "dynarmic/common/llvm_disassemble.h"
-#include <bit>
 
+#include "common/assert.h"
 #include "dynarmic/backend/x64/a64_emit_x64.h"
 #include "dynarmic/backend/x64/a64_jitstate.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/devirtualize.h"
 #include "dynarmic/backend/x64/jitstate_info.h"
 #include "dynarmic/common/atomic.h"
+#include "dynarmic/common/fp/fpcr.h"
+#include "dynarmic/common/llvm_disassemble.h"
 #include "dynarmic/frontend/A64/translate/a64_translate.h"
 #include "dynarmic/interface/A64/a64.h"
 #include "dynarmic/ir/basic_block.h"
@@ -61,11 +61,10 @@ static Optimization::PolyfillOptions GenPolyfillOptions(const BlockOfCode& code)
 struct Jit::Impl final {
 public:
     Impl(Jit* jit, UserConfig conf)
-        : conf(conf)
-        , block_of_code(GenRunCodeCallbacks(conf.callbacks, &GetCurrentBlockThunk, this, conf), JitStateInfo{jit_state}, conf.code_cache_size, GenRCP(conf))
-        , emitter(block_of_code, conf, jit)
-        , polyfill_options(GenPolyfillOptions(block_of_code))
-    {
+            : conf(conf)
+            , block_of_code(GenRunCodeCallbacks(conf.callbacks, &GetCurrentBlockThunk, this, conf), JitStateInfo{jit_state}, conf.code_cache_size, GenRCP(conf))
+            , emitter(block_of_code, conf, jit)
+            , polyfill_options(GenPolyfillOptions(block_of_code)) {
         ASSERT(conf.page_table_address_space_bits >= 12 && conf.page_table_address_space_bits <= 64);
     }
 

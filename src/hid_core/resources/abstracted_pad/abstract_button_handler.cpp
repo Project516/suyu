@@ -17,8 +17,7 @@
 namespace Service::HID {
 
 NpadAbstractButtonHandler::NpadAbstractButtonHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+    : kernel{kernel_} {}
 
 NpadAbstractButtonHandler::~NpadAbstractButtonHandler() = default;
 

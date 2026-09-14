@@ -11,11 +11,11 @@
 #include <map>
 #include <optional>
 
-#include "common/common_types.h"
+#include <ankerl/unordered_dense.h>
 #include <oaknut/code_block.hpp>
 #include <oaknut/oaknut.hpp>
-#include <ankerl/unordered_dense.h>
 
+#include "common/common_types.h"
 #include "dynarmic/backend/arm64/emit_arm64.h"
 #include "dynarmic/backend/arm64/fastmem.h"
 #include "dynarmic/interface/halt_reason.h"
@@ -44,6 +44,7 @@ public:
     void InvalidateBasicBlocks(const ankerl::unordered_dense::set<IR::LocationDescriptor>& descriptors);
 
     void ClearCache();
+
 protected:
     virtual EmitConfig GetEmitConfig() = 0;
     virtual void RegisterNewBasicBlock(const IR::Block& block, const EmittedBlockInfo& block_info) = 0;

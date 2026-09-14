@@ -31,10 +31,10 @@ enum class UserDataTag {
 
 class Port : public MultiWaitHolder, public Common::IntrusiveListBaseNode<Port> {
 public:
-    explicit Port(Kernel::KernelCore& kernel, Kernel::KServerPort* server_port, SessionRequestHandlerFactory&& handler_factory)
-        : MultiWaitHolder(server_port), m_handler_factory(std::move(handler_factory))
-        , m_kernel{kernel}
-    {
+    explicit Port(Kernel::KernelCore& kernel, Kernel::KServerPort* server_port,
+                  SessionRequestHandlerFactory&& handler_factory)
+        : MultiWaitHolder(server_port),
+          m_handler_factory(std::move(handler_factory)), m_kernel{kernel} {
         this->SetUserData(static_cast<uintptr_t>(UserDataTag::Port));
     }
 
@@ -53,10 +53,9 @@ private:
 
 class Session : public MultiWaitHolder, public Common::IntrusiveListBaseNode<Session> {
 public:
-    explicit Session(Kernel::KernelCore& kernel, Kernel::KServerSession* server_session, std::shared_ptr<SessionRequestManager>&& manager)
-        : MultiWaitHolder(server_session), m_manager(std::move(manager))
-        , m_kernel{kernel}
-    {
+    explicit Session(Kernel::KernelCore& kernel, Kernel::KServerSession* server_session,
+                     std::shared_ptr<SessionRequestManager>&& manager)
+        : MultiWaitHolder(server_session), m_manager(std::move(manager)), m_kernel{kernel} {
         this->SetUserData(static_cast<uintptr_t>(UserDataTag::Session));
     }
 
@@ -78,10 +77,7 @@ private:
     Kernel::KernelCore& m_kernel;
 };
 
-ServerManager::ServerManager(Core::System& system)
-    : m_system{system}
-    , m_selection_mutex{system}
-{
+ServerManager::ServerManager(Core::System& system) : m_system{system}, m_selection_mutex{system} {
     // Initialize event.
     m_wakeup_event = Kernel::KEvent::Create(system.Kernel());
     m_wakeup_event->Initialize(m_system.Kernel(), nullptr);
@@ -207,7 +203,8 @@ Result ServerManager::ManageNamedPort(const std::string& service_name,
     port->GetServerPort().Open(m_system.Kernel());
 
     // Transfer ownership into a new port object.
-    auto* server = new Port(m_system.Kernel(), std::addressof(port->GetServerPort()), std::move(handler_factory));
+    auto* server = new Port(m_system.Kernel(), std::addressof(port->GetServerPort()),
+                            std::move(handler_factory));
 
     // Begin tracking the port.
     {
@@ -356,7 +353,8 @@ Result ServerManager::OnSessionEvent(Session* session) {
 
     // Try to receive a message.
     auto* server_session = static_cast<Kernel::KServerSession*>(session->GetNativeHandle());
-    res = server_session->ReceiveRequestHLE(m_system.Kernel(), &session->GetContext(), session->GetManager());
+    res = server_session->ReceiveRequestHLE(m_system.Kernel(), &session->GetContext(),
+                                            session->GetManager());
 
     // If the session has been closed, we're done.
     if (res == Kernel::ResultSessionClosed) {

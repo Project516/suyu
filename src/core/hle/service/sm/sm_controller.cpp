@@ -37,7 +37,9 @@ void Controller::CloneCurrentObject(HLERequestContext& ctx) {
     // once this is a proper process
 
     // Reserve a new session from the process resource limit.
-    Kernel::KScopedResourceReservation session_reservation(system.Kernel(), Kernel::GetCurrentProcessPointer(kernel), Kernel::LimitableResource::SessionCountMax);
+    Kernel::KScopedResourceReservation session_reservation(
+        system.Kernel(), Kernel::GetCurrentProcessPointer(kernel),
+        Kernel::LimitableResource::SessionCountMax);
     ASSERT(session_reservation.Succeeded());
 
     // Create the session.
@@ -103,12 +105,12 @@ void Controller::SetPointerBufferSize(HLERequestContext& ctx) {
 
     process->SetPointerBufferSize(requested_size);
 
-    LOG_INFO(Service, "Pointer buffer size dynamically updated to {:#x} bytes by process", requested_size);
+    LOG_INFO(Service, "Pointer buffer size dynamically updated to {:#x} bytes by process",
+             requested_size);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
 }
-
 
 // https://switchbrew.org/wiki/IPC_Marshalling
 Controller::Controller(Core::System& system_) : ServiceFramework{system_, "IpcController"} {
@@ -118,7 +120,8 @@ Controller::Controller(Core::System& system_) : ServiceFramework{system_, "IpcCo
         {2, &Controller::CloneCurrentObject, "CloneCurrentObject"},
         {3, &Controller::QueryPointerBufferSize, "QueryPointerBufferSize"},
         {4, &Controller::CloneCurrentObjectEx, "CloneCurrentObjectEx"},
-        {5, &Controller::SetPointerBufferSize, "SetPointerBufferSize"}, //TODO: where does this come from
+        {5, &Controller::SetPointerBufferSize,
+         "SetPointerBufferSize"}, // TODO: where does this come from
     };
     RegisterHandlers(functions);
 }

@@ -22,9 +22,9 @@
 #include "common/fs/path_util.h"
 
 #ifdef _WIN32
-#include <windows.h>
 #include <psapi.h>
 #include <tlhelp32.h>
+#include <windows.h>
 #else
 #include <unistd.h>
 #endif
@@ -89,9 +89,9 @@ QWidget* HackerEnvironment::CreateProcessMonitorTab() {
     layout->addLayout(toolbar);
 
     process_table_ = new QTableWidget(0, 5, widget);
-    process_table_->setHorizontalHeaderLabels(
-        {QStringLiteral("TID"), QStringLiteral("Name"), QStringLiteral("State"),
-         QStringLiteral("CPU %"), QStringLiteral("Memory")});
+    process_table_->setHorizontalHeaderLabels({QStringLiteral("TID"), QStringLiteral("Name"),
+                                               QStringLiteral("State"), QStringLiteral("CPU %"),
+                                               QStringLiteral("Memory")});
     process_table_->horizontalHeader()->setStretchLastSection(true);
     process_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
     process_table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -104,7 +104,8 @@ QWidget* HackerEnvironment::CreateProcessMonitorTab() {
 }
 
 void HackerEnvironment::RefreshProcesses() {
-    if (!process_table_) return;
+    if (!process_table_)
+        return;
 
     process_table_->setRowCount(0);
 
@@ -112,7 +113,8 @@ void HackerEnvironment::RefreshProcesses() {
 #ifdef _WIN32
     DWORD pid = GetCurrentProcessId();
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-    if (snapshot == INVALID_HANDLE_VALUE) return;
+    if (snapshot == INVALID_HANDLE_VALUE)
+        return;
 
     THREADENTRY32 te{};
     te.dwSize = sizeof(te);
@@ -122,19 +124,13 @@ void HackerEnvironment::RefreshProcesses() {
         do {
             if (te.th32OwnerProcessID == pid) {
                 process_table_->insertRow(row);
-                process_table_->setItem(
-                    row, 0,
-                    new QTableWidgetItem(QString::number(te.th32ThreadID)));
-                process_table_->setItem(
-                    row, 1, new QTableWidgetItem(QStringLiteral("Thread")));
-                process_table_->setItem(
-                    row, 2, new QTableWidgetItem(QStringLiteral("Running")));
-                process_table_->setItem(
-                    row, 3,
-                    new QTableWidgetItem(
-                        QString::number(te.tpBasePri)));
-                process_table_->setItem(
-                    row, 4, new QTableWidgetItem(QStringLiteral("-")));
+                process_table_->setItem(row, 0,
+                                        new QTableWidgetItem(QString::number(te.th32ThreadID)));
+                process_table_->setItem(row, 1, new QTableWidgetItem(QStringLiteral("Thread")));
+                process_table_->setItem(row, 2, new QTableWidgetItem(QStringLiteral("Running")));
+                process_table_->setItem(row, 3,
+                                        new QTableWidgetItem(QString::number(te.tpBasePri)));
+                process_table_->setItem(row, 4, new QTableWidgetItem(QStringLiteral("-")));
                 ++row;
             }
         } while (Thread32Next(snapshot, &te));
@@ -197,9 +193,7 @@ QWidget* HackerEnvironment::CreateMemoryViewerTab() {
     for (int r = 0; r < 16; ++r) {
         quint64 addr = static_cast<quint64>(r) * 16;
         memory_table_->setItem(
-            r, 0,
-            new QTableWidgetItem(
-                QStringLiteral("0x%1").arg(addr, 8, 16, QLatin1Char('0'))));
+            r, 0, new QTableWidgetItem(QStringLiteral("0x%1").arg(addr, 8, 16, QLatin1Char('0'))));
         for (int c = 1; c <= 16; ++c) {
             memory_table_->setItem(r, c, new QTableWidgetItem(QStringLiteral("00")));
         }
@@ -211,11 +205,13 @@ QWidget* HackerEnvironment::CreateMemoryViewerTab() {
 }
 
 void HackerEnvironment::RefreshMemory() {
-    if (!memory_table_ || !address_input_) return;
+    if (!memory_table_ || !address_input_)
+        return;
 
     bool ok = false;
     quint64 base = address_input_->text().toULongLong(&ok, 16);
-    if (!ok) base = 0;
+    if (!ok)
+        base = 0;
 
     for (int r = 0; r < 16; ++r) {
         quint64 row_addr = base + static_cast<quint64>(r) * 16;
@@ -241,8 +237,7 @@ QWidget* HackerEnvironment::CreateLogConsoleTab() {
     log_output_ = new QTextEdit();
     log_output_->setReadOnly(true);
     log_output_->setFont(QFont(QStringLiteral("Courier New"), 9));
-    log_output_->setStyleSheet(
-        QStringLiteral("background-color:#1e1e1e; color:#dcdcdc;"));
+    log_output_->setStyleSheet(QStringLiteral("background-color:#1e1e1e; color:#dcdcdc;"));
     layout->addWidget(log_output_);
 
     auto* input_layout = new QHBoxLayout();
@@ -250,7 +245,8 @@ QWidget* HackerEnvironment::CreateLogConsoleTab() {
     command_input_->setPlaceholderText(QStringLiteral("Enter command..."));
     connect(command_input_, &QLineEdit::returnPressed, this, [this]() {
         const QString cmd = command_input_->text().trimmed();
-        if (cmd.isEmpty()) return;
+        if (cmd.isEmpty())
+            return;
 
         AppendLog(QStringLiteral("> %1").arg(cmd));
 
@@ -284,10 +280,10 @@ QWidget* HackerEnvironment::CreateLogConsoleTab() {
 }
 
 void HackerEnvironment::AppendLog(const QString& message) {
-    if (!log_output_) return;
+    if (!log_output_)
+        return;
 
-    const QString timestamp =
-        QDateTime::currentDateTime().toString(QStringLiteral("hh:mm:ss"));
+    const QString timestamp = QDateTime::currentDateTime().toString(QStringLiteral("hh:mm:ss"));
     log_output_->append(QStringLiteral("[%1] %2").arg(timestamp, message));
 }
 
@@ -338,8 +334,7 @@ QWidget* HackerEnvironment::CreateMcpToolsTab() {
     tool_output_ = new QTextEdit();
     tool_output_->setReadOnly(true);
     tool_output_->setFont(QFont(QStringLiteral("Courier New"), 9));
-    tool_output_->setStyleSheet(
-        QStringLiteral("background-color:#1e1e1e; color:#dcdcdc;"));
+    tool_output_->setStyleSheet(QStringLiteral("background-color:#1e1e1e; color:#dcdcdc;"));
     right_layout->addWidget(tool_output_);
 
     auto* invoke_layout = new QHBoxLayout();
@@ -356,8 +351,7 @@ QWidget* HackerEnvironment::CreateMcpToolsTab() {
         }
         const QString tool_name = item->text(0);
         const QString args = tool_args_input_->text();
-        tool_output_->append(
-            QStringLiteral("Invoking %1(%2)...").arg(tool_name, args));
+        tool_output_->append(QStringLiteral("Invoking %1(%2)...").arg(tool_name, args));
         emit ToolInvoked(tool_name, args);
     });
     invoke_layout->addWidget(btn_invoke);
@@ -403,7 +397,8 @@ QWidget* HackerEnvironment::CreateSystemInfoTab() {
 }
 
 void HackerEnvironment::RefreshSystemInfo() {
-    if (!system_tree_) return;
+    if (!system_tree_)
+        return;
     system_tree_->clear();
 
     // Host section
@@ -415,26 +410,22 @@ void HackerEnvironment::RefreshSystemInfo() {
     SYSTEM_INFO si{};
     GetSystemInfo(&si);
     new QTreeWidgetItem(host,
-                        {QStringLiteral("Processors"),
-                         QString::number(si.dwNumberOfProcessors)});
+                        {QStringLiteral("Processors"), QString::number(si.dwNumberOfProcessors)});
     MEMORYSTATUSEX ms{};
     ms.dwLength = sizeof(ms);
     GlobalMemoryStatusEx(&ms);
-    new QTreeWidgetItem(
-        host, {QStringLiteral("Total RAM"),
-               QStringLiteral("%1 MB").arg(ms.ullTotalPhys / (1024 * 1024))});
-    new QTreeWidgetItem(
-        host, {QStringLiteral("Available RAM"),
-               QStringLiteral("%1 MB").arg(ms.ullAvailPhys / (1024 * 1024))});
+    new QTreeWidgetItem(host, {QStringLiteral("Total RAM"),
+                               QStringLiteral("%1 MB").arg(ms.ullTotalPhys / (1024 * 1024))});
+    new QTreeWidgetItem(host, {QStringLiteral("Available RAM"),
+                               QStringLiteral("%1 MB").arg(ms.ullAvailPhys / (1024 * 1024))});
 #else
     new QTreeWidgetItem(host, {QStringLiteral("OS"), QStringLiteral("POSIX")});
-    new QTreeWidgetItem(
-        host, {QStringLiteral("Page Size"), QString::number(sysconf(_SC_PAGESIZE))});
+    new QTreeWidgetItem(host,
+                        {QStringLiteral("Page Size"), QString::number(sysconf(_SC_PAGESIZE))});
     long pages = sysconf(_SC_PHYS_PAGES);
     long page_size = sysconf(_SC_PAGESIZE);
-    new QTreeWidgetItem(
-        host, {QStringLiteral("Total RAM"),
-               QStringLiteral("%1 MB").arg((pages * page_size) / (1024 * 1024))});
+    new QTreeWidgetItem(host, {QStringLiteral("Total RAM"),
+                               QStringLiteral("%1 MB").arg((pages * page_size) / (1024 * 1024))});
 #endif
 
     // Emulated section
@@ -448,18 +439,18 @@ void HackerEnvironment::RefreshSystemInfo() {
     // Paths section
     auto* paths = new QTreeWidgetItem(system_tree_, {QStringLiteral("Paths")});
     paths->setExpanded(true);
-    new QTreeWidgetItem(paths,
-                        {QStringLiteral("User Dir"),
-                         QString::fromStdString(
-                             Common::FS::GetSuyuPath(Common::FS::SuyuPath::SuyuDir).string())});
-    new QTreeWidgetItem(paths,
-                        {QStringLiteral("Keys Dir"),
-                         QString::fromStdString(
-                             Common::FS::GetSuyuPath(Common::FS::SuyuPath::KeysDir).string())});
-    new QTreeWidgetItem(paths,
-                        {QStringLiteral("NAND Dir"),
-                         QString::fromStdString(
-                             Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir).string())});
+    new QTreeWidgetItem(
+        paths,
+        {QStringLiteral("User Dir"),
+         QString::fromStdString(Common::FS::GetSuyuPath(Common::FS::SuyuPath::SuyuDir).string())});
+    new QTreeWidgetItem(
+        paths,
+        {QStringLiteral("Keys Dir"),
+         QString::fromStdString(Common::FS::GetSuyuPath(Common::FS::SuyuPath::KeysDir).string())});
+    new QTreeWidgetItem(
+        paths,
+        {QStringLiteral("NAND Dir"),
+         QString::fromStdString(Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir).string())});
 }
 
 // ---------------------------------------------------------------------------
@@ -488,16 +479,14 @@ QWidget* HackerEnvironment::CreateRecompileTab() {
     recomp_path_input_ = new QLineEdit();
     recomp_path_input_->setPlaceholderText(QStringLiteral("C:/output/recompiled"));
     recomp_path_input_->setText(
-        QString::fromStdString(
-            Common::FS::GetSuyuPath(Common::FS::SuyuPath::SuyuDir).string()) +
+        QString::fromStdString(Common::FS::GetSuyuPath(Common::FS::SuyuPath::SuyuDir).string()) +
         QStringLiteral("/recompiled"));
     form->addWidget(recomp_path_input_, 1);
 
     auto* btn_browse = new QPushButton(QStringLiteral("Browse..."));
     connect(btn_browse, &QPushButton::clicked, this, [this]() {
         const QString dir = QFileDialog::getExistingDirectory(
-            this, QStringLiteral("Recompile Output Directory"),
-            recomp_path_input_->text());
+            this, QStringLiteral("Recompile Output Directory"), recomp_path_input_->text());
         if (!dir.isEmpty()) {
             recomp_path_input_->setText(dir);
         }
@@ -506,16 +495,14 @@ QWidget* HackerEnvironment::CreateRecompileTab() {
 
     form->addWidget(new QLabel(QStringLiteral("Platform:")));
     recomp_platform_ = new QComboBox();
-    recomp_platform_->addItems({QStringLiteral("Windows (.exe)"),
-                                 QStringLiteral("Linux/BSD (ELF)"),
-                                 QStringLiteral("macOS (Mach-O)"),
-                                 QStringLiteral("All Platforms")});
+    recomp_platform_->addItems({QStringLiteral("Windows (.exe)"), QStringLiteral("Linux/BSD (ELF)"),
+                                QStringLiteral("macOS (Mach-O)"), QStringLiteral("All Platforms")});
     form->addWidget(recomp_platform_);
 
     form->addWidget(new QLabel(QStringLiteral("Mode:")));
     recomp_mode_ = new QComboBox();
-    recomp_mode_->addItems({QStringLiteral("Source + Build Scripts"),
-                             QStringLiteral("Source Only (no build)")});
+    recomp_mode_->addItems(
+        {QStringLiteral("Source + Build Scripts"), QStringLiteral("Source Only (no build)")});
     form->addWidget(recomp_mode_);
 
     layout->addLayout(form);
@@ -524,10 +511,10 @@ QWidget* HackerEnvironment::CreateRecompileTab() {
     btn_layout->addStretch();
 
     auto* btn_export = new QPushButton(QStringLiteral("Export Recompiled Source"));
-    btn_export->setStyleSheet(QStringLiteral(
-        "QPushButton { background: #2a6; color: white; padding: 6px 16px; "
-        "border-radius: 4px; font-weight: bold; }"
-        "QPushButton:hover { background: #3b7; }"));
+    btn_export->setStyleSheet(
+        QStringLiteral("QPushButton { background: #2a6; color: white; padding: 6px 16px; "
+                       "border-radius: 4px; font-weight: bold; }"
+                       "QPushButton:hover { background: #3b7; }"));
     connect(btn_export, &QPushButton::clicked, this, [this]() {
         const QString output_dir = recomp_path_input_->text().trimmed();
         if (output_dir.isEmpty()) {
@@ -551,10 +538,8 @@ QWidget* HackerEnvironment::CreateRecompileTab() {
     recomp_output_ = new QTextEdit();
     recomp_output_->setReadOnly(true);
     recomp_output_->setFont(QFont(QStringLiteral("Courier New"), 9));
-    recomp_output_->setStyleSheet(
-        QStringLiteral("background-color:#1e1e1e; color:#dcdcdc;"));
-    recomp_output_->setPlaceholderText(
-        QStringLiteral("Recompile output will appear here..."));
+    recomp_output_->setStyleSheet(QStringLiteral("background-color:#1e1e1e; color:#dcdcdc;"));
+    recomp_output_->setPlaceholderText(QStringLiteral("Recompile output will appear here..."));
     layout->addWidget(recomp_output_, 1);
 
     widget->setLayout(layout);

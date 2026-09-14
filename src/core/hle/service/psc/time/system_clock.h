@@ -21,7 +21,8 @@ namespace Service::PSC::Time {
 
 class SystemClock final : public ServiceFramework<SystemClock> {
 public:
-    explicit SystemClock(Core::System& system, SystemClockCore& system_clock_core, bool can_write_clock, bool can_write_uninitialized_clock);
+    explicit SystemClock(Core::System& system, SystemClockCore& system_clock_core,
+                         bool can_write_clock, bool can_write_uninitialized_clock);
     ~SystemClock() override = default;
 
     Result GetCurrentTime(Out<s64> out_time);

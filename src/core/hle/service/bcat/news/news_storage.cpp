@@ -24,7 +24,8 @@ std::set<std::string> LoadReadIds() {
     std::ifstream f(GetReadCachePath());
     std::string line;
     while (std::getline(f, line)) {
-        if (!line.empty()) ids.insert(line);
+        if (!line.empty())
+            ids.insert(line);
     }
     return ids;
 }
@@ -97,7 +98,8 @@ StoredNews& NewsStorage::Upsert(std::string_view news_id, std::string_view user_
 }
 
 StoredNews& NewsStorage::UpsertRaw(const GithubNewsMeta& meta, std::vector<u8> payload) {
-    return Upsert(meta.news_id, "", meta.topic_id, static_cast<s64>(meta.published_at), std::move(payload));
+    return Upsert(meta.news_id, "", meta.topic_id, static_cast<s64>(meta.published_at),
+                  std::move(payload));
 }
 
 std::vector<NewsRecord> NewsStorage::ListAll() const {
@@ -109,9 +111,8 @@ std::vector<NewsRecord> NewsStorage::ListAll() const {
         out.push_back(v.record);
     }
 
-    std::sort(out.begin(), out.end(), [](const auto& a, const auto& b) {
-        return a.received_time > b.received_time;
-    });
+    std::sort(out.begin(), out.end(),
+              [](const auto& a, const auto& b) { return a.received_time > b.received_time; });
     return out;
 }
 
@@ -164,6 +165,5 @@ void NewsStorage::ResetOpenCounter() {
     std::scoped_lock lk{mtx};
     open_counter = 0;
 }
-
 
 } // namespace Service::News

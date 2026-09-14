@@ -17,8 +17,9 @@ AboutDialog::AboutDialog(QWidget* parent)
     const auto suyu_build = fmt::format("suyu Development Build | {}-{}", branch_name, description);
     const auto override_build =
         fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
-    const auto suyu_build_version = !build_fullname.empty() ? build_fullname
-                                                            : (override_build.empty() ? suyu_build : override_build);
+    const auto suyu_build_version = !build_fullname.empty()
+                                        ? build_fullname
+                                        : (override_build.empty() ? suyu_build : override_build);
 
     ui->setupUi(this);
     // Try and request the icon from Qt theme (Linux?)

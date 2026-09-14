@@ -14,4 +14,4 @@ struct CodePage {
     uint32_t inst[CODE_PAGE_SIZE / sizeof(uint32_t)];
 };
 
-}
+}  // namespace Dynarmic

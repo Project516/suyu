@@ -88,7 +88,9 @@ Result StartThread(Core::System& system, Handle thread_handle) {
     LOG_DEBUG(Kernel_SVC, "called thread=0x{:08X}", thread_handle);
 
     // Get the thread from its handle.
-    KScopedAutoObject thread = GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KThread>(system.Kernel(), thread_handle);
+    KScopedAutoObject thread = GetCurrentProcess(system.Kernel())
+                                   .GetHandleTable()
+                                   .GetObject<KThread>(system.Kernel(), thread_handle);
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Try to start the thread.
@@ -143,14 +145,18 @@ void SleepThread(Core::System& system, s64 ns) {
 
 /// Gets the thread context
 Result GetThreadContext3(Core::System& system, u64 out_context, Handle thread_handle) {
-    LOG_DEBUG(Kernel_SVC, "called, out_context=0x{:08X}, thread_handle={:#X}", out_context, thread_handle);
+    LOG_DEBUG(Kernel_SVC, "called, out_context=0x{:08X}, thread_handle={:#X}", out_context,
+              thread_handle);
 
     // Get the thread from its handle.
-    KScopedAutoObject thread = GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KThread>(system.Kernel(), thread_handle);
+    KScopedAutoObject thread = GetCurrentProcess(system.Kernel())
+                                   .GetHandleTable()
+                                   .GetObject<KThread>(system.Kernel(), thread_handle);
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Require the handle be to a non-current thread in the current process.
-    R_UNLESS(thread->GetOwnerProcess() == GetCurrentProcessPointer(system.Kernel()), ResultInvalidHandle);
+    R_UNLESS(thread->GetOwnerProcess() == GetCurrentProcessPointer(system.Kernel()),
+             ResultInvalidHandle);
     R_UNLESS(thread.GetPointerUnsafe() != GetCurrentThreadPointer(system.Kernel()), ResultBusy);
 
     // Get the thread context.
@@ -158,9 +164,9 @@ Result GetThreadContext3(Core::System& system, u64 out_context, Handle thread_ha
     R_TRY(thread->GetThreadContext3(system.Kernel(), std::addressof(context)));
 
     // Copy the thread context to user space.
-    R_UNLESS(
-        GetCurrentMemory(system.Kernel()).WriteBlock(out_context, std::addressof(context), sizeof(context)),
-        ResultInvalidPointer);
+    R_UNLESS(GetCurrentMemory(system.Kernel())
+                 .WriteBlock(out_context, std::addressof(context), sizeof(context)),
+             ResultInvalidPointer);
 
     R_SUCCEED();
 }
@@ -170,7 +176,9 @@ Result GetThreadPriority(Core::System& system, s32* out_priority, Handle handle)
     LOG_TRACE(Kernel_SVC, "called");
 
     // Get the thread from its handle.
-    KScopedAutoObject thread = GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KThread>(system.Kernel(), handle);
+    KScopedAutoObject thread = GetCurrentProcess(system.Kernel())
+                                   .GetHandleTable()
+                                   .GetObject<KThread>(system.Kernel(), handle);
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Get the thread's priority.
@@ -189,7 +197,8 @@ Result SetThreadPriority(Core::System& system, Handle thread_handle, s32 priorit
     R_UNLESS(process.CheckThreadPriority(priority), ResultInvalidPriority);
 
     // Get the thread from its handle.
-    KScopedAutoObject thread = process.GetHandleTable().GetObject<KThread>(system.Kernel(), thread_handle);
+    KScopedAutoObject thread =
+        process.GetHandleTable().GetObject<KThread>(system.Kernel(), thread_handle);
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Set the thread priority.
@@ -242,7 +251,9 @@ Result GetThreadCoreMask(Core::System& system, s32* out_core_id, u64* out_affini
     LOG_TRACE(Kernel_SVC, "called, handle=0x{:08X}", thread_handle);
 
     // Get the thread from its handle.
-    KScopedAutoObject thread = GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KThread>(system.Kernel(), thread_handle);
+    KScopedAutoObject thread = GetCurrentProcess(system.Kernel())
+                                   .GetHandleTable()
+                                   .GetObject<KThread>(system.Kernel(), thread_handle);
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Get the core mask.
@@ -271,8 +282,9 @@ Result SetThreadCoreMask(Core::System& system, Handle thread_handle, s32 core_id
     }
 
     // Get the thread from its handle.
-    KScopedAutoObject thread =
-        GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KThread>(system.Kernel(), thread_handle);
+    KScopedAutoObject thread = GetCurrentProcess(system.Kernel())
+                                   .GetHandleTable()
+                                   .GetObject<KThread>(system.Kernel(), thread_handle);
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Set the core mask.
@@ -282,7 +294,9 @@ Result SetThreadCoreMask(Core::System& system, Handle thread_handle, s32 core_id
 /// Get the ID for the specified thread.
 Result GetThreadId(Core::System& system, u64* out_thread_id, Handle thread_handle) {
     // Get the thread from its handle.
-    KScopedAutoObject thread = GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KThread>(system.Kernel(), thread_handle);
+    KScopedAutoObject thread = GetCurrentProcess(system.Kernel())
+                                   .GetHandleTable()
+                                   .GetObject<KThread>(system.Kernel(), thread_handle);
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Get the thread's id.

@@ -9,9 +9,9 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <ankerl/unordered_dense.h>
 #include <utility>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 #include "common/logging.h"
 #include "common/param_package.h"
 #include "common/uuid.h"
@@ -412,7 +412,8 @@ public:
 namespace Impl {
 
 template <typename InputDeviceType>
-using FactoryListType = ankerl::unordered_dense::map<std::string, std::shared_ptr<Factory<InputDeviceType>>>;
+using FactoryListType =
+    ankerl::unordered_dense::map<std::string, std::shared_ptr<Factory<InputDeviceType>>>;
 
 template <typename InputDeviceType>
 struct FactoryList {

@@ -10,11 +10,10 @@
 
 #include <array>
 
-#include "dynarmic/mcl/intrusive_list.hpp"
 #include "common/common_types.h"
-
-#include "dynarmic/ir/value.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/ir/value.h"
+#include "dynarmic/mcl/intrusive_list.hpp"
 
 namespace Dynarmic::IR {
 
@@ -25,10 +24,11 @@ constexpr size_t max_arg_count = 4;
 
 /// A representation of a microinstruction. A single ARM/Thumb instruction may be
 /// converted into zero or more microinstructions.
-//class Inst final {
+// class Inst final {
 class Inst final : public mcl::intrusive_list_node<Inst> {
 public:
-    explicit Inst(Opcode opcode) : op(opcode) {}
+    explicit Inst(Opcode opcode)
+            : op(opcode) {}
 
     /// @brief Determines if all arguments of this instruction are immediates.
     bool AreAllArgsImmediates() const;
@@ -55,8 +55,8 @@ public:
     inline Value GetArg(size_t index) const noexcept {
         DEBUG_ASSERT(index < GetNumArgsOf(op));
         DEBUG_ASSERT(!args[index].IsEmpty() || GetArgTypeOf(op, index) == IR::Type::Opaque);
-        //DEBUG_ASSERT(index < GetNumArgsOf(op) && "Inst::GetArg: index {} >= number of arguments of {} ({})", index, op, GetNumArgsOf(op));
-        //DEBUG_ASSERT(!args[index].IsEmpty() || GetArgTypeOf(op, index) == IR::Type::Opaque && "Inst::GetArg: index {} is empty", index, args[index].GetType());
+        // DEBUG_ASSERT(index < GetNumArgsOf(op) && "Inst::GetArg: index {} >= number of arguments of {} ({})", index, op, GetNumArgsOf(op));
+        // DEBUG_ASSERT(!args[index].IsEmpty() || GetArgTypeOf(op, index) == IR::Type::Opaque && "Inst::GetArg: index {} is empty", index, args[index].GetType());
         return args[index];
     }
     void SetArg(size_t index, Value value) noexcept;
@@ -79,13 +79,13 @@ public:
 
     // TODO: so much padding wasted with mcl::intrusive_node
     // 16 + 1, 24
-    Opcode op; //2 (6)
+    Opcode op;  // 2 (6)
     // Linked list of pseudooperations associated with this instruction.
-    Inst* next_pseudoop = nullptr; //8 (14)
-    unsigned use_count = 0; //4 (0)
-    unsigned name = 0; //4 (4)
-    alignas(64) std::array<Value, max_arg_count> args; //16 * 4 = 64 (1 cache line)
+    Inst* next_pseudoop = nullptr;                      // 8 (14)
+    unsigned use_count = 0;                             // 4 (0)
+    unsigned name = 0;                                  // 4 (4)
+    alignas(64) std::array<Value, max_arg_count> args;  // 16 * 4 = 64 (1 cache line)
 };
-//static_assert(sizeof(Inst) == 128);
+// static_assert(sizeof(Inst) == 128);
 
 }  // namespace Dynarmic::IR

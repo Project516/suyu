@@ -38,13 +38,9 @@ struct Frame {
 
 class PresentManager {
 public:
-    PresentManager(const vk::Instance& instance,
-                   Core::Frontend::EmuWindow& render_window,
-                   const Device& device,
-                   MemoryAllocator& memory_allocator,
-                   Scheduler& scheduler,
-                   Swapchain& swapchain,
-                   vk::SurfaceKHR& surface);
+    PresentManager(const vk::Instance& instance, Core::Frontend::EmuWindow& render_window,
+                   const Device& device, MemoryAllocator& memory_allocator, Scheduler& scheduler,
+                   Swapchain& swapchain, vk::SurfaceKHR& surface);
     ~PresentManager();
 
     /// Returns the last used presentation frame

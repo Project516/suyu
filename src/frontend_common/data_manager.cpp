@@ -2,17 +2,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <filesystem>
-#include "data_manager.h"
+#include <fmt/format.h>
 #include "common/assert.h"
 #include "common/fs/path_util.h"
-#include <fmt/format.h>
+#include "data_manager.h"
 
 namespace FrontendCommon::DataManager {
 
 namespace fs = std::filesystem;
 
-const fs::path GetDataDir(DataDir dir, const std::string &user_id)
-{
+const fs::path GetDataDir(DataDir dir, const std::string& user_id) {
     const fs::path nand_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir);
     const fs::path save_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::SaveDir);
 
@@ -36,15 +35,13 @@ const fs::path GetDataDir(DataDir dir, const std::string &user_id)
     return "";
 }
 
-const std::string GetDataDirString(DataDir dir, const std::string &user_id)
-{
+const std::string GetDataDirString(DataDir dir, const std::string& user_id) {
     auto dirString = GetDataDir(dir, user_id).string();
     std::filesystem::create_directories(dirString);
     return dirString;
 }
 
-u64 ClearDir(DataDir dir, const std::string &user_id)
-{
+u64 ClearDir(DataDir dir, const std::string& user_id) {
     fs::path data_dir = GetDataDir(dir, user_id);
     std::error_code ec;
     u64 result = fs::remove_all(data_dir, ec);
@@ -58,19 +55,19 @@ std::string ReadableBytesSize(u64 size) noexcept {
     u64 const base = 1000;
     if (size == 0)
         return "0 B";
-    auto const digit_groups = std::min<u64>(u64(std::log10(size) / std::log10(base)), u64(units.size()));
+    auto const digit_groups =
+        std::min<u64>(u64(std::log10(size) / std::log10(base)), u64(units.size()));
     return fmt::format("{:.1f} {}", size / std::pow(base, digit_groups), units[digit_groups]);
 }
 
-u64 DataDirSize(DataDir dir)
-{
+u64 DataDirSize(DataDir dir) {
     fs::path data_dir = GetDataDir(dir);
     u64 size = 0;
 
     if (!fs::exists(data_dir))
         return 0;
 
-    for (const auto &entry : fs::recursive_directory_iterator(data_dir)) {
+    for (const auto& entry : fs::recursive_directory_iterator(data_dir)) {
         if (!entry.is_directory()) {
             size += entry.file_size();
         }

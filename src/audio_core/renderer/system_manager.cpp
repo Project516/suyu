@@ -71,7 +71,8 @@ bool SystemManager::Remove(System& system_) {
     {
         std::scoped_lock l{mutex1};
         if (systems.remove(&system_) == 0) {
-            LOG_ERROR(Service_Audio, "Failed to remove a render system, it was not found in the list!");
+            LOG_ERROR(Service_Audio,
+                      "Failed to remove a render system, it was not found in the list!");
             return false;
         }
     }

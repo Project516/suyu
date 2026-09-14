@@ -52,12 +52,10 @@ using IntervalType = boost::icl::interval_set<VAddr>::interval_type;
 
 class DynarmicCallbacks64 : public Dynarmic::A64::UserCallbacks {
 public:
-    explicit DynarmicCallbacks64(Core::Memory::Memory& memory_, std::vector<u8>& local_memory_, IntervalSet& mapped_ranges_, JITContextImpl& parent_)
-        : memory{memory_}
-        , local_memory{local_memory_}
-        , mapped_ranges{mapped_ranges_}
-        , parent{parent_}
-    {}
+    explicit DynarmicCallbacks64(Core::Memory::Memory& memory_, std::vector<u8>& local_memory_,
+                                 IntervalSet& mapped_ranges_, JITContextImpl& parent_)
+        : memory{memory_}, local_memory{local_memory_},
+          mapped_ranges{mapped_ranges_}, parent{parent_} {}
 
     std::optional<std::uint32_t> MemoryReadCode(VAddr vaddr) override {
         static_assert(Core::Memory::YUZU_PAGESIZE == Dynarmic::CODE_PAGE_SIZE);
@@ -69,7 +67,7 @@ public:
         return cached_code_page.inst[(vaddr & Core::Memory::YUZU_PAGEMASK) / sizeof(u32)];
     }
     void InstructionSynchronizationBarrierRaised() override {
-        last_code_addr = u64(-1); //reset back, force refetch
+        last_code_addr = u64(-1); // reset back, force refetch
     }
     u8 MemoryRead8(u64 vaddr) override {
         return ReadMemory<u8>(vaddr);
@@ -137,7 +135,8 @@ public:
         return 0;
     }
 
-    template<typename T> T ReadMemory(u64 vaddr) {
+    template <typename T>
+    T ReadMemory(u64 vaddr) {
         T ret{};
         if (boost::icl::contains(mapped_ranges, vaddr)) {
             memory.ReadBlock(vaddr, &ret, sizeof(T));
@@ -261,7 +260,8 @@ public:
     void InsertStack() {
         // Allocate enough space to avoid any reasonable risk of
         // overflowing the stack during plugin execution
-        const u64 pad_amount = Common::AlignUp(local_memory.size(), STACK_ALIGN) - local_memory.size();
+        const u64 pad_amount =
+            Common::AlignUp(local_memory.size(), STACK_ALIGN) - local_memory.size();
         local_memory.insert(local_memory.end(), (4096 * 32) + pad_amount, 0);
         top_of_stack = local_memory.size();
         heap_pointer = top_of_stack;
@@ -292,7 +292,8 @@ public:
         for (size_t i = 0; i < 8 && i < argument_stack.size(); i++)
             jit->SetRegister(i, argument_stack[i]);
         if (argument_stack.size() > 8) {
-            const VAddr new_sp = Common::AlignDown(top_of_stack - (argument_stack.size() - 8) * sizeof(u64), STACK_ALIGN);
+            const VAddr new_sp = Common::AlignDown(
+                top_of_stack - (argument_stack.size() - 8) * sizeof(u64), STACK_ALIGN);
             for (size_t i = 8; i < argument_stack.size(); i++)
                 callbacks->MemoryWrite64(new_sp + (i - 8) * sizeof(u64), argument_stack[i]);
             jit->SetSP(new_sp);
@@ -318,7 +319,8 @@ public:
         const size_t num_bytes = Common::AlignUp(size, STACK_ALIGN);
         // Make additional memory space if required
         if (heap_pointer + num_bytes > local_memory.size()) {
-            local_memory.insert(local_memory.end(), (heap_pointer + num_bytes) - local_memory.size(), 0);
+            local_memory.insert(local_memory.end(),
+                                (heap_pointer + num_bytes) - local_memory.size(), 0);
         }
         const VAddr location{heap_pointer};
         std::memcpy(local_memory.data() + location, data, size);
@@ -331,15 +333,24 @@ public:
     }
 
     VAddr GetHelper(const std::string& name) {
-        if (name == "_resolve") return helpers[HelperFn::Resolve];
-        else if (name == "_panic") return helpers[HelperFn::Panic];
-        else if (name == "_stop") return helpers[HelperFn::Stop];
-        else if (name == "memset") return helpers[HelperFn::Memset];
-        else if (name == "memcpy") return helpers[HelperFn::Memcpy];
-        else if (name == "memmove") return helpers[HelperFn::Memmove];
-        else if (name == "PanicForPlugin") return helpers[HelperFn::PanicForPlugin];
-        else if (name == "_ZN2nn4diag6detail9AbortImplEPKcS3_S3_i") return helpers[HelperFn::AbortImpl];
-        else if (name == "_ZN2nn6detail21UnexpectedDefaultImplEPKcS2_i") return helpers[HelperFn::UnexpectedImpl];
+        if (name == "_resolve")
+            return helpers[HelperFn::Resolve];
+        else if (name == "_panic")
+            return helpers[HelperFn::Panic];
+        else if (name == "_stop")
+            return helpers[HelperFn::Stop];
+        else if (name == "memset")
+            return helpers[HelperFn::Memset];
+        else if (name == "memcpy")
+            return helpers[HelperFn::Memcpy];
+        else if (name == "memmove")
+            return helpers[HelperFn::Memmove];
+        else if (name == "PanicForPlugin")
+            return helpers[HelperFn::PanicForPlugin];
+        else if (name == "_ZN2nn4diag6detail9AbortImplEPKcS3_S3_i")
+            return helpers[HelperFn::AbortImpl];
+        else if (name == "_ZN2nn6detail21UnexpectedDefaultImplEPKcS2_i")
+            return helpers[HelperFn::UnexpectedImpl];
         else {
             LOG_CRITICAL(Service_JIT, "unresolved {}", name);
             return helpers[HelperFn::Panic];
@@ -378,7 +389,8 @@ void DynarmicCallbacks64::CallSVC(u32 swi) {
     }
 
     u64 pc{parent.jit->GetPC() - 4};
-    if (pc == parent.helpers[size_t(HelperFn::Memcpy)] || pc == parent.helpers[size_t(HelperFn::Memmove)]) {
+    if (pc == parent.helpers[size_t(HelperFn::Memcpy)] ||
+        pc == parent.helpers[size_t(HelperFn::Memmove)]) {
         const VAddr dest{parent.jit->GetRegister(0)};
         const VAddr src{parent.jit->GetRegister(1)};
         const size_t n{parent.jit->GetRegister(2)};
@@ -405,7 +417,7 @@ void DynarmicCallbacks64::CallSVC(u32 swi) {
     } else if (pc == parent.helpers[size_t(HelperFn::Panic)]) {
         LOG_CRITICAL(Service_JIT, "plugin panicked!");
         parent.jit->HaltExecution();
-    // SM64
+        // SM64
     } else if (pc == parent.helpers[size_t(HelperFn::PanicForPlugin)]) {
         LOG_CRITICAL(Service_JIT, "plugin panicked!");
         parent.jit->HaltExecution();

@@ -41,51 +41,50 @@ const std::array<const char*, size_t(Language::Count)> LANGUAGE_NAMES{{
     "Thai",
 }};
 
-namespace
-{
-    constexpr std::size_t MAX_EXPANDED_LANG_SIZE = sizeof(LanguageEntry) * 32;
+namespace {
+constexpr std::size_t MAX_EXPANDED_LANG_SIZE = sizeof(LanguageEntry) * 32;
 
+bool InflateRawDeflate(std::span<const u8> compressed, std::vector<u8>& out) {
+    if (compressed.empty())
+        return false;
 
-    bool InflateRawDeflate(std::span<const u8> compressed, std::vector<u8>& out)
-    {
-        if (compressed.empty()) return false;
-
-        z_stream stream{};
-        stream.next_in = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(compressed.data()));
-        stream.avail_in = static_cast<uInt>(compressed.size());
-        if (inflateInit2(&stream, -MAX_WBITS) != Z_OK) {
-            return false;
-        }
-
-        out.resize(MAX_EXPANDED_LANG_SIZE);
-        stream.next_out = reinterpret_cast<Bytef*>(out.data());
-        stream.avail_out = static_cast<uInt>(out.size());
-
-        int ret = inflate(&stream, Z_FINISH);
-        inflateEnd(&stream);
-
-        if (ret != Z_STREAM_END && ret != Z_OK) {
-            return false;
-        }
-
-        // Shrink to actual decompressed size
-        out.resize(stream.total_out);
-        return true;
+    z_stream stream{};
+    stream.next_in = const_cast<Bytef*>(reinterpret_cast<const Bytef*>(compressed.data()));
+    stream.avail_in = static_cast<uInt>(compressed.size());
+    if (inflateInit2(&stream, -MAX_WBITS) != Z_OK) {
+        return false;
     }
+
+    out.resize(MAX_EXPANDED_LANG_SIZE);
+    stream.next_out = reinterpret_cast<Bytef*>(out.data());
+    stream.avail_out = static_cast<uInt>(out.size());
+
+    int ret = inflate(&stream, Z_FINISH);
+    inflateEnd(&stream);
+
+    if (ret != Z_STREAM_END && ret != Z_OK) {
+        return false;
+    }
+
+    // Shrink to actual decompressed size
+    out.resize(stream.total_out);
+    return true;
+}
 } // namespace
 
 std::string LanguageEntry::GetApplicationName() const {
-    return Common::StringFromFixedZeroTerminatedBuffer(application_name.data(), application_name.size());
+    return Common::StringFromFixedZeroTerminatedBuffer(application_name.data(),
+                                                       application_name.size());
 }
 
 std::string LanguageEntry::GetDeveloperName() const {
-    return Common::StringFromFixedZeroTerminatedBuffer(developer_name.data(), developer_name.size());
+    return Common::StringFromFixedZeroTerminatedBuffer(developer_name.data(),
+                                                       developer_name.size());
 }
 
 NACP::NACP() = default;
 
-NACP::NACP(VirtualFile file)
-{
+NACP::NACP(VirtualFile file) {
     file->ReadObject(&raw);
     if (raw.titles_data_format == TitleDataFormat::Compressed) {
         const u16 compressed_size = raw.language_entries.compressed_data.buffer_size;
@@ -109,36 +108,56 @@ NACP::~NACP() = default;
 
 const LanguageEntry& NACP::GetLanguageEntry() const {
 
-    auto const language = []{
+    auto const language = [] {
         switch (Settings::values.language_index.GetValue()) {
-        case Settings::Language::Chinese: return Language::SimplifiedChinese;
-        case Settings::Language::ChineseSimplified: return Language::SimplifiedChinese;
-        case Settings::Language::ChineseTraditional: return Language::TraditionalChinese;
-        case Settings::Language::Dutch: return Language::Dutch;
-        case Settings::Language::EnglishAmerican: return Language::AmericanEnglish;
-        case Settings::Language::EnglishBritish: return Language::BritishEnglish;
-        case Settings::Language::French: return Language::French;
-        case Settings::Language::FrenchCanadian: return Language::CanadianFrench;
-        case Settings::Language::German: return Language::German;
-        case Settings::Language::Italian: return Language::Italian;
-        case Settings::Language::Korean: return Language::Korean;
-        case Settings::Language::Japanese: return Language::Japanese;
-        case Settings::Language::Portuguese: return Language::Portuguese;
-        case Settings::Language::PortugueseBrazilian: return Language::BrazilianPortuguese;
-        case Settings::Language::Russian: return Language::Russian;
-        case Settings::Language::Spanish: return Language::Spanish;
-        case Settings::Language::SpanishLatin: return Language::LatinAmericanSpanish;
-        case Settings::Language::Taiwanese: return Language::TraditionalChinese;
-        case Settings::Language::Thai: return Language::Thai;
-        case Settings::Language::Polish: return Language::Polish;
-        default: return Language::AmericanEnglish;
+        case Settings::Language::Chinese:
+            return Language::SimplifiedChinese;
+        case Settings::Language::ChineseSimplified:
+            return Language::SimplifiedChinese;
+        case Settings::Language::ChineseTraditional:
+            return Language::TraditionalChinese;
+        case Settings::Language::Dutch:
+            return Language::Dutch;
+        case Settings::Language::EnglishAmerican:
+            return Language::AmericanEnglish;
+        case Settings::Language::EnglishBritish:
+            return Language::BritishEnglish;
+        case Settings::Language::French:
+            return Language::French;
+        case Settings::Language::FrenchCanadian:
+            return Language::CanadianFrench;
+        case Settings::Language::German:
+            return Language::German;
+        case Settings::Language::Italian:
+            return Language::Italian;
+        case Settings::Language::Korean:
+            return Language::Korean;
+        case Settings::Language::Japanese:
+            return Language::Japanese;
+        case Settings::Language::Portuguese:
+            return Language::Portuguese;
+        case Settings::Language::PortugueseBrazilian:
+            return Language::BrazilianPortuguese;
+        case Settings::Language::Russian:
+            return Language::Russian;
+        case Settings::Language::Spanish:
+            return Language::Spanish;
+        case Settings::Language::SpanishLatin:
+            return Language::LatinAmericanSpanish;
+        case Settings::Language::Taiwanese:
+            return Language::TraditionalChinese;
+        case Settings::Language::Thai:
+            return Language::Thai;
+        case Settings::Language::Polish:
+            return Language::Polish;
+        default:
+            return Language::AmericanEnglish;
         }
     }();
 
     const auto index = static_cast<size_t>(language);
 
-    if (index < language_entries.size() &&
-        !language_entries[index].GetApplicationName().empty()) {
+    if (index < language_entries.size() && !language_entries[index].GetApplicationName().empty()) {
         return language_entries[index];
     }
 

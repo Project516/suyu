@@ -302,11 +302,22 @@ public:
     }
 
 public:
-    [[nodiscard]] Core::Memory::Memory& GetMemory() noexcept { return *m_memory; }
-    [[nodiscard]] Core::Memory::Memory const& GetMemory() const noexcept { return *m_memory; }
-    [[nodiscard]] Common::PageTable& GetImpl() noexcept { return m_impl; }
-    [[nodiscard]] Common::PageTable const& GetImpl() const noexcept { return m_impl; }
-    [[nodiscard]] size_t GetNumGuardPages() const noexcept { return this->IsKernel() ? 1 : 4; }
+    [[nodiscard]] Core::Memory::Memory& GetMemory() noexcept {
+        return *m_memory;
+    }
+    [[nodiscard]] Core::Memory::Memory const& GetMemory() const noexcept {
+        return *m_memory;
+    }
+    [[nodiscard]] Common::PageTable& GetImpl() noexcept {
+        return m_impl;
+    }
+    [[nodiscard]] Common::PageTable const& GetImpl() const noexcept {
+        return m_impl;
+    }
+    [[nodiscard]] size_t GetNumGuardPages() const noexcept {
+        return this->IsKernel() ? 1 : 4;
+    }
+
 protected:
     // NOTE: These three functions (Operate, Operate, FinalizeUpdate) are virtual functions
     // in Nintendo's kernel. We devirtualize them, since KPageTable is the only derived
@@ -341,21 +352,21 @@ protected:
         ASSERT(this->IsLockedByCurrentThread());
 
         return m_system.Kernel().MemoryLayout().IsHeapPhysicalAddress(m_cached_physical_heap_region,
-                                                             phys_addr);
+                                                                      phys_addr);
     }
 
     bool IsHeapPhysicalAddress(KPhysicalAddress phys_addr, size_t size) {
         ASSERT(this->IsLockedByCurrentThread());
 
         return m_system.Kernel().MemoryLayout().IsHeapPhysicalAddress(m_cached_physical_heap_region,
-                                                             phys_addr, size);
+                                                                      phys_addr, size);
     }
 
     bool IsHeapPhysicalAddressForFinalize(KPhysicalAddress phys_addr) {
         ASSERT(!this->IsLockedByCurrentThread());
 
         return m_system.Kernel().MemoryLayout().IsHeapPhysicalAddress(m_cached_physical_heap_region,
-                                                             phys_addr);
+                                                                      phys_addr);
     }
 
     bool ContainsPages(KProcessAddress addr, size_t num_pages) const {

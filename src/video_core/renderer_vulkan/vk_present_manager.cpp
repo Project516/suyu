@@ -16,7 +16,6 @@
 
 namespace Vulkan {
 
-
 namespace {
 
 bool CanBlitToSwapchain(const vk::PhysicalDevice& physical_device, VkFormat format) {
@@ -96,22 +95,14 @@ bool CanBlitToSwapchain(const vk::PhysicalDevice& physical_device, VkFormat form
 } // Anonymous namespace
 
 PresentManager::PresentManager(const vk::Instance& instance_,
-                               Core::Frontend::EmuWindow& render_window_,
-                               const Device& device_,
-                               MemoryAllocator& memory_allocator_,
-                               Scheduler& scheduler_,
-                               Swapchain& swapchain_,
-                               vk::SurfaceKHR& surface_)
-    : instance{instance_}
-    , render_window{render_window_}
-    , device{device_}
-    , memory_allocator{memory_allocator_}
-    , scheduler{scheduler_}
-    , swapchain{swapchain_}
-    , surface{surface_}
-    , blit_supported{CanBlitToSwapchain(device.GetPhysical(), swapchain.GetImageViewFormat())}
-    , use_present_thread{Settings::values.async_presentation.GetValue()}
-{
+                               Core::Frontend::EmuWindow& render_window_, const Device& device_,
+                               MemoryAllocator& memory_allocator_, Scheduler& scheduler_,
+                               Swapchain& swapchain_, vk::SurfaceKHR& surface_)
+    : instance{instance_}, render_window{render_window_}, device{device_},
+      memory_allocator{memory_allocator_}, scheduler{scheduler_}, swapchain{swapchain_},
+      surface{surface_}, blit_supported{CanBlitToSwapchain(device.GetPhysical(),
+                                                           swapchain.GetImageViewFormat())},
+      use_present_thread{Settings::values.async_presentation.GetValue()} {
     SetImageCount();
 
     auto& dld = device.GetLogical();
@@ -429,8 +420,8 @@ void PresentManager::CopyToSwapchainImpl(Frame* frame) {
         },
     };
 
-    cmdbuf.PipelineBarrier(vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER, VK_PIPELINE_STAGE_TRANSFER_BIT, {},
-                           {}, {}, pre_barriers);
+    cmdbuf.PipelineBarrier(vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER,
+                           VK_PIPELINE_STAGE_TRANSFER_BIT, {}, {}, {}, pre_barriers);
 
     if (blit_supported) {
         cmdbuf.BlitImage(*frame->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image,

@@ -11,6 +11,7 @@
 #include <array>
 #include <tuple>
 #include <utility>
+
 #include "common/assert.h"
 #include "dynarmic/mcl/bit.hpp"
 
@@ -67,7 +68,7 @@ struct detail {
     /// An argument is specified by a continuous string of the same character.
     template<size_t N>
     static consteval auto GetArgInfo(std::array<char, opcode_bitsize> bitstring) {
-        //static_assert(N > 0, "unexpected field");
+        // static_assert(N > 0, "unexpected field");
         std::array<opcode_type, N> masks = {};
         std::array<size_t, N> shifts = {};
         size_t arg_index = 0;
@@ -86,7 +87,7 @@ struct detail {
                     arg_index++;
                 }
                 const size_t bit_position = opcode_bitsize - i - 1;
-                //static_assert(arg_index >= N, "unexpected field");
+                // static_assert(arg_index >= N, "unexpected field");
                 masks[arg_index] |= opcode_type(1) << bit_position;
                 shifts[arg_index] = bit_position;
             }

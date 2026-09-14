@@ -171,23 +171,32 @@ NvResult nvhost_gpu::SetChannelPriority(IoctlChannelSetPriority& params) {
     LOG_INFO(Service_NVDRV, "called, priority={:X}", channel_priority);
 
     switch (static_cast<ChannelPriority>(channel_priority)) {
-    case ChannelPriority::Low: channel_timeslice = 1300; break;
-    case ChannelPriority::Medium: channel_timeslice = 2600; break;
-    case ChannelPriority::High: channel_timeslice = 5200; break;
-    default : return NvResult::BadParameter;
+    case ChannelPriority::Low:
+        channel_timeslice = 1300;
+        break;
+    case ChannelPriority::Medium:
+        channel_timeslice = 2600;
+        break;
+    case ChannelPriority::High:
+        channel_timeslice = 5200;
+        break;
+    default:
+        return NvResult::BadParameter;
     }
 
     return NvResult::Success;
 }
 
 NvResult nvhost_gpu::AllocGPFIFOEx(IoctlAllocGpfifoEx& params, DeviceFD fd) {
-    LOG_DEBUG(Service_NVDRV, "called, num_entries={:X}, flags={:X}, reserved1={:X}, "
+    LOG_DEBUG(Service_NVDRV,
+              "called, num_entries={:X}, flags={:X}, reserved1={:X}, "
               "reserved2={:X}, reserved3={:X}",
               params.num_entries, params.flags, params.reserved[0], params.reserved[1],
               params.reserved[2]);
 
     if (channel_state->initialized) {
-        LOG_DEBUG(Service_NVDRV, "Channel already initialized; AllocGPFIFOEx returning AlreadyAllocated");
+        LOG_DEBUG(Service_NVDRV,
+                  "Channel already initialized; AllocGPFIFOEx returning AlreadyAllocated");
         return NvResult::AlreadyAllocated;
     }
 
@@ -220,7 +229,8 @@ NvResult nvhost_gpu::AllocGPFIFOEx2(IoctlAllocGpfifoEx& params, DeviceFD fd) {
               params.reserved[2]);
 
     if (channel_state->initialized) {
-        LOG_DEBUG(Service_NVDRV, "Channel already initialized; AllocGPFIFOEx2 returning AlreadyAllocated");
+        LOG_DEBUG(Service_NVDRV,
+                  "Channel already initialized; AllocGPFIFOEx2 returning AlreadyAllocated");
         return NvResult::AlreadyAllocated;
     }
 
@@ -248,13 +258,20 @@ NvResult nvhost_gpu::AllocGPFIFOEx2(IoctlAllocGpfifoEx& params, DeviceFD fd) {
 s32_le nvhost_gpu::GetObjectContextClassNumberIndex(CtxClasses class_number) {
     constexpr s32_le invalid_class_number_index = -1;
     switch (class_number) {
-    case CtxClasses::Ctx2D: return 0;
-    case CtxClasses::Ctx3D: return 1;
-    case CtxClasses::CtxCompute: return 2;
-    case CtxClasses::CtxKepler: return 3;
-    case CtxClasses::CtxDMA: return 4;
-    case CtxClasses::CtxChannelGPFIFO: return 5;
-    default: return invalid_class_number_index;
+    case CtxClasses::Ctx2D:
+        return 0;
+    case CtxClasses::Ctx3D:
+        return 1;
+    case CtxClasses::CtxCompute:
+        return 2;
+    case CtxClasses::CtxKepler:
+        return 3;
+    case CtxClasses::CtxDMA:
+        return 4;
+    case CtxClasses::CtxChannelGPFIFO:
+        return 5;
+    default:
+        return invalid_class_number_index;
     }
 }
 
@@ -287,7 +304,8 @@ NvResult nvhost_gpu::AllocateObjectContext(IoctlAllocObjCtx& params) {
     }
 
     if (ctxObjs[ctx_class_number_index].has_value()) {
-        LOG_WARNING(Service_NVDRV, "Object context for class {:#X} already allocated on this channel",
+        LOG_WARNING(Service_NVDRV,
+                    "Object context for class {:#X} already allocated on this channel",
                     params.class_num);
         return NvResult::AlreadyAllocated;
     }

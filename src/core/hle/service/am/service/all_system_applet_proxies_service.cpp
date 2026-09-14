@@ -9,8 +9,8 @@
 #include "core/hle/service/am/service/all_system_applet_proxies_service.h"
 #include "core/hle/service/am/service/application_proxy.h"
 #include "core/hle/service/am/service/library_applet_proxy.h"
-#include "core/hle/service/am/service/system_applet_proxy.h"
 #include "core/hle/service/am/service/overlay_applet_proxy.h"
+#include "core/hle/service/am/service/system_applet_proxy.h"
 #include "core/hle/service/am/window_system.h"
 #include "core/hle/service/cmif_serialization.h"
 

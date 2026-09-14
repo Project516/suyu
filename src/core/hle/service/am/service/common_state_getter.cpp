@@ -105,7 +105,7 @@ Result ICommonStateGetter::ReceiveMessage(Out<AppletMessage> out_applet_message)
     }
 
     LOG_DEBUG(Service_AM, "called, returning message={} to applet_id={}",
-             static_cast<u32>(*out_applet_message), static_cast<u32>(m_applet->applet_id));
+              static_cast<u32>(*out_applet_message), static_cast<u32>(m_applet->applet_id));
 
     R_SUCCEED();
 }
@@ -281,26 +281,26 @@ Result ICommonStateGetter::PerformSystemButtonPressingIfInFocus(SystemButtonType
     switch (type) {
     case SystemButtonType::HomeButtonShortPressing:
         if (!m_applet->home_button_short_pressed_blocked) {
-            m_applet->lifecycle_manager.PushUnorderedMessage(system.Kernel(),
-                AppletMessage::DetectShortPressingHomeButton);
+            m_applet->lifecycle_manager.PushUnorderedMessage(
+                system.Kernel(), AppletMessage::DetectShortPressingHomeButton);
         }
         break;
     case SystemButtonType::HomeButtonLongPressing:
         if (!m_applet->home_button_long_pressed_blocked) {
-            m_applet->lifecycle_manager.PushUnorderedMessage(system.Kernel(),
-                AppletMessage::DetectLongPressingHomeButton);
+            m_applet->lifecycle_manager.PushUnorderedMessage(
+                system.Kernel(), AppletMessage::DetectLongPressingHomeButton);
         }
         break;
     case SystemButtonType::CaptureButtonShortPressing:
         if (m_applet->handling_capture_button_short_pressed_message_enabled_for_applet) {
-            m_applet->lifecycle_manager.PushUnorderedMessage(system.Kernel(),
-                AppletMessage::DetectShortPressingCaptureButton);
+            m_applet->lifecycle_manager.PushUnorderedMessage(
+                system.Kernel(), AppletMessage::DetectShortPressingCaptureButton);
         }
         break;
     case SystemButtonType::CaptureButtonLongPressing:
         if (m_applet->handling_capture_button_long_pressed_message_enabled_for_applet) {
-            m_applet->lifecycle_manager.PushUnorderedMessage(system.Kernel(),
-                AppletMessage::DetectLongPressingCaptureButton);
+            m_applet->lifecycle_manager.PushUnorderedMessage(
+                system.Kernel(), AppletMessage::DetectLongPressingCaptureButton);
         }
         break;
     default:

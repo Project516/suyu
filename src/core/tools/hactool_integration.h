@@ -117,8 +117,8 @@ public:
      * @param dir_path Path to check
      * @return ExtractionType if detected, nullopt otherwise
      */
-    [[nodiscard]] static std::optional<ExtractionType>
-    DetectExtractedContent(const std::filesystem::path& dir_path);
+    [[nodiscard]] static std::optional<ExtractionType> DetectExtractedContent(
+        const std::filesystem::path& dir_path);
 
     /**
      * Create a VirtualDir from a hactool-extracted directory.
@@ -128,9 +128,8 @@ public:
      * @param vfs The virtual filesystem to use for creating entries
      * @return VirtualDir pointing to the loadable content, or nullptr
      */
-    [[nodiscard]] static FileSys::VirtualDir
-    CreateVfsFromExtracted(const std::filesystem::path& dir_path,
-                           FileSys::VirtualFilesystem& vfs);
+    [[nodiscard]] static FileSys::VirtualDir CreateVfsFromExtracted(
+        const std::filesystem::path& dir_path, FileSys::VirtualFilesystem& vfs);
 
     /// Get the temporary extraction directory
     [[nodiscard]] const std::filesystem::path& GetExtractionDir() const;

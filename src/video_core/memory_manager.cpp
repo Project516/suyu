@@ -26,14 +26,16 @@ using Tegra::Memory::GuestMemoryFlags;
 
 std::atomic<size_t> MemoryManager::unique_identifier_generator{};
 
-MemoryManager::MemoryManager(Core::System& system_, MaxwellDeviceMemoryManager& memory_, u64 address_space_bits_, GPUVAddr split_address_, u64 big_page_bits_, u64 page_bits_)
-    : system{system_}, memory{memory_}, address_space_bits{address_space_bits_}
-    , split_address{split_address_}, page_bits{page_bits_}, big_page_bits{big_page_bits_}
-    , entries{}, big_entries{}
-    , page_table{address_space_bits, address_space_bits + page_bits - 38, page_bits != big_page_bits ? page_bits : 0}
-    , kind_map{PTEKind::INVALID}, unique_identifier{unique_identifier_generator.fetch_add(1, std::memory_order_acq_rel)}
-    , accumulator{}
-{
+MemoryManager::MemoryManager(Core::System& system_, MaxwellDeviceMemoryManager& memory_,
+                             u64 address_space_bits_, GPUVAddr split_address_, u64 big_page_bits_,
+                             u64 page_bits_)
+    : system{system_}, memory{memory_}, address_space_bits{address_space_bits_},
+      split_address{split_address_}, page_bits{page_bits_}, big_page_bits{big_page_bits_},
+      entries{}, big_entries{}, page_table{address_space_bits, address_space_bits + page_bits - 38,
+                                           page_bits != big_page_bits ? page_bits : 0},
+      kind_map{PTEKind::INVALID}, unique_identifier{unique_identifier_generator.fetch_add(
+                                      1, std::memory_order_acq_rel)},
+      accumulator{} {
     address_space_size = 1ULL << address_space_bits;
     page_size = 1ULL << page_bits;
     page_mask = page_size - 1ULL;
@@ -52,9 +54,10 @@ MemoryManager::MemoryManager(Core::System& system_, MaxwellDeviceMemoryManager& 
     entries.resize(page_table_size / 32, 0);
 }
 
-MemoryManager::MemoryManager(Core::System& system_, u64 address_space_bits_, GPUVAddr split_address_, u64 big_page_bits_, u64 page_bits_)
-    : MemoryManager(system_, system_.Host1x().MemoryManager(), address_space_bits_, split_address_, big_page_bits_, page_bits_)
-{}
+MemoryManager::MemoryManager(Core::System& system_, u64 address_space_bits_,
+                             GPUVAddr split_address_, u64 big_page_bits_, u64 page_bits_)
+    : MemoryManager(system_, system_.Host1x().MemoryManager(), address_space_bits_, split_address_,
+                    big_page_bits_, page_bits_) {}
 
 MemoryManager::~MemoryManager() = default;
 
@@ -295,7 +298,8 @@ const u8* MemoryManager::GetPointer(GPUVAddr gpu_addr) const {
     return memory.GetPointer<u8>(*address);
 }
 
-#if defined(_MSC_VER) && !defined(__clang__) // no need for gcc / clang but msvc's compiler is more conservative with inlining.
+#if defined(_MSC_VER) && !defined(__clang__) // no need for gcc / clang but msvc's compiler is more
+                                             // conservative with inlining.
 #pragma inline_recursion(on)
 #endif
 
@@ -466,7 +470,8 @@ void MemoryManager::WriteBlockUnsafe(GPUVAddr gpu_dest_addr, const void* src_buf
     WriteBlockImpl<false>(gpu_dest_addr, src_buffer, size, VideoCommon::CacheType::None);
 }
 
-void MemoryManager::WriteBlockCached(GPUVAddr gpu_dest_addr, const void* src_buffer, std::size_t size) {
+void MemoryManager::WriteBlockCached(GPUVAddr gpu_dest_addr, const void* src_buffer,
+                                     std::size_t size) {
     WriteBlockImpl<false>(gpu_dest_addr, src_buffer, size, VideoCommon::CacheType::None);
     accumulator.Add(gpu_dest_addr, size);
 }
@@ -754,8 +759,8 @@ void MemoryManager::GetSubmappedRangeImpl(
 void MemoryManager::FlushCaching() {
     // Flush from the invalidate accumulator
     if (accumulator.InvalidateAll([this](GPUVAddr addr, size_t size) {
-        GetSubmappedRangeImpl<false>(addr, size, page_stash2);
-    })) {
+            GetSubmappedRangeImpl<false>(addr, size, page_stash2);
+        })) {
         rasterizer->InnerInvalidation(VideoCommon::FixSmallVectorADL(page_stash2));
         page_stash2.clear();
     }

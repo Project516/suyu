@@ -18,8 +18,8 @@
 #include <boost/heap/fibonacci_heap.hpp>
 
 #include "common/common_types.h"
-#include "common/thread.h"
 #include "common/cpu_features.h"
+#include "common/thread.h"
 
 namespace Core::Timing {
 
@@ -142,7 +142,8 @@ public:
 
     void Reset();
 
-    using heap_t = boost::heap::fibonacci_heap<CoreTiming::Event, boost::heap::compare<std::greater<>>>;
+    using heap_t =
+        boost::heap::fibonacci_heap<CoreTiming::Event, boost::heap::compare<std::greater<>>>;
     heap_t event_queue;
     s64 global_timer = 0;
 #ifdef _WIN32

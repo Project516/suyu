@@ -4,11 +4,11 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "common/logging/log.h"
 #include "common/fiber.h"
+#include "common/logging/log.h"
 #include "common/scope_exit.h"
-#include "common/thread.h"
 #include "common/settings.h"
+#include "common/thread.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"
@@ -28,9 +28,8 @@ void CpuManager::Initialize() {
     num_cores = is_multicore ? Core::Hardware::NUM_CPU_CORES : 1;
     gpu_barrier.emplace(num_cores + 1);
     for (std::size_t core = 0; core < num_cores; core++)
-        core_data[core].host_thread = std::jthread([this, core](std::stop_token token) {
-            RunThread(token, core);
-        });
+        core_data[core].host_thread =
+            std::jthread([this, core](std::stop_token token) { RunThread(token, core); });
 }
 
 void CpuManager::Shutdown() {
@@ -173,7 +172,8 @@ void CpuManager::ShutdownThread(Kernel::KernelCore& kernel) {
 void CpuManager::RunThread(std::stop_token token, std::size_t core) {
     /// Initialization
     system.RegisterCoreThread(core);
-    std::string name = is_multicore ? ("CPUCore_" + std::to_string(core)) : std::string{"CPUThread"};
+    std::string name =
+        is_multicore ? ("CPUCore_" + std::to_string(core)) : std::string{"CPUThread"};
     Common::SetCurrentThreadName(name.c_str());
     Common::SetCurrentThreadPriority(Common::ThreadPriority::Critical);
 #ifdef __ANDROID__

@@ -159,8 +159,8 @@ void RoomJson::Delete() {
         LOG_ERROR(WebService, "Room must be registered to be deleted");
     } else {
         // This jthread won't be destroyed until after the dtor has been ran
-        // Once the thread finishes it will stay resident on the vector -- destroyed and freed by dtor()
-        // this is still valid while in dtor, so... yeah
+        // Once the thread finishes it will stay resident on the vector -- destroyed and freed by
+        // dtor() this is still valid while in dtor, so... yeah
         detached_tasks.emplace_back([this](std::stop_token stop_token) {
             client.DeleteJson(fmt::format("/lobby/{}", room_id), "", false);
         });

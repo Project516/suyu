@@ -32,7 +32,8 @@ public:
         KThreadQueue::EndWait(kernel, waiting_thread, wait_result);
     }
 
-    virtual void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
+    virtual void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result,
+                            bool cancel_timer_task) override {
         // Remove the thread from our wait list.
         m_wait_list->erase(m_wait_list->iterator_to(*waiting_thread));
 
@@ -47,9 +48,7 @@ private:
 
 public:
     ThreadQueueImplForKLightServerSessionReceive(KernelCore& kernel, KThread** st)
-        : KThreadQueue(kernel)
-        , m_server_thread(st)
-    {}
+        : KThreadQueue(kernel), m_server_thread(st) {}
 
     virtual void EndWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result) override {
         // Clear the server thread.
@@ -62,7 +61,8 @@ public:
         KThreadQueue::EndWait(kernel, waiting_thread, wait_result);
     }
 
-    virtual void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
+    virtual void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result,
+                            bool cancel_timer_task) override {
         // Clear the server thread.
         *m_server_thread = nullptr;
 
@@ -140,7 +140,8 @@ Result KLightServerSession::ReplyAndReceive(KernelCore& kernel, u32* data) {
 
         // If we can reply, do so.
         if (!m_current_request->IsTerminationRequested()) {
-            std::memcpy(m_current_request->GetLightSessionData(), GetCurrentThread(kernel).GetLightSessionData(), KLightSession::DataSize);
+            std::memcpy(m_current_request->GetLightSessionData(),
+                        GetCurrentThread(kernel).GetLightSessionData(), KLightSession::DataSize);
             m_current_request->EndWait(kernel, ResultSuccess);
         }
 
@@ -153,7 +154,8 @@ Result KLightServerSession::ReplyAndReceive(KernelCore& kernel, u32* data) {
     }
 
     // Create the wait queue for our receive.
-    ThreadQueueImplForKLightServerSessionReceive wait_queue(kernel, std::addressof(m_server_thread));
+    ThreadQueueImplForKLightServerSessionReceive wait_queue(kernel,
+                                                            std::addressof(m_server_thread));
 
     // Receive.
     while (true) {
@@ -170,7 +172,8 @@ Result KLightServerSession::ReplyAndReceive(KernelCore& kernel, u32* data) {
             R_UNLESS(!m_parent->IsServerClosed(), ResultSessionClosed);
 
             // Check that we're not terminating.
-            R_UNLESS(!GetCurrentThread(kernel).IsTerminationRequested(), ResultTerminationRequested);
+            R_UNLESS(!GetCurrentThread(kernel).IsTerminationRequested(),
+                     ResultTerminationRequested);
 
             // If we have a request available, use it.
             if (auto head = m_request_list.begin(); head != m_request_list.end()) {

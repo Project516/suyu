@@ -10,8 +10,8 @@
 #include <set>
 #include <span>
 #include <string>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 
 #include "common/common_types.h"
 
@@ -43,9 +43,9 @@ enum class DriverType : u8 {
 // Ring buffer entry for tracking Vulkan API calls
 struct VulkanCallEntry {
     std::chrono::microseconds timestamp;
-    std::string call_name;    // e.g., "vkCmdDraw", "vkBeginRenderPass"
-    std::string parameters;   // Serialized parameters
-    int result;               // VkResult return code
+    std::string call_name;  // e.g., "vkCmdDraw", "vkBeginRenderPass"
+    std::string parameters; // Serialized parameters
+    int result;             // VkResult return code
     u32 thread_id;
 };
 
@@ -61,11 +61,11 @@ struct MemoryAllocationEntry {
 
 // GPU state snapshot for crash dumps
 struct GPUStateSnapshot {
-    std::vector<VulkanCallEntry> recent_calls;    // Last N API calls
-    std::vector<std::string> active_shaders;      // Currently bound shaders
-    std::string pipeline_state;                   // Current pipeline state
-    std::string memory_status;                    // Current memory allocations
-    std::string driver_debug_info;                // Driver-specific debug data
+    std::vector<VulkanCallEntry> recent_calls; // Last N API calls
+    std::vector<std::string> active_shaders;   // Currently bound shaders
+    std::string pipeline_state;                // Current pipeline state
+    std::string memory_status;                 // Current memory allocations
+    std::string driver_debug_info;             // Driver-specific debug data
     std::chrono::microseconds timestamp;
     DriverType driver_type;
 };
@@ -188,9 +188,8 @@ void DumpSpirvShader(u64 shader_hash, std::span<const u32> spirv_code);
 
 // Helper to get stage name from index
 inline const char* GetShaderStageName(size_t stage_index) {
-    static constexpr std::array<const char*, 5> stage_names{
-        "vertex", "tess_control", "tess_eval", "geometry", "fragment"
-    };
+    static constexpr std::array<const char*, 5> stage_names{"vertex", "tess_control", "tess_eval",
+                                                            "geometry", "fragment"};
     return stage_index < stage_names.size() ? stage_names[stage_index] : "unknown";
 }
 

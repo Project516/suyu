@@ -17,10 +17,11 @@ class Scheduler;
 
 class FSR {
 public:
-    explicit FSR(const Device& device, MemoryAllocator& memory_allocator, size_t image_count, VkExtent2D extent);
-    VkImageView Draw(const Device& device, Scheduler& scheduler, size_t image_index, VkImage source_image,
-                     VkImageView source_image_view, VkExtent2D input_image_extent,
-                     const Common::Rectangle<f32>& crop_rect);
+    explicit FSR(const Device& device, MemoryAllocator& memory_allocator, size_t image_count,
+                 VkExtent2D extent);
+    VkImageView Draw(const Device& device, Scheduler& scheduler, size_t image_index,
+                     VkImage source_image, VkImageView source_image_view,
+                     VkExtent2D input_image_extent, const Common::Rectangle<f32>& crop_rect);
 
 private:
     void CreateImages(const Device& device);

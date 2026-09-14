@@ -217,9 +217,8 @@ void ConfigureGraphics::PopulateVSyncModeSelection(bool use_setting) {
 
         const Settings::VSyncMode global_vsync_mode = Settings::values.vsync_mode.GetValue(true);
         vsync_restore_global_button->setEnabled(
-            (IsOpenGL(backend) &&
-             (global_vsync_mode == Settings::VSyncMode::Immediate ||
-              global_vsync_mode == Settings::VSyncMode::Fifo)) ||
+            (IsOpenGL(backend) && (global_vsync_mode == Settings::VSyncMode::Immediate ||
+                                   global_vsync_mode == Settings::VSyncMode::Fifo)) ||
             backend == Settings::RendererBackend::Vulkan);
     }
 }
@@ -405,8 +404,7 @@ const QString ConfigureGraphics::TranslateVSyncMode(VkPresentModeKHR mode,
     case VK_PRESENT_MODE_MAILBOX_KHR:
         return QStringLiteral("Mailbox (%1)").arg(tr("Recommended"));
     case VK_PRESENT_MODE_FIFO_KHR:
-        return IsOpenGL(backend) ? tr("On")
-                                 : QStringLiteral("FIFO (%1)").arg(tr("VSync On"));
+        return IsOpenGL(backend) ? tr("On") : QStringLiteral("FIFO (%1)").arg(tr("VSync On"));
     case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
         return QStringLiteral("FIFO Relaxed");
     default:
@@ -444,8 +442,7 @@ void ConfigureGraphics::ApplyConfiguration() {
                         combobox_translations.at(api_index).size()
                 ? Settings::values.renderer_backend.GetValue()
                 : static_cast<Settings::RendererBackend>(
-                      combobox_translations.at(api_index)[api_combobox->currentIndex()]
-                          .first);
+                      combobox_translations.at(api_index)[api_combobox->currentIndex()].first);
         switch (backend) {
         case Settings::RendererBackend::OpenGL_GLSL:
         case Settings::RendererBackend::OpenGL_GLASM:
@@ -524,9 +521,7 @@ Settings::RendererBackend ConfigureGraphics::GetCurrentGraphicsBackend() const {
             return Settings::values.renderer_backend.GetValue();
         }
         return static_cast<Settings::RendererBackend>(
-            combobox_translations.at(api_index)
-                .at(api_combobox->currentIndex())
-                .first);
+            combobox_translations.at(api_index).at(api_combobox->currentIndex()).first);
     }();
 
     if (selected_backend == Settings::RendererBackend::Vulkan &&

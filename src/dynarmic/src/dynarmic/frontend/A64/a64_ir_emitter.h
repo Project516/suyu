@@ -10,15 +10,14 @@
 
 #include <optional>
 
-#include "common/common_types.h"
 #include "common/assert.h"
-
+#include "common/common_types.h"
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 #include "dynarmic/frontend/A64/a64_types.h"
 #include "dynarmic/interface/A64/config.h"
 #include "dynarmic/ir/ir_emitter.h"
-#include "dynarmic/ir/value.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/ir/value.h"
 
 namespace Dynarmic::A64 {
 
@@ -29,8 +28,10 @@ namespace Dynarmic::A64 {
  */
 class IREmitter : public IR::IREmitter {
 public:
-    explicit IREmitter(IR::Block& block) : IR::IREmitter(block) {}
-    explicit IREmitter(IR::Block& block, LocationDescriptor descriptor) : IR::IREmitter(block), current_location(descriptor) {}
+    explicit IREmitter(IR::Block& block)
+            : IR::IREmitter(block) {}
+    explicit IREmitter(IR::Block& block, LocationDescriptor descriptor)
+            : IR::IREmitter(block), current_location(descriptor) {}
 
     std::optional<LocationDescriptor> current_location;
 

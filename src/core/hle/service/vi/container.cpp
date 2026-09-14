@@ -141,12 +141,13 @@ Result Container::SetLayerZIndex(u64 layer_id, s32 z_index) {
     R_UNLESS(layer != nullptr, VI::ResultNotFound);
 
     if (auto layer_ref = m_surface_flinger->FindLayer(layer->GetConsumerBinderId())) {
-        LOG_DEBUG(Service_VI, "called, SetLayerZIndex layer_id={} z={} (cid={})", layer_id,
-                 z_index, layer->GetConsumerBinderId());
+        LOG_DEBUG(Service_VI, "called, SetLayerZIndex layer_id={} z={} (cid={})", layer_id, z_index,
+                  layer->GetConsumerBinderId());
         layer_ref->z_index = z_index;
     } else {
-        LOG_DEBUG(Service_VI, "called, SetLayerZIndex failed to find layer for layer_id={} (cid={})",
-                 layer_id, layer->GetConsumerBinderId());
+        LOG_DEBUG(Service_VI,
+                  "called, SetLayerZIndex failed to find layer for layer_id={} (cid={})", layer_id,
+                  layer->GetConsumerBinderId());
     }
 
     R_SUCCEED();

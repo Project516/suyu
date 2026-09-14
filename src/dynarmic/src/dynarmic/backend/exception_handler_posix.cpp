@@ -29,6 +29,7 @@
 #    include "dynarmic/backend/x64/block_of_code.h"
 #elif defined(ARCHITECTURE_arm64)
 #    include <oaknut/code_block.hpp>
+
 #    include "dynarmic/backend/arm64/abi.h"
 #elif defined(ARCHITECTURE_riscv64)
 #    include "dynarmic/backend/riscv64/code_block.h"
@@ -62,6 +63,7 @@ class SigHandler {
     struct sigaction old_sa_segv;
     struct sigaction old_sa_bus;
     std::size_t signal_stack_size;
+
 public:
     SigHandler() noexcept {
         signal_stack_size = std::max<size_t>(SIGSTKSZ, 2 * 1024 * 1024);
@@ -77,7 +79,7 @@ public:
             return;
         }
 
-        struct sigaction sa{};
+        struct sigaction sa {};
         sa.sa_handler = nullptr;
         sa.sa_sigaction = &SigHandler::SigAction;
         sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_RESTART;
@@ -197,9 +199,8 @@ struct ExceptionHandler::Impl final {
 
     void SetCallback(std::function<FakeCall(u64)> cb) {
         sig_handler->AddCodeBlock(offset, CodeBlockInfo{
-            .size = size,
-            .cb = cb
-        });
+                                              .size = size,
+                                              .cb = cb});
     }
 
     ~Impl() {

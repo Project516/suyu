@@ -71,11 +71,14 @@ public:
     };
 
     void CallMethod(DmaPusher& dma_pusher, const MethodCall& method_call);
-    void CallMultiMethod(DmaPusher& dma_pusher, u32 method, u32 subchannel, const u32* base_start, u32 amount, u32 methods_pending);
+    void CallMultiMethod(DmaPusher& dma_pusher, u32 method, u32 subchannel, const u32* base_start,
+                         u32 amount, u32 methods_pending);
     void BindRasterizer(DmaPusher& dma_pusher, VideoCore::RasterizerInterface* rasterizer);
     void CallPullerMethod(DmaPusher& dma_pusher, const MethodCall& method_call);
     void CallEngineMethod(DmaPusher& dma_pusher, const MethodCall& method_call);
-    void CallEngineMultiMethod(DmaPusher& dma_pusher, u32 method, u32 subchannel, const u32* base_start, u32 amount, u32 methods_pending);
+    void CallEngineMultiMethod(DmaPusher& dma_pusher, u32 method, u32 subchannel,
+                               const u32* base_start, u32 amount, u32 methods_pending);
+
 private:
     static constexpr std::size_t NUM_REGS = 0x800;
     struct Regs {
@@ -138,7 +141,8 @@ private:
     };
 
 #define ASSERT_REG_POSITION(field_name, position)                                                  \
-    static_assert(offsetof(Regs, field_name) == position * 4, "Field " #field_name " has invalid position")
+    static_assert(offsetof(Regs, field_name) == position * 4,                                      \
+                  "Field " #field_name " has invalid position")
 
     ASSERT_REG_POSITION(semaphore_address, 0x4);
     ASSERT_REG_POSITION(semaphore_sequence, 0x6);

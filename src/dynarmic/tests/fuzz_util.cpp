@@ -12,11 +12,11 @@
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include "common/assert.h"
 
-#include "dynarmic/tests/rand_int.h"
+#include "common/assert.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/rounding_mode.h"
+#include "dynarmic/tests/rand_int.h"
 
 using namespace Dynarmic;
 

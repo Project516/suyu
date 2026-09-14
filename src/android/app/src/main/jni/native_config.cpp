@@ -550,35 +550,38 @@ void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_saveControlPlayerValues(JNIEnv* 
 
 jstring Java_org_yuzu_yuzu_1emu_utils_NativeConfig_getSaveDir(JNIEnv* env, jobject obj) {
     return Common::Android::ToJString(env,
-        Common::FS::GetSuyuPathString(Common::FS::SuyuPath::SaveDir));
+                                      Common::FS::GetSuyuPathString(Common::FS::SuyuPath::SaveDir));
 }
 
 jstring Java_org_yuzu_yuzu_1emu_utils_NativeConfig_getDefaultSaveDir(JNIEnv* env, jobject obj) {
     return Common::Android::ToJString(env,
-        Common::FS::GetSuyuPathString(Common::FS::SuyuPath::NANDDir));
+                                      Common::FS::GetSuyuPathString(Common::FS::SuyuPath::NANDDir));
 }
 
-void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_setSaveDir(JNIEnv* env, jobject obj, jstring jpath) {
+void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_setSaveDir(JNIEnv* env, jobject obj,
+                                                           jstring jpath) {
     auto path = Common::Android::GetJString(env, jpath);
     Common::FS::SetSuyuPath(Common::FS::SuyuPath::SaveDir, path);
 }
 
 jstring Java_org_yuzu_yuzu_1emu_utils_NativeConfig_getNandDir(JNIEnv* env, jobject obj) {
     return Common::Android::ToJString(env,
-        Common::FS::GetSuyuPathString(Common::FS::SuyuPath::NANDDir));
+                                      Common::FS::GetSuyuPathString(Common::FS::SuyuPath::NANDDir));
 }
 
-void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_setNandDir(JNIEnv* env, jobject obj, jstring jpath) {
+void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_setNandDir(JNIEnv* env, jobject obj,
+                                                           jstring jpath) {
     auto path = Common::Android::GetJString(env, jpath);
     Common::FS::SetSuyuPath(Common::FS::SuyuPath::NANDDir, path);
 }
 
 jstring Java_org_yuzu_yuzu_1emu_utils_NativeConfig_getSdmcDir(JNIEnv* env, jobject obj) {
     return Common::Android::ToJString(env,
-        Common::FS::GetSuyuPathString(Common::FS::SuyuPath::SDMCDir));
+                                      Common::FS::GetSuyuPathString(Common::FS::SuyuPath::SDMCDir));
 }
 
-void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_setSdmcDir(JNIEnv* env, jobject obj, jstring jpath) {
+void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_setSdmcDir(JNIEnv* env, jobject obj,
+                                                           jstring jpath) {
     auto path = Common::Android::GetJString(env, jpath);
     Common::FS::SetSuyuPath(Common::FS::SuyuPath::SDMCDir, path);
 }
@@ -586,9 +589,8 @@ void Java_org_yuzu_yuzu_1emu_utils_NativeConfig_setSdmcDir(JNIEnv* env, jobject 
 jobjectArray Java_org_yuzu_yuzu_1emu_utils_NativeConfig_getExternalContentDirs(JNIEnv* env,
                                                                                jobject obj) {
     const auto& dirs = Settings::values.external_content_dirs;
-    jobjectArray jdirsArray =
-        env->NewObjectArray(dirs.size(), Common::Android::GetStringClass(),
-                            Common::Android::ToJString(env, ""));
+    jobjectArray jdirsArray = env->NewObjectArray(dirs.size(), Common::Android::GetStringClass(),
+                                                  Common::Android::ToJString(env, ""));
     for (size_t i = 0; i < dirs.size(); ++i) {
         env->SetObjectArrayElement(jdirsArray, i, Common::Android::ToJString(env, dirs[i]));
     }

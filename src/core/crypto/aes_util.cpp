@@ -56,7 +56,7 @@ static inline const std::string GetCipherName(Mode mode, u32 key_size) {
     return fmt::format("AES-{}-{}", effective_bits, cipher);
 };
 
-static EVP_CIPHER *GetCipher(Mode mode, u32 key_size) {
+static EVP_CIPHER* GetCipher(Mode mode, u32 key_size) {
     static auto const fetch_cipher = [](Mode m, u32 k) {
         return EVP_CIPHER_fetch(nullptr, GetCipherName(m, k).c_str(), nullptr);
     };
@@ -93,7 +93,8 @@ Crypto::AESCipher<Key>::AESCipher(Key key, Mode mode) : ctx(std::make_unique<Cip
         UNIMPLEMENTED();
     }
 
-    ASSERT(ctx->encryption_context && ctx->decryption_context && ctx->cipher && "OpenSSL cipher context failed init!");
+    ASSERT(ctx->encryption_context && ctx->decryption_context && ctx->cipher &&
+           "OpenSSL cipher context failed init!");
     // now init ciphers
     // An all-zero key means the key file simply is not present. That is a
     // normal state - a statically recompiled game export ships its content
@@ -101,8 +102,7 @@ Crypto::AESCipher<Key>::AESCipher(Key key, Mode mode) : ctx(std::make_unique<Cip
     // outright, because its two halves must differ. Report it once at info
     // level rather than asserting: the cipher is never actually used in that
     // case, and an assert here reads as a failure in a run that is fine.
-    const bool key_present =
-        std::any_of(key.begin(), key.end(), [](u8 b) { return b != 0; });
+    const bool key_present = std::any_of(key.begin(), key.end(), [](u8 b) { return b != 0; });
     if (!key_present) {
         LOG_DEBUG(Crypto, "No key available for this cipher; leaving it uninitialized");
         return;
@@ -156,7 +156,8 @@ void AESCipher<Key>::Transcode(const u8* src, std::size_t size, u8* dest, Op op)
 
     int tail_written = 0;
 
-    ASSERT(EVP_CipherUpdate(context, tail_buffer.data(), &tail_written, tail_buffer.data(), block_size));
+    ASSERT(EVP_CipherUpdate(context, tail_buffer.data(), &tail_written, tail_buffer.data(),
+                            block_size));
 
     if (tail_written != block_size) {
         LOG_WARNING(Crypto, "Tail block not fully processed requested={:016X}, actual={:016X}.",
@@ -167,7 +168,8 @@ void AESCipher<Key>::Transcode(const u8* src, std::size_t size, u8* dest, Op op)
 }
 
 template <typename Key>
-void AESCipher<Key>::XTSTranscode(const u8* src, std::size_t size, u8* dest, std::size_t sector_id, std::size_t sector_size, Op op) {
+void AESCipher<Key>::XTSTranscode(const u8* src, std::size_t size, u8* dest, std::size_t sector_id,
+                                  std::size_t sector_size, Op op) {
     ASSERT(size % sector_size == 0 && "XTS decryption size must be a multiple of sector size.");
     for (std::size_t i = 0; i < size; i += sector_size) {
         SetIV(CalculateNintendoTweak(sector_id++));
@@ -177,8 +179,10 @@ void AESCipher<Key>::XTSTranscode(const u8* src, std::size_t size, u8* dest, std
 
 template <typename Key>
 void AESCipher<Key>::SetIV(std::span<const u8> data) {
-    const int ret_enc = EVP_CipherInit_ex(ctx->encryption_context, nullptr, nullptr, nullptr, data.data(), -1);
-    const int ret_dec = EVP_CipherInit_ex(ctx->decryption_context, nullptr, nullptr, nullptr, data.data(), -1);
+    const int ret_enc =
+        EVP_CipherInit_ex(ctx->encryption_context, nullptr, nullptr, nullptr, data.data(), -1);
+    const int ret_dec =
+        EVP_CipherInit_ex(ctx->decryption_context, nullptr, nullptr, nullptr, data.data(), -1);
     ASSERT(ret_enc == 1 && ret_dec == 1 && "Failed to set IV on OpenSSL contexts");
 }
 

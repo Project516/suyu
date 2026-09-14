@@ -37,7 +37,8 @@ void PipelineStatistics::Collect(const Device& device, VkPipeline pipeline) {
     const std::vector properties{device.GetLogical().GetPipelineExecutablePropertiesKHR(pipeline)};
     const u32 num_executables{static_cast<u32>(properties.size())};
     for (u32 executable = 0; executable < num_executables; ++executable) {
-        const auto statistics{device.GetLogical().GetPipelineExecutableStatisticsKHR(pipeline, executable)};
+        const auto statistics{
+            device.GetLogical().GetPipelineExecutableStatisticsKHR(pipeline, executable)};
         if (statistics.empty()) {
             continue;
         }

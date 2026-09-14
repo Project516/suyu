@@ -4,8 +4,8 @@
 #pragma once
 
 #include <QCheckBox>
-#include <QDialog>
 #include <QComboBox>
+#include <QDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPixmap>
@@ -85,8 +85,8 @@ public:
     };
 
     enum class RecompileBackend {
-        Dynarmic,   ///< Default — mature and stable
-        Ballistic,  ///< WIP — from pound-emu/ballistic
+        Dynarmic,  ///< Default — mature and stable
+        Ballistic, ///< WIP — from pound-emu/ballistic
     };
 
 signals:

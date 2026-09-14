@@ -32,7 +32,6 @@ Result SignalEvent(Core::System& system, Handle event_handle) {
         R_SUCCEED();
     }
 
-
     // Get the event.
     KScopedAutoObject event = handle_table.GetObject<KEvent>(system.Kernel(), event_handle);
     R_UNLESS(event.IsNotNull(), ResultInvalidHandle);
@@ -57,7 +56,8 @@ Result ClearEvent(Core::System& system, Handle event_handle) {
 
     // Try to clear the readable event.
     {
-        KScopedAutoObject readable_event = handle_table.GetObject<KReadableEvent>(system.Kernel(), event_handle);
+        KScopedAutoObject readable_event =
+            handle_table.GetObject<KReadableEvent>(system.Kernel(), event_handle);
         if (readable_event.IsNotNull()) {
             readable_event->Clear(system.Kernel());
             R_SUCCEED();
@@ -74,7 +74,8 @@ Result CreateEvent(Core::System& system, Handle* out_write, Handle* out_read) {
     auto& handle_table = GetCurrentProcess(system.Kernel()).GetHandleTable();
 
     // Reserve a new event from the process resource limit
-    KScopedResourceReservation event_reservation(system.Kernel(), GetCurrentProcessPointer(system.Kernel()),
+    KScopedResourceReservation event_reservation(system.Kernel(),
+                                                 GetCurrentProcessPointer(system.Kernel()),
                                                  LimitableResource::EventCountMax);
     R_UNLESS(event_reservation.Succeeded(), ResultLimitReached);
 
@@ -106,7 +107,8 @@ Result CreateEvent(Core::System& system, Handle* out_write, Handle* out_read) {
     };
 
     // Add the readable event to the handle table.
-    R_RETURN(handle_table.Add(system.Kernel(), out_read, std::addressof(event->GetReadableEvent())));
+    R_RETURN(
+        handle_table.Add(system.Kernel(), out_read, std::addressof(event->GetReadableEvent())));
 }
 
 Result SignalEvent64(Core::System& system, Handle event_handle) {

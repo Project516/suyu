@@ -10,8 +10,8 @@
 #include <deque>
 #include <memory>
 #include <mutex>
-#include <ankerl/unordered_dense.h>
 #include <utility>
+#include <ankerl/unordered_dense.h>
 
 #include "common/assert.h"
 #include "common/common_types.h"
@@ -118,8 +118,8 @@ struct QueryCacheBase<Traits>::QueryCacheBaseImpl {
     QueryCacheBaseImpl(QueryCacheBase<Traits>* owner_, VideoCore::RasterizerInterface& rasterizer_,
                        Tegra::MaxwellDeviceMemoryManager& device_memory_, RuntimeType& runtime_,
                        Tegra::GPU& gpu_)
-        : owner{owner_}, rasterizer{rasterizer_}, device_memory{device_memory_}, runtime{runtime_},
-          gpu{gpu_} {
+        : owner{owner_}, rasterizer{rasterizer_},
+          device_memory{device_memory_}, runtime{runtime_}, gpu{gpu_} {
         streamer_mask = 0;
         for (size_t i = 0; i < static_cast<size_t>(QueryType::MaxQueryTypes); i++) {
             streamers[i] = runtime.GetStreamerInterface(static_cast<QueryType>(i));
@@ -260,7 +260,12 @@ void QueryCacheBase<Traits>::CounterReport(GPUVAddr addr, QueryType counter_type
     };
     u8* pointer = impl->device_memory.template GetPointer<u8>(cpu_addr);
     u8* pointer_timestamp = impl->device_memory.template GetPointer<u8>(cpu_addr + 8);
-    bool is_synced = (Settings::IsGPUFenceBehaviorDefault() ? !Settings::IsGPULevelHigh() : !Settings::IsGPUFenceBehaviorBalanced() && !Settings::IsGPUFenceBehaviorAccurate() && !Settings::IsGPUFenceBehaviorStrict()) && is_fence;
+    bool is_synced =
+        (Settings::IsGPUFenceBehaviorDefault()
+             ? !Settings::IsGPULevelHigh()
+             : !Settings::IsGPUFenceBehaviorBalanced() && !Settings::IsGPUFenceBehaviorAccurate() &&
+                   !Settings::IsGPUFenceBehaviorStrict()) &&
+        is_fence;
     std::function<void()> operation([this, is_synced, streamer, query_base = query, query_location,
                                      pointer, pointer_timestamp] {
         if (True(query_base->flags & QueryFlagBits::IsInvalidated)) {

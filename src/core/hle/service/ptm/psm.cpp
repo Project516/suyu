@@ -204,7 +204,7 @@ void PSM::GetBatteryAgePercentage(HLERequestContext& ctx) {
 }
 
 struct BatteryChargeInfoFields {
-    u32 input_current_limit; //mA
+    u32 input_current_limit; // mA
     u32 boost_mode_current_limit;
     u32 fast_charge_current_limit;
     u32 charge_voltage_limit;
@@ -233,11 +233,12 @@ void PSM::GetBatteryChargeInfoFields(HLERequestContext& ctx) {
     Common::PowerStatus power_status = Common::GetPowerStatus();
 
     BatteryChargeInfoFields r{};
-    r.battery_charge_percentage = f32(power_status.percentage); //100%
-    r.battery_age_percentage = f32(power_status.percentage); //100%
+    r.battery_charge_percentage = f32(power_status.percentage); // 100%
+    r.battery_age_percentage = f32(power_status.percentage);    // 100%
     r.battery_charging = power_status.charging ? 1 : 0;
-    r.charger_type = u32(power_status.has_battery && power_status.charging
-        ? ChargerType::RegularCharger : ChargerType::Unplugged);
+    r.charger_type =
+        u32(power_status.has_battery && power_status.charging ? ChargerType::RegularCharger
+                                                              : ChargerType::Unplugged);
     r.charger_input_voltage_limit = 100;
     r.charger_input_voltage_limit = 100;
     r.input_current_limit = 100;

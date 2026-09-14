@@ -14,8 +14,8 @@
 #include <optional>
 #include <span>
 #include <type_traits>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 
 #include "common/common_types.h"
 #include "common/polyfill_thread.h"
@@ -219,13 +219,15 @@ void SerializePipeline(std::span<const char> key, std::span<const GenericEnviron
                        const std::filesystem::path& filename, u32 cache_version);
 
 template <typename Key, typename Envs>
-    requires std::is_trivially_copyable_v<Key>
-        && std::has_unique_object_representations_v<Key>
-void SerializePipeline(const Key& key, const Envs& envs, const std::filesystem::path& filename, u32 cache_version) {
-    SerializePipeline(std::span(reinterpret_cast<const char*>(&key), sizeof(key)), std::span(envs.data(), envs.size()), filename, cache_version);
+    requires std::is_trivially_copyable_v<Key> && std::has_unique_object_representations_v<Key>
+void SerializePipeline(const Key& key, const Envs& envs, const std::filesystem::path& filename,
+                       u32 cache_version) {
+    SerializePipeline(std::span(reinterpret_cast<const char*>(&key), sizeof(key)),
+                      std::span(envs.data(), envs.size()), filename, cache_version);
 }
 
-void LoadPipelines(std::stop_token stop_loading, const std::filesystem::path& filename, u32 expected_cache_version,
+void LoadPipelines(
+    std::stop_token stop_loading, const std::filesystem::path& filename, u32 expected_cache_version,
     Common::UniqueFunction<void, std::ifstream&, FileEnvironment> load_compute,
     Common::UniqueFunction<void, std::ifstream&, std::vector<FileEnvironment>> load_graphics);
 

@@ -1198,12 +1198,8 @@ void RasterizerOpenGL::SyncLogicOpState() {
         using namespace Tegra::Engines;
 
         bool has_float = std::any_of(
-            regs.vertex_attrib_format.begin(),
-            regs.vertex_attrib_format.end(),
-            [](const auto& n) {
-                return n.type == Maxwell3D::Regs::VertexAttribute::Type::Float;
-            }
-        );
+            regs.vertex_attrib_format.begin(), regs.vertex_attrib_format.end(),
+            [](const auto& n) { return n.type == Maxwell3D::Regs::VertexAttribute::Type::Float; });
 
         regs.logic_op.enable = static_cast<u32>(!has_float);
     }

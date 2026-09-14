@@ -18,5 +18,6 @@ enum ModInstallResult {
 
 std::vector<std::filesystem::path> GetModFolder(const std::string& root);
 
-ModInstallResult InstallMod(const std::filesystem::path &path, const u64 program_id, const bool copy = true);
-}
+ModInstallResult InstallMod(const std::filesystem::path& path, const u64 program_id,
+                            const bool copy = true);
+} // namespace FrontendCommon

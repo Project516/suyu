@@ -8,8 +8,7 @@
 
 namespace Service::AM {
 
-class ISystemProcessCommonFunctions final
-    : public ServiceFramework<ISystemProcessCommonFunctions> {
+class ISystemProcessCommonFunctions final : public ServiceFramework<ISystemProcessCommonFunctions> {
 public:
     explicit ISystemProcessCommonFunctions(Core::System& system_);
     ~ISystemProcessCommonFunctions() override;

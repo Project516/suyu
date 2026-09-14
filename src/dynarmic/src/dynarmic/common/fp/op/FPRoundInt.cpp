@@ -9,9 +9,7 @@
 #include "dynarmic/common/fp/op/FPRoundInt.h"
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"
@@ -21,6 +19,7 @@
 #include "dynarmic/common/fp/rounding_mode.h"
 #include "dynarmic/common/fp/unpacked.h"
 #include "dynarmic/common/safe_ops.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::FP {
 

@@ -18,7 +18,9 @@ namespace Service::JIT {
 
 class CodeMemory {
 public:
-    Result Initialize(Kernel::KernelCore& kernel, Kernel::KProcess& process, Kernel::KCodeMemory& code_memory, size_t size, Kernel::Svc::MemoryPermission perm, std::mt19937_64& generate_random);
+    Result Initialize(Kernel::KernelCore& kernel, Kernel::KProcess& process,
+                      Kernel::KCodeMemory& code_memory, size_t size,
+                      Kernel::Svc::MemoryPermission perm, std::mt19937_64& generate_random);
     void Finalize(Kernel::KernelCore& kernel);
 
     size_t GetSize() const {

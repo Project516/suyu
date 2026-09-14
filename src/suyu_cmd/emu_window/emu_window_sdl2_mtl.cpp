@@ -18,10 +18,9 @@ EmuWindow_SDL2_MTL::EmuWindow_SDL2_MTL(InputCommon::InputSubsystem* input_subsys
     : EmuWindow_SDL2{input_subsystem_, system_} {
     const std::string window_title = fmt::format("suyu {} | {}-{} (Metal)", Common::g_build_name,
                                                  Common::g_scm_branch, Common::g_scm_desc);
-    render_window =
-        SDL_CreateWindow(window_title.c_str(),
-                         Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height,
-                         SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_METAL);
+    render_window = SDL_CreateWindow(
+        window_title.c_str(), Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height,
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_METAL);
 
     if (render_window == nullptr) {
         LOG_CRITICAL(Frontend, "Failed to create SDL3 window: {}", SDL_GetError());

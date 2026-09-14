@@ -18,10 +18,12 @@ class StagingBufferPool;
 
 class FXAA final : public AntiAliasPass {
 public:
-    explicit FXAA(const Device& device, MemoryAllocator& allocator, size_t image_count, VkExtent2D extent);
+    explicit FXAA(const Device& device, MemoryAllocator& allocator, size_t image_count,
+                  VkExtent2D extent);
     ~FXAA() override;
 
-    void Draw(const Device& device, Scheduler& scheduler, size_t image_index, VkImage* inout_image, VkImageView* inout_image_view) override;
+    void Draw(const Device& device, Scheduler& scheduler, size_t image_index, VkImage* inout_image,
+              VkImageView* inout_image_view) override;
 
 private:
     void CreateImages(const Device& device, MemoryAllocator& allocator);

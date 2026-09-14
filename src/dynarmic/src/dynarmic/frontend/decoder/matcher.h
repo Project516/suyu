@@ -28,13 +28,11 @@ public:
     using visitor_type = V;
 
     constexpr Matcher(T mask, T expected) noexcept
-        : mask{mask}
-        , expected{expected}
-    {}
+            : mask{mask}
+            , expected{expected} {}
 
     constexpr Matcher(std::tuple<T, T> t) noexcept
-        : Matcher(std::get<0>(t), std::get<1>(t))
-    {}
+            : Matcher(std::get<0>(t), std::get<1>(t)) {}
 
     /// @brief Gets the mask for this instruction.
     constexpr inline T GetMask() const noexcept {

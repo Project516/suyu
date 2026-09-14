@@ -444,8 +444,7 @@ Result IApplicationFunctions::CreateApplicationAndRequestToStart(u64 application
     LOG_INFO(Service_AM, "called, application_id={:016X}", application_id);
 
     // If application_id is 0, relaunch the current application
-    const u64 target_application_id =
-        (application_id == 0) ? m_applet->program_id : application_id;
+    const u64 target_application_id = (application_id == 0) ? m_applet->program_id : application_id;
 
     system.GetUserChannel() = m_applet->user_channel_launch_parameter;
     system.ExecuteProgram(target_application_id);
@@ -517,8 +516,7 @@ Result IApplicationFunctions::GetHealthWarningDisappearedSystemEvent(
     R_SUCCEED();
 }
 
-Result IApplicationFunctions::GetUnknownEvent210(
-    OutCopyHandle<Kernel::KReadableEvent> out_event) {
+Result IApplicationFunctions::GetUnknownEvent210(OutCopyHandle<Kernel::KReadableEvent> out_event) {
     LOG_DEBUG(Service_AM, "called");
     *out_event = m_applet->unknown_event.GetHandle();
     R_SUCCEED();

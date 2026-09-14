@@ -23,13 +23,11 @@ TimeZoneService::TimeZoneService(
     Core::System& system_, FileTimestampWorker& file_timestamp_worker,
     bool can_write_timezone_device_location, TimeZoneBinary& time_zone_binary,
     std::shared_ptr<Service::PSC::Time::TimeZoneService> time_zone_service)
-    : ServiceFramework{system_, "ITimeZoneService"}
-    , m_can_write_timezone_device_location{can_write_timezone_device_location}
-    , m_file_timestamp_worker{file_timestamp_worker}
-    , m_wrapped_service{std::move(time_zone_service)}
-    , m_operation_event{system}
-    , m_time_zone_binary{time_zone_binary}
-{
+    : ServiceFramework{system_, "ITimeZoneService"},
+      m_can_write_timezone_device_location{can_write_timezone_device_location},
+      m_file_timestamp_worker{file_timestamp_worker}, m_wrapped_service{std::move(
+                                                          time_zone_service)},
+      m_operation_event{system}, m_time_zone_binary{time_zone_binary} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0,   D<&TimeZoneService::GetDeviceLocationName>, "GetDeviceLocationName"},
@@ -50,7 +48,8 @@ TimeZoneService::TimeZoneService(
     // clang-format on
     RegisterHandlers(functions);
 
-    m_set_sys = system.ServiceManager().GetService<Service::Set::ISystemSettingsServer>("set:sys", true);
+    m_set_sys =
+        system.ServiceManager().GetService<Service::Set::ISystemSettingsServer>("set:sys", true);
 }
 
 TimeZoneService::~TimeZoneService() = default;
@@ -108,7 +107,8 @@ Result TimeZoneService::LoadLocationNameList(
     OutArray<Service::PSC::Time::LocationName, BufferAttr_HipcMapAlias> out_names, u32 index) {
     SCOPE_EXIT {
         LOG_DEBUG(Service_Time, "called. index={} out_count={} out_names[0]={} out_names[1]={}",
-                  index, *out_count, out_names.size() > 0 ? out_names[0] : Service::PSC::Time::LocationName{},
+                  index, *out_count,
+                  out_names.size() > 0 ? out_names[0] : Service::PSC::Time::LocationName{},
                   out_names.size() > 1 ? out_names[1] : Service::PSC::Time::LocationName{});
     };
 

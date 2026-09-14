@@ -11,7 +11,6 @@
 #include <array>
 
 #include "common/common_types.h"
-
 #include "dynarmic/backend/arm64/stack_layout.h"
 
 namespace oaknut {

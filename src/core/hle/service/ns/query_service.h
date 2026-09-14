@@ -40,7 +40,8 @@ struct ApplicationPlayStatistics {
     u64 play_time_ns{};
     u64 launch_count{};
 };
-static_assert(sizeof(ApplicationPlayStatistics) == 0x18, "ApplicationPlayStatistics is an invalid size");
+static_assert(sizeof(ApplicationPlayStatistics) == 0x18,
+              "ApplicationPlayStatistics is an invalid size");
 
 class IQueryService final : public ServiceFramework<IQueryService> {
 public:

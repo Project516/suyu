@@ -7,7 +7,7 @@
 #include "common/common_types.h"
 
 namespace Common::Random {
-    [[nodiscard]] u32 Random32(u32 seed) noexcept;
-    [[nodiscard]] u64 Random64(u64 seed) noexcept;
-    [[nodiscard]] std::mt19937 GetMT19937() noexcept;
-}
+[[nodiscard]] u32 Random32(u32 seed) noexcept;
+[[nodiscard]] u64 Random64(u64 seed) noexcept;
+[[nodiscard]] std::mt19937 GetMT19937() noexcept;
+} // namespace Common::Random

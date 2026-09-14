@@ -106,8 +106,8 @@ Result IOlscServiceForSystemService::GetDaemonController(
     R_SUCCEED();
 }
 
-Result IOlscServiceForSystemService::GetDataTransferPolicy(
-    Out<DataTransferPolicy> out_policy, u64 application_id) {
+Result IOlscServiceForSystemService::GetDataTransferPolicy(Out<DataTransferPolicy> out_policy,
+                                                           u64 application_id) {
     LOG_WARNING(Service_OLSC, "(STUBBED) called");
     DataTransferPolicy policy{};
     policy.upload_policy = 0;
@@ -117,7 +117,8 @@ Result IOlscServiceForSystemService::GetDataTransferPolicy(
 }
 
 Result IOlscServiceForSystemService::GetTransferTaskErrorInfo(Out<TransferTaskErrorInfo> out_info,
-                                                             Common::UUID uuid, u64 application_id) {
+                                                              Common::UUID uuid,
+                                                              u64 application_id) {
     LOG_WARNING(Service_OLSC, "(STUBBED) called, uuid={} application_id={:016X}",
                 uuid.FormattedString(), application_id);
 
