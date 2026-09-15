@@ -39,7 +39,7 @@ jobs:
             ${{ runner.os }}-android-
 
       - name: Query Tag Name
-        uses: olegtarasov/get-tag@v2.1.2
+        uses: olegtarasov/get-tag@v2.1.4
         id: tagName
 
       - name: Install Dependencies
@@ -85,7 +85,7 @@ jobs:
         uses: actions/download-artifact@v4
 
       - name: Query Tag Name
-        uses: olegtarasov/get-tag@v2.1.2
+        uses: olegtarasov/get-tag@v2.1.4
         id: tagName
 
       - name: Create Release
