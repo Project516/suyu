@@ -565,7 +565,9 @@ jobs:
       - name: Install system dependencies (Homebrew)
         run: |
           brew update
-          brew install cmake ninja
+          # autoconf/automake/libtool are required by externals/libusb's
+          # bootstrap.sh when configuring for iOS.
+          brew install cmake ninja autoconf automake libtool
 
       - name: Initialize submodules
         run: |

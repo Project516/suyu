@@ -7,14 +7,15 @@ set_target_properties(yuzu_room_standalone PROPERTIES OUTPUT_NAME "suyu-room")
 
 target_link_libraries(yuzu_room_standalone PRIVATE yuzu-room)
 # OpenSSL's static libcrypto needs zlib symbols (compress/uncompress).
-# Conan's static libcrypto requires zlib to be linked *after* crypto.
-# Use LINK_GROUP to force correct order regardless of left-to-right pass,
-# and fall back to plain -lz for systems where ZLIB target is missing.
+# Conan's static libcrypto requires zlib to be linked *after* crypto, so
+# keep ZLIB last in left-to-right order. Do NOT use $<LINK_GROUP:RESCAN>
+# here: it is unsupported by the MSVC and Apple linkers and fails CMake
+# generation on Windows/macOS.
 find_package(ZLIB QUIET)
 if (TARGET ZLIB::ZLIB)
-    target_link_libraries(yuzu_room_standalone PRIVATE "$<LINK_GROUP:RESCAN,OpenSSL::SSL,OpenSSL::Crypto,ZLIB::ZLIB>" ZLIB::ZLIB)
+    target_link_libraries(yuzu_room_standalone PRIVATE OpenSSL::SSL OpenSSL::Crypto ZLIB::ZLIB)
 elseif (TARGET zlibstatic)
-    target_link_libraries(yuzu_room_standalone PRIVATE "$<LINK_GROUP:RESCAN,OpenSSL::SSL,OpenSSL::Crypto,zlibstatic>" zlibstatic)
+    target_link_libraries(yuzu_room_standalone PRIVATE OpenSSL::SSL OpenSSL::Crypto zlibstatic)
 else()
     target_link_libraries(yuzu_room_standalone PRIVATE z)
 endif()
