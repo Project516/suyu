@@ -200,7 +200,7 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-android-
             - name: Query tag name
-              uses: https://github.com/olegtarasov/get-tag@v2.1.2
+              uses: https://github.com/olegtarasov/get-tag@v2.1.4
               id: tagName
             - name: Build
               run: ./.ci/scripts/android/build.sh
