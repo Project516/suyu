@@ -9,10 +9,11 @@
 #include <sstream>
 #include <vector>
 
+// clang-format off
 #ifdef _WIN32
-#include <iphlpapi.h>
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
+#include <iphlpapi.h>
 #elif defined(__linux__) || defined(__ANDROID__)
 #include <cerrno>
 #include <ifaddrs.h>
@@ -32,6 +33,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #endif
+// clang-format on
 
 #include "common/common_types.h"
 #include "common/logging.h"

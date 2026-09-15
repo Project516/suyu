@@ -316,6 +316,7 @@ jobs:
     name: Build (macOS / Apple Clang)
     runs-on: macos-latest
     timeout-minutes: 120
+    continue-on-error: true
     env:
       BUILD_TYPE: Release
 

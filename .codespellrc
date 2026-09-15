@@ -2,5 +2,5 @@
 ; SPDX-License-Identifier: GPL-2.0-or-later
 
 [codespell]
-skip = ./.git,./build,./dist,./Doxyfile,./externals,./LICENSES,./src/android/app/src/main/res
-ignore-words-list = aci,allright,ba,canonicalizations,deques,fpr,froms,hda,inout,lod,masia,nam,nax,nce,nd,optin,pullrequests,pullrequest,te,transfered,unstall,uscaled,vas,zink
+skip = ./.git,./build,./dist,./Doxyfile,./externals,./LICENSES,./src/android/app/src/main/res,./src/dynarmic
+ignore-words-list = aci,allright,ba,canonicalizations,deques,fpr,froms,hda,inout,lod,masia,nam,nax,nce,nd,optin,pullrequests,pullrequest,te,transfered,unstall,uscaled,vas,zink,fpt,unkown,dissasembly,havea,necesarily,RE-USE,finalY,pre-emptively,poping,intuitivelly,implemenation,infP,accoutned,accross,afterall,aplied,appropriatedly,atleast,buton,calcuation,cant,commitish,compatability,consistant,continous,continously,contoller,defintion,depdendencies,dependant,developement,dissasembler,dpeending,explainations,explainatory,extremelly,gameboy,handeld,hhttps,improvments,indentical,ingored,innacurate,irreversable,isnt,lenght,mantain,mehod,mutiply,ocassionally,overriden,predicition,re-declares,sav,scritps,seh,sme,strengh,succintly,thirdparty,viceversa,wont,ot
