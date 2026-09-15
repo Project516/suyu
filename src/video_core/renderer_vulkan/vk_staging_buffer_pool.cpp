@@ -46,11 +46,11 @@ size_t GetStreamBufferSize(const Device& device) {
 
     VkDeviceSize size{0};
     bool has_device_local_host_visible_heap{};
-    ForEachDeviceLocalHostVisibleHeap(device, [&size, &has_device_local_host_visible_heap](
-                                                  size_t index, VkMemoryHeap& heap) {
-        has_device_local_host_visible_heap = true;
-        size = (std::max)(size, heap.size);
-    });
+    ForEachDeviceLocalHostVisibleHeap(
+        device, [&size, &has_device_local_host_visible_heap](size_t index, VkMemoryHeap& heap) {
+            has_device_local_host_visible_heap = true;
+            size = (std::max)(size, heap.size);
+        });
     if (has_device_local_host_visible_heap) {
         // If rebar is not supported, cut the max heap size to 40%. This will allow 2 captures to be
         // loaded at the same time in RenderDoc. If rebar is supported, this shouldn't be an issue
@@ -195,7 +195,8 @@ std::optional<StagingBufferRef> StagingBufferPool::TryGetReservedBuffer(size_t s
     return it->Ref();
 }
 
-StagingBufferRef StagingBufferPool::CreateStagingBuffer(size_t size, MemoryUsage usage, bool deferred) {
+StagingBufferRef StagingBufferPool::CreateStagingBuffer(size_t size, MemoryUsage usage,
+                                                        bool deferred) {
     auto const log2_size = Common::Log2Ceil<u32>(u32(size));
     VkBufferCreateInfo buffer_ci = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,

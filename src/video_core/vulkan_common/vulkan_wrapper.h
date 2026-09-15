@@ -12,11 +12,11 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include <string>
 
 #include "common/common_types.h"
 #include "video_core/vulkan_common/vulkan.h"
@@ -157,7 +157,6 @@ inline constexpr VkPipelineStageFlags PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER_H
     PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER | VK_PIPELINE_STAGE_HOST_BIT;
 
 inline constexpr VkPipelineStageFlags PIPELINE_STAGE_HOST = VK_PIPELINE_STAGE_HOST_BIT;
-
 
 /// Table holding Vulkan instance function pointers.
 struct InstanceDispatch {
@@ -648,8 +647,8 @@ class Instance : public Handle<VkInstance, NoOwner, InstanceDispatch> {
 public:
     /// Creates a Vulkan instance.
     /// @throw Exception on initialization error.
-    [[nodiscard]] static Instance Create(u32 version, Span<const char*> layers, Span<const char*> extensions,
-                           InstanceDispatch& dispatch);
+    [[nodiscard]] static Instance Create(u32 version, Span<const char*> layers,
+                                         Span<const char*> extensions, InstanceDispatch& dispatch);
 
     /// Enumerates physical devices.
     /// @return Physical devices and an empty handle on failure.
@@ -1442,7 +1441,8 @@ public:
 
     template <typename T>
         requires std::is_trivially_copyable_v<T>
-    void PushConstants(VkPipelineLayout layout, VkShaderStageFlags flags, const T& data) const noexcept {
+    void PushConstants(VkPipelineLayout layout, VkShaderStageFlags flags,
+                       const T& data) const noexcept {
         dld->vkCmdPushConstants(handle, layout, flags, 0, u32(sizeof(T)), std::addressof(data));
     }
 
@@ -1538,23 +1538,20 @@ public:
         dld->vkCmdSetRasterizerDiscardEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
     }
 
-    void SetConservativeRasterizationModeEXT(VkConservativeRasterizationModeEXT mode) const noexcept
-    {
+    void SetConservativeRasterizationModeEXT(
+        VkConservativeRasterizationModeEXT mode) const noexcept {
         dld->vkCmdSetConservativeRasterizationModeEXT(handle, mode);
     }
 
-    void SetLineRasterizationModeEXT(VkLineRasterizationModeEXT mode) const noexcept
-    {
+    void SetLineRasterizationModeEXT(VkLineRasterizationModeEXT mode) const noexcept {
         dld->vkCmdSetLineRasterizationModeEXT(handle, mode);
     }
 
-    void SetLineStippleEnableEXT(bool enable) const noexcept
-    {
+    void SetLineStippleEnableEXT(bool enable) const noexcept {
         dld->vkCmdSetLineStippleEnableEXT(handle, enable ? VK_TRUE : VK_FALSE);
     }
 
-    void SetLineStippleEXT(u32 factor, u16 pattern) const noexcept
-    {
+    void SetLineStippleEXT(u32 factor, u16 pattern) const noexcept {
         dld->vkCmdSetLineStippleEXT(handle, factor, pattern);
     }
 

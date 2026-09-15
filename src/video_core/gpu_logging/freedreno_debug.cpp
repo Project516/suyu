@@ -3,8 +3,8 @@
 
 #ifdef __ANDROID__
 
-#include "video_core/gpu_logging/freedreno_debug.h"
 #include "common/logging.h"
+#include "video_core/gpu_logging/freedreno_debug.h"
 
 #include <cstdlib>
 

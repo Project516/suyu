@@ -14,15 +14,15 @@
 #include <string>
 
 #include <boost/container/container_fwd.hpp>
-#include <boost/container/static_vector.hpp>
 #include <boost/container/stable_vector.hpp>
-#include "dynarmic/mcl/intrusive_list.hpp"
-#include "common/common_types.h"
+#include <boost/container/static_vector.hpp>
 
+#include "common/common_types.h"
 #include "dynarmic/ir/location_descriptor.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/terminal.h"
 #include "dynarmic/ir/value.h"
+#include "dynarmic/mcl/intrusive_list.hpp"
 
 namespace Dynarmic::IR {
 
@@ -35,7 +35,7 @@ enum class Opcode;
 /// order memory accesses.
 class alignas(4096) Block final {
 public:
-    //using instruction_list_type = dense_list<Inst>;
+    // using instruction_list_type = dense_list<Inst>;
     using instruction_list_type = mcl::intrusive_list<Inst>;
     using size_type = instruction_list_type::size_type;
     using iterator = instruction_list_type::iterator;

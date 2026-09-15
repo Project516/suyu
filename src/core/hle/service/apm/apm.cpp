@@ -18,11 +18,15 @@ void LoopProcess(Core::System& system) {
     auto module = std::make_shared<Module>();
     auto server_manager = std::make_unique<ServerManager>(system);
 
-    server_manager->RegisterNamedService("apm", std::make_shared<APM>(system, module, system.GetAPMController(), "apm"));
-    server_manager->RegisterNamedService("apm:am", std::make_shared<APM>(system, module, system.GetAPMController(), "apm:am"));
+    server_manager->RegisterNamedService(
+        "apm", std::make_shared<APM>(system, module, system.GetAPMController(), "apm"));
+    server_manager->RegisterNamedService(
+        "apm:am", std::make_shared<APM>(system, module, system.GetAPMController(), "apm:am"));
     // Removed on [+8.0.0] but kept for compatibility
-    server_manager->RegisterNamedService("apm:p", std::make_shared<APM>(system, module, system.GetAPMController(), "apm:p"));
-    server_manager->RegisterNamedService("apm:sys", std::make_shared<APM_Sys>(system, system.GetAPMController()));
+    server_manager->RegisterNamedService(
+        "apm:p", std::make_shared<APM>(system, module, system.GetAPMController(), "apm:p"));
+    server_manager->RegisterNamedService(
+        "apm:sys", std::make_shared<APM_Sys>(system, system.GetAPMController()));
     ServerManager::RunServer(std::move(server_manager));
 }
 

@@ -91,8 +91,8 @@ public:
     }
 
     void AccelerateImageUpload(Image&, const StagingBufferRef&,
-                               std::span<const VideoCommon::SwizzleParameters>,
-                               u32 z_start, u32 z_count);
+                               std::span<const VideoCommon::SwizzleParameters>, u32 z_start,
+                               u32 z_count);
 
     void InsertUploadMemoryBarrier() {}
 
@@ -119,7 +119,8 @@ public:
     bool IsFormatDitherable(VideoCore::Surface::PixelFormat format);
     bool IsFormatScalable(VideoCore::Surface::PixelFormat format);
 
-    VkFormat GetSupportedFormat(VkFormat requested_format, VkFormatFeatureFlags required_features) const;
+    VkFormat GetSupportedFormat(VkFormat requested_format,
+                                VkFormatFeatureFlags required_features) const;
 
     const Device& device;
     Scheduler& scheduler;
@@ -374,8 +375,9 @@ private:
         std::array<vk::ImageView, Shader::NUM_TEXTURE_TYPES> unsigneds;
     };
 
-    [[nodiscard]] vk::ImageView MakeView(VkFormat vk_format, VkImageAspectFlags aspect_mask,
-                                         std::optional<Shader::TextureType> texture_type = std::nullopt);
+    [[nodiscard]] vk::ImageView MakeView(
+        VkFormat vk_format, VkImageAspectFlags aspect_mask,
+        std::optional<Shader::TextureType> texture_type = std::nullopt);
 
     const Device* device = nullptr;
     const SlotVector<Image>* slot_images = nullptr;

@@ -25,8 +25,8 @@ Use this guide for when you want to install an Atmosphere-based mod for use in E
 8. Look in the **Add-Ons** tab and observe that the Mod Name (or whatever you named the folder to earlier) now appears on the list and is selected.
 9. Hit **OK** and launch the game.  Your mod should now be active.
     <aside>
-    
+
     ***NOTE:*** Your mod may not show up on the home screen initially, if it does not.  Hit the refresh button in the bottom-left of the window or go back into *Configure Game* and disable the mod by unchecking it, and clicking **OK**.  It should now appear on the home screen in the Add-Ons column correctly.  Just go back into the *Configure Game* and enable it again if you use this method.
-    
+
     </aside>
 10. Your mod is now ready to play.

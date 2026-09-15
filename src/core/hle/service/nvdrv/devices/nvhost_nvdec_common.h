@@ -7,8 +7,8 @@
 #pragma once
 
 #include <deque>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 
 #include "common/common_types.h"
 #include "common/swap.h"

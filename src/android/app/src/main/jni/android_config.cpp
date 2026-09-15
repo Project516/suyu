@@ -39,8 +39,7 @@ void AndroidConfig::ReadAndroidValues() {
         BeginGroup(Settings::TranslateCategory(Settings::Category::DataStorage));
         Settings::values.ext_content_from_game_dirs = ReadBooleanSetting(
             std::string("ext_content_from_game_dirs"),
-            std::make_optional(
-                Settings::values.ext_content_from_game_dirs.GetDefault()));
+            std::make_optional(Settings::values.ext_content_from_game_dirs.GetDefault()));
         EndGroup();
         ReadOverlayValues();
     }
@@ -104,7 +103,7 @@ void AndroidConfig::ReadPathValues() {
     const auto save_dir_setting = ReadStringSetting(std::string("save_directory"));
     if (save_dir_setting.empty()) {
         Common::FS::SetSuyuPath(Common::FS::SuyuPath::SaveDir,
-            Common::FS::GetSuyuPathString(Common::FS::SuyuPath::NANDDir));
+                                Common::FS::GetSuyuPathString(Common::FS::SuyuPath::NANDDir));
     } else {
         Common::FS::SetSuyuPath(Common::FS::SuyuPath::SaveDir, save_dir_setting);
     }
@@ -144,7 +143,8 @@ void AndroidConfig::ReadOverlayValues() {
             ReadDoubleSetting(std::string("foldable\\x_position"));
         control_data.foldable_position.second =
             ReadDoubleSetting(std::string("foldable\\y_position"));
-        control_data.individual_scale = static_cast<float>(ReadDoubleSetting(std::string("individual_scale")));
+        control_data.individual_scale =
+            static_cast<float>(ReadDoubleSetting(std::string("individual_scale")));
         AndroidSettings::values.overlay_control_data.push_back(control_data);
     }
     EndArray();
@@ -325,7 +325,8 @@ void AndroidConfig::SaveOverlayValues() {
                            control_data.foldable_position.first);
         WriteDoubleSetting(std::string("foldable\\y_position"),
                            control_data.foldable_position.second);
-        WriteDoubleSetting(std::string("individual_scale"), static_cast<double>(control_data.individual_scale));
+        WriteDoubleSetting(std::string("individual_scale"),
+                           static_cast<double>(control_data.individual_scale));
     }
     EndArray();
 

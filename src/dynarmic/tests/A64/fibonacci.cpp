@@ -8,12 +8,12 @@
 
 #include <array>
 #include <exception>
-#include <ankerl/unordered_dense.h>
 
+#include <ankerl/unordered_dense.h>
 #include <catch2/catch_test_macros.hpp>
-#include "common/common_types.h"
 #include <oaknut/oaknut.hpp>
 
+#include "common/common_types.h"
 #include "dynarmic/interface/A64/a64.h"
 
 using namespace Dynarmic;

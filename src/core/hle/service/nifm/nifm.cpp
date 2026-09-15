@@ -213,7 +213,8 @@ struct NifmNetworkProfileData {
     IpSettingData ip_setting_data{};
 };
 #pragma pack(pop)
-static_assert(sizeof(NifmNetworkProfileData) == 0x18E, "NifmNetworkProfileData has incorrect size.");
+static_assert(sizeof(NifmNetworkProfileData) == 0x18E,
+              "NifmNetworkProfileData has incorrect size.");
 
 struct PendingProfile {
     std::array<char, 0x21> ssid{};
@@ -368,7 +369,7 @@ public:
             {23, nullptr, "SetKeptInSleep"},
             {24, nullptr, "RegisterSocketDescriptor"},
             {25, nullptr, "UnregisterSocketDescriptor"},
-            {26, nullptr, "GetNetworkAccessStatus"}, //21.0.0+
+            {26, nullptr, "GetNetworkAccessStatus"}, // 21.0.0+
         };
         RegisterHandlers(functions);
 

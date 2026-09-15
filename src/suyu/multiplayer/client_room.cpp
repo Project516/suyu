@@ -6,8 +6,8 @@
 #include <QImage>
 #include <QList>
 #include <QLocale>
-#include <QMetaType>
 #include <QMessageBox>
+#include <QMetaType>
 #include <QTime>
 #include <QtConcurrent/QtConcurrentRun>
 #include "common/logging/log.h"
@@ -78,7 +78,8 @@ void ClientRoomWindow::OnRoomUpdate(const Network::RoomInformation& info) {
         last_room_name_ = room_name;
         last_announced_program_id_ = 0;
         auto_launch_attempted_ = false;
-        ui->chat->AppendStatusMessage(tr("Joined room %1. Waiting for room details...").arg(room_name));
+        ui->chat->AppendStatusMessage(
+            tr("Joined room %1. Waiting for room details...").arg(room_name));
     }
 
     if (info.preferred_game.id != last_announced_program_id_) {
@@ -86,8 +87,8 @@ void ClientRoomWindow::OnRoomUpdate(const Network::RoomInformation& info) {
         auto_launch_attempted_ = false;
 
         if (info.preferred_game.id == 0) {
-            ui->chat->AppendStatusMessage(
-                tr("Connected to the room chat. Waiting for the host to advertise a multiplayer game."));
+            ui->chat->AppendStatusMessage(tr("Connected to the room chat. Waiting for the host to "
+                                             "advertise a multiplayer game."));
         } else if (auto* parent = static_cast<MultiplayerState*>(parentWidget())) {
             const auto preferred_name = QString::fromStdString(info.preferred_game.name);
             const auto game_name =
@@ -95,8 +96,8 @@ void ClientRoomWindow::OnRoomUpdate(const Network::RoomInformation& info) {
             const auto local_path = parent->FindLocalGamePath(info.preferred_game.id);
             if (local_path.isEmpty()) {
                 ui->chat->AppendStatusMessage(
-                    tr("Room prefers %1, but no matching local ROM was found in your library.").arg(
-                        game_name));
+                    tr("Room prefers %1, but no matching local ROM was found in your library.")
+                        .arg(game_name));
             } else {
                 ui->chat->AppendStatusMessage(
                     tr("Room prefers %1. Launching your local copy automatically.").arg(game_name));
@@ -161,10 +162,11 @@ void ClientRoomWindow::LaunchPreferredGame() {
     }
 
     if (!parent->LaunchLocalGamePath(local_path)) {
-        QMessageBox::warning(this, tr("Preferred Game Not Available"),
-                             preferred_name.isEmpty()
-                                 ? tr("The room's preferred game is not available in your game library.")
-                                 : tr("%1 is not available in your game library.").arg(preferred_name));
+        QMessageBox::warning(
+            this, tr("Preferred Game Not Available"),
+            preferred_name.isEmpty()
+                ? tr("The room's preferred game is not available in your game library.")
+                : tr("%1 is not available in your game library.").arg(preferred_name));
     }
 }
 
@@ -185,8 +187,7 @@ void ClientRoomWindow::UpdateView() {
                 information.preferred_game.id != 0 &&
                 !state->FindLocalGamePath(information.preferred_game.id).isEmpty();
             const bool have_by_name =
-                !state->FindLocalGameByName(
-                          QString::fromStdString(information.preferred_game.name))
+                !state->FindLocalGameByName(QString::fromStdString(information.preferred_game.name))
                      .isEmpty();
             ui->launch_preferred_game->setEnabled(have_by_id || have_by_name);
             setWindowTitle(QString(tr("%1 - %2 (%3/%4 members) - connected"))
@@ -231,8 +232,8 @@ void ClientRoomWindow::MaybeAutoLaunchPreferredGame(const Network::RoomInformati
     } else {
         auto_launch_attempted_ = false;
         ui->chat->AppendStatusMessage(
-            tr("Automatic launch for %1 failed. Use Launch Preferred Game to retry.").arg(
-                game_name));
+            tr("Automatic launch for %1 failed. Use Launch Preferred Game to retry.")
+                .arg(game_name));
     }
 }
 

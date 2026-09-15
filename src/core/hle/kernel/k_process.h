@@ -66,11 +66,13 @@ public:
 
 private:
     using SharedMemoryInfoList = Common::IntrusiveListBaseTraits<KSharedMemoryInfo>::ListType;
-    using TLPTree = Common::IntrusiveRedBlackTreeBaseTraits<KThreadLocalPage>::TreeType<KThreadLocalPage>;
+    using TLPTree =
+        Common::IntrusiveRedBlackTreeBaseTraits<KThreadLocalPage>::TreeType<KThreadLocalPage>;
     using TLPIterator = TLPTree::iterator;
 
 private:
-    std::array<std::unique_ptr<Core::ArmInterface>, Core::Hardware::NUM_CPU_CORES> m_arm_interfaces{};
+    std::array<std::unique_ptr<Core::ArmInterface>, Core::Hardware::NUM_CPU_CORES>
+        m_arm_interfaces{};
     std::array<KThread*, Core::Hardware::NUM_CPU_CORES> m_running_threads{};
     std::array<u64, Core::Hardware::NUM_CPU_CORES> m_running_thread_idle_counts{};
     std::array<u64, Core::Hardware::NUM_CPU_CORES> m_running_thread_switch_counts{};
@@ -101,7 +103,7 @@ private:
     KConditionVariable m_cond_var;
     KAddressArbiter m_address_arbiter;
     std::array<u64, 4> m_entropy{};
-    u32 m_pointer_buffer_size = 0x8000;  // Default pointer buffer size (can be game-specific later)
+    u32 m_pointer_buffer_size = 0x8000; // Default pointer buffer size (can be game-specific later)
     std::array<char, 13> m_name{};
     Svc::CreateProcessFlag m_flags{};
     KMemoryManager::Pool m_memory_pool{};
@@ -162,15 +164,15 @@ public:
     explicit KProcess(KernelCore& kernel);
     ~KProcess() override;
 
-    Result Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params, KResourceLimit* res_limit,
-                      bool is_real);
+    Result Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params,
+                      KResourceLimit* res_limit, bool is_real);
 
-    Result Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params, const KPageGroup& pg,
-                      std::span<const u32> caps, KResourceLimit* res_limit,
+    Result Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params,
+                      const KPageGroup& pg, std::span<const u32> caps, KResourceLimit* res_limit,
                       KMemoryManager::Pool pool, bool immortal);
-    Result Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params, std::span<const u32> user_caps,
-                      KResourceLimit* res_limit, KMemoryManager::Pool pool,
-                      KProcessAddress aslr_space_start);
+    Result Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params,
+                      std::span<const u32> user_caps, KResourceLimit* res_limit,
+                      KMemoryManager::Pool pool, KProcessAddress aslr_space_start);
     void Exit(KernelCore& kernel);
 
     const char* GetName() const {
@@ -348,8 +350,10 @@ public:
     size_t GetUsedNonSystemUserPhysicalMemorySize(KernelCore& kernel) const;
     size_t GetTotalNonSystemUserPhysicalMemorySize(KernelCore& kernel) const;
 
-    Result AddSharedMemory(KernelCore& kernel, KSharedMemory* shmem, KProcessAddress address, size_t size);
-    void RemoveSharedMemory(KernelCore& kernel, KSharedMemory* shmem, KProcessAddress address, size_t size);
+    Result AddSharedMemory(KernelCore& kernel, KSharedMemory* shmem, KProcessAddress address,
+                           size_t size);
+    void RemoveSharedMemory(KernelCore& kernel, KSharedMemory* shmem, KProcessAddress address,
+                            size_t size);
 
     Result CreateThreadLocalRegion(KernelCore& kernel, KProcessAddress* out);
     Result DeleteThreadLocalRegion(KernelCore& kernel, KProcessAddress addr);
@@ -481,15 +485,18 @@ public:
         R_RETURN(m_cond_var.Wait(address, cv_key, tag, ns));
     }
 
-    Result SignalAddressArbiter(uintptr_t address, Svc::SignalType signal_type, s32 value, s32 count) {
+    Result SignalAddressArbiter(uintptr_t address, Svc::SignalType signal_type, s32 value,
+                                s32 count) {
         R_RETURN(m_address_arbiter.SignalToAddress(address, signal_type, value, count));
     }
 
-    Result WaitAddressArbiter(uintptr_t address, Svc::ArbitrationType arb_type, s32 value, s64 timeout) {
+    Result WaitAddressArbiter(uintptr_t address, Svc::ArbitrationType arb_type, s32 value,
+                              s64 timeout) {
         R_RETURN(m_address_arbiter.WaitForAddress(address, arb_type, value, timeout));
     }
 
-    Result GetThreadList(KernelCore& kernel, s32* out_num_threads, KProcessAddress out_thread_ids, s32 max_out_count);
+    Result GetThreadList(KernelCore& kernel, s32* out_num_threads, KProcessAddress out_thread_ids,
+                         s32 max_out_count);
 
     static void Switch(KernelCore& kernel, KProcess* cur_process, KProcess* next_process);
 
@@ -505,17 +512,21 @@ public:
 
 public:
     // Attempts to insert a watchpoint into a free slot. Returns false if none are available.
-    bool InsertWatchpoint(KernelCore& kernel, KProcessAddress addr, u64 size, DebugWatchpointType type);
+    bool InsertWatchpoint(KernelCore& kernel, KProcessAddress addr, u64 size,
+                          DebugWatchpointType type);
 
     // Attempts to remove the watchpoint specified by the given parameters.
-    bool RemoveWatchpoint(KernelCore& kernel, KProcessAddress addr, u64 size, DebugWatchpointType type);
+    bool RemoveWatchpoint(KernelCore& kernel, KProcessAddress addr, u64 size,
+                          DebugWatchpointType type);
 
     const std::array<DebugWatchpoint, Core::Hardware::NUM_WATCHPOINTS>& GetWatchpoints() const {
         return m_watchpoints;
     }
 
 public:
-    Result LoadFromMetadata(KernelCore& kernel, const FileSys::ProgramMetadata& metadata, std::size_t code_size, KProcessAddress aslr_space_start, size_t aslr_space_offset);
+    Result LoadFromMetadata(KernelCore& kernel, const FileSys::ProgramMetadata& metadata,
+                            std::size_t code_size, KProcessAddress aslr_space_start,
+                            size_t aslr_space_offset);
 
     void LoadModule(KernelCore& kernel, CodeSet code_set, KProcessAddress base_addr);
 

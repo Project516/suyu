@@ -51,12 +51,8 @@ void ConfigureDebug::SetConfiguration() {
     ui->enable_all_controllers->setChecked(Settings::values.enable_all_controllers.GetValue());
     ui->extended_logging->setChecked(Settings::values.extended_logging.GetValue());
     ui->perform_vulkan_check->setChecked(Settings::values.perform_vulkan_check.GetValue());
-    ui->serial_battery_edit->setText(
-        QString::number(Settings::values.serial_battery.GetValue())
-    );
-    ui->serial_board_edit->setText(
-        QString::number(Settings::values.serial_unit.GetValue())
-    );
+    ui->serial_battery_edit->setText(QString::number(Settings::values.serial_battery.GetValue()));
+    ui->serial_board_edit->setText(QString::number(Settings::values.serial_unit.GetValue()));
 #ifdef YUZU_USE_QT_WEB_ENGINE
     ui->disable_web_applet->setChecked(Settings::values.disable_web_applet.GetValue());
 #else
@@ -96,8 +92,7 @@ void ConfigureDebug::SetConfiguration() {
     ui->debug_knobs_spinbox->setValue(Settings::values.debug_knobs.GetValue());
 
     ui->gpu_log_level->setEnabled(runtime_lock);
-    ui->gpu_log_level->setCurrentIndex(
-        static_cast<int>(Settings::values.gpu_log_level.GetValue()));
+    ui->gpu_log_level->setCurrentIndex(static_cast<int>(Settings::values.gpu_log_level.GetValue()));
     ui->gpu_log_shader_dumps->setEnabled(runtime_lock);
     ui->gpu_log_shader_dumps->setChecked(Settings::values.gpu_log_shader_dumps.GetValue());
 #ifdef YUZU_USE_QT_WEB_ENGINE

@@ -12,11 +12,11 @@
 #include "core/hle/service/ns/application_manager_interface.h"
 
 #include "core/file_sys/content_archive.h"
+#include "core/file_sys/patch_manager.h"
 #include "core/hle/service/ns/content_management_interface.h"
 #include "core/hle/service/ns/read_only_application_control_data_interface.h"
-#include "core/file_sys/patch_manager.h"
-#include "frontend_common/firmware_manager.h"
 #include "core/launch_timestamp_cache.h"
+#include "frontend_common/firmware_manager.h"
 
 #include <algorithm>
 #include <vector>
@@ -485,7 +485,8 @@ IApplicationManagerInterface::IApplicationManagerInterface(Core::System& system_
 
 IApplicationManagerInterface::~IApplicationManagerInterface() = default;
 
-Result IApplicationManagerInterface::UnregisterNetworkServiceAccountWithUserSaveDataDeletion(Common::UUID user_id) {
+Result IApplicationManagerInterface::UnregisterNetworkServiceAccountWithUserSaveDataDeletion(
+    Common::UUID user_id) {
     LOG_DEBUG(Service_NS, "called, user_id={}", user_id.FormattedString());
     R_SUCCEED();
 }
@@ -518,8 +519,7 @@ Result IApplicationManagerInterface::GetApplicationLogoData(
 
     const auto file = logo_dir->GetFile(path);
     if (!file) {
-        LOG_WARNING(Service_NS, "Logo path not found: {} for id={:016X}", path,
-                    application_id);
+        LOG_WARNING(Service_NS, "Logo path not found: {} for id={:016X}", path, application_id);
         R_RETURN(ResultUnknown);
     }
 
@@ -573,28 +573,29 @@ Result IApplicationManagerInterface::ListApplicationRecord(
     records.reserve(installed_games.size());
 
     for (const auto& [slot, game] : installed_games) {
-         if (game.title_id == 0 || game.title_id < 0x0100000000001FFFull) {
-             continue;
-         }
-         if ((game.title_id & 0xFFF) != 0) {
-             continue; // skip sub-programs (e.g., 001)
-         }
+        if (game.title_id == 0 || game.title_id < 0x0100000000001FFFull) {
+            continue;
+        }
+        if ((game.title_id & 0xFFF) != 0) {
+            continue; // skip sub-programs (e.g., 001)
+        }
 
-         ApplicationRecord record{};
-         record.application_id = game.title_id;
-         record.last_event = ApplicationEvent::Installed;
-         record.attributes = 0;
-         record.last_updated = Core::LaunchTimestampCache::GetLaunchTimestamp(game.title_id);
+        ApplicationRecord record{};
+        record.application_id = game.title_id;
+        record.last_event = ApplicationEvent::Installed;
+        record.attributes = 0;
+        record.last_updated = Core::LaunchTimestampCache::GetLaunchTimestamp(game.title_id);
 
-         records.push_back(record);
-     }
+        records.push_back(record);
+    }
 
-     std::sort(records.begin(), records.end(), [](const ApplicationRecord& lhs, const ApplicationRecord& rhs) {
-         if (lhs.last_updated == rhs.last_updated) {
-             return lhs.application_id < rhs.application_id;
-         }
-         return lhs.last_updated > rhs.last_updated;
-     });
+    std::sort(records.begin(), records.end(),
+              [](const ApplicationRecord& lhs, const ApplicationRecord& rhs) {
+                  if (lhs.last_updated == rhs.last_updated) {
+                      return lhs.application_id < rhs.application_id;
+                  }
+                  return lhs.last_updated > rhs.last_updated;
+              });
 
     size_t i = 0;
     const size_t start = static_cast<size_t>(std::max(0, offset));
@@ -662,8 +663,7 @@ Result IApplicationManagerInterface::GetApplicationViewDeprecated(
 }
 
 Result IApplicationManagerInterface::GetApplicationViewWithPromotionInfo(
-    OutBuffer<BufferAttr_HipcMapAlias> out_buffer,
-    Out<u32> out_count,
+    OutBuffer<BufferAttr_HipcMapAlias> out_buffer, Out<u32> out_count,
     InArray<u64, BufferAttr_HipcMapAlias> application_ids) {
     const auto requested = application_ids.size();
     LOG_WARNING(Service_NS, "called, size={}", requested);
@@ -672,7 +672,7 @@ Result IApplicationManagerInterface::GetApplicationViewWithPromotionInfo(
     const bool is_fw20 = fw_pair.first.major >= 20;
 
     const size_t per_entry_size = is_fw20 ? (sizeof(ApplicationViewV20) + sizeof(PromotionInfo))
-                                             : (sizeof(ApplicationViewV19) + sizeof(PromotionInfo));
+                                          : (sizeof(ApplicationViewV19) + sizeof(PromotionInfo));
     const size_t capacity_entries = out_buffer.size() / per_entry_size;
     const size_t to_write_entries = (std::min)(requested, capacity_entries);
 
@@ -687,7 +687,8 @@ Result IApplicationManagerInterface::GetApplicationViewWithPromotionInfo(
         data.view.download_progress = {};
         data.promotion = {};
 
-        const size_t written = WriteApplicationViewWithPromotion(dst, out_buffer.size() - (dst - out_buffer.data()), data, is_fw20);
+        const size_t written = WriteApplicationViewWithPromotion(
+            dst, out_buffer.size() - (dst - out_buffer.data()), data, is_fw20);
         if (written == 0) {
             break;
         }
@@ -751,12 +752,15 @@ Result IApplicationManagerInterface::GetSdCardMountStatusChangedEvent(
     R_SUCCEED();
 }
 
-Result IApplicationManagerInterface::GetTotalSpaceSize(Out<s64> out_total_space_size, FileSys::StorageId storage_id) {
+Result IApplicationManagerInterface::GetTotalSpaceSize(Out<s64> out_total_space_size,
+                                                       FileSys::StorageId storage_id) {
     LOG_DEBUG(Service_NS, "called");
-    R_RETURN(IContentManagementInterface(system).GetTotalSpaceSize(out_total_space_size, storage_id));
+    R_RETURN(
+        IContentManagementInterface(system).GetTotalSpaceSize(out_total_space_size, storage_id));
 }
 
-Result IApplicationManagerInterface::GetFreeSpaceSize(Out<s64> out_free_space_size, FileSys::StorageId storage_id) {
+Result IApplicationManagerInterface::GetFreeSpaceSize(Out<s64> out_free_space_size,
+                                                      FileSys::StorageId storage_id) {
     LOG_DEBUG(Service_NS, "called");
     R_RETURN(IContentManagementInterface(system).GetFreeSpaceSize(out_free_space_size, storage_id));
 }
@@ -817,15 +821,13 @@ Result IApplicationManagerInterface::GetApplicationTerminateResult(Out<Result> o
 
 Result IApplicationManagerInterface::RequestDownloadApplicationControlDataInBackground(
     u64 control_source, u64 application_id) {
-    LOG_INFO(Service_NS, "called, control_source={} app={:016X}",
-             control_source, application_id);
+    LOG_INFO(Service_NS, "called, control_source={} app={:016X}", control_source, application_id);
 
     unknown_event.Signal(system.Kernel());
     R_SUCCEED();
 }
 
-Result IApplicationManagerInterface::Unknown4022(
-    OutCopyHandle<Kernel::KReadableEvent> out_event) {
+Result IApplicationManagerInterface::Unknown4022(OutCopyHandle<Kernel::KReadableEvent> out_event) {
     LOG_WARNING(Service_NS, "(STUBBED) called");
     unknown_event.Signal(system.Kernel());
     *out_event = unknown_event.GetHandle();

@@ -283,7 +283,8 @@ void NSP::ReadNCAs(const std::vector<VirtualFile>& files) {
                         auto& target_map = ncas[cnmt.GetTitleID()];
                         auto existing = target_map.find({cnmt.GetType(), rec.type});
 
-                        if (existing != target_map.end() && rec.type == ContentRecordType::Program) {
+                        if (existing != target_map.end() &&
+                            rec.type == ContentRecordType::Program) {
                             continue;
                         }
                         ncas[cnmt.GetTitleID()][{cnmt.GetType(), rec.type}] = std::move(next_nca);

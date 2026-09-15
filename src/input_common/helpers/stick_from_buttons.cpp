@@ -69,13 +69,15 @@ public:
     bool IsAngleGreater(float old_angle, float new_angle) const {
         const float top_limit = new_angle + APERTURE;
         return (old_angle > new_angle && old_angle <= top_limit) ||
-               (old_angle + f32((std::numbers::pi_v<float> / 2.f)) > new_angle && old_angle + f32((std::numbers::pi_v<float> / 2.f)) <= top_limit);
+               (old_angle + f32((std::numbers::pi_v<float> / 2.f)) > new_angle &&
+                old_angle + f32((std::numbers::pi_v<float> / 2.f)) <= top_limit);
     }
 
     bool IsAngleSmaller(float old_angle, float new_angle) const {
         const float bottom_limit = new_angle - APERTURE;
         return (old_angle >= bottom_limit && old_angle < new_angle) ||
-               (old_angle - f32((std::numbers::pi_v<float> / 2.f)) >= bottom_limit && old_angle - f32((std::numbers::pi_v<float> / 2.f)) < new_angle);
+               (old_angle - f32((std::numbers::pi_v<float> / 2.f)) >= bottom_limit &&
+                old_angle - f32((std::numbers::pi_v<float> / 2.f)) < new_angle);
     }
 
     float GetAngle(std::chrono::time_point<std::chrono::steady_clock> now) const {
@@ -111,14 +113,22 @@ public:
     }
 
     void SetGoalAngle(bool r, bool l, bool u, bool d) {
-        if (r && !u && !d) goal_angle = f32(std::numbers::pi_v<float>) * 0.00f; //right
-        if (r && u && !d)  goal_angle = f32(std::numbers::pi_v<float>) * 0.25f; //upper right
-        if (u && !l && !r) goal_angle = f32(std::numbers::pi_v<float>) * 0.50f; //up
-        if (l && u && !d)  goal_angle = f32(std::numbers::pi_v<float>) * 0.75f; //upper left
-        if (l && !u && !d) goal_angle = f32(std::numbers::pi_v<float>) * 1.00f; //left
-        if (l && !u && d)  goal_angle = f32(std::numbers::pi_v<float>) * 1.25f; //bottom left
-        if (d && !l && !r) goal_angle = f32(std::numbers::pi_v<float>) * 1.50f; //down
-        if (r && !u && d)  goal_angle = f32(std::numbers::pi_v<float>) * 1.75f; //bottom right
+        if (r && !u && !d)
+            goal_angle = f32(std::numbers::pi_v<float>) * 0.00f; // right
+        if (r && u && !d)
+            goal_angle = f32(std::numbers::pi_v<float>) * 0.25f; // upper right
+        if (u && !l && !r)
+            goal_angle = f32(std::numbers::pi_v<float>) * 0.50f; // up
+        if (l && u && !d)
+            goal_angle = f32(std::numbers::pi_v<float>) * 0.75f; // upper left
+        if (l && !u && !d)
+            goal_angle = f32(std::numbers::pi_v<float>) * 1.00f; // left
+        if (l && !u && d)
+            goal_angle = f32(std::numbers::pi_v<float>) * 1.25f; // bottom left
+        if (d && !l && !r)
+            goal_angle = f32(std::numbers::pi_v<float>) * 1.50f; // down
+        if (r && !u && d)
+            goal_angle = f32(std::numbers::pi_v<float>) * 1.75f; // bottom right
     }
 
     void UpdateUpButtonStatus(const Common::Input::CallbackStatus& button_callback) {

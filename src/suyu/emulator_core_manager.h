@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <QObject>
-#include <QString>
 #include <memory>
 #include <vector>
+#include <QObject>
+#include <QString>
 
 class QProcess;
 class QTcpSocket;

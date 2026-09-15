@@ -11,6 +11,7 @@
 #include <vector>
 
 #include <biscuit/label.hpp>
+
 #include "common/common_types.h"
 
 namespace biscuit {

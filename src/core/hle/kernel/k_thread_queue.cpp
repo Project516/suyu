@@ -10,7 +10,8 @@
 
 namespace Kernel {
 
-void KThreadQueue::NotifyAvailable(KernelCore& kernel, KThread* waiting_thread, KSynchronizationObject* signaled_object, Result wait_result) {
+void KThreadQueue::NotifyAvailable(KernelCore& kernel, KThread* waiting_thread,
+                                   KSynchronizationObject* signaled_object, Result wait_result) {
     UNREACHABLE();
 }
 
@@ -30,7 +31,8 @@ void KThreadQueue::EndWait(KernelCore& kernel, KThread* waiting_thread, Result w
     }
 }
 
-void KThreadQueue::CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result, bool cancel_timer_task) {
+void KThreadQueue::CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result,
+                              bool cancel_timer_task) {
     // Set the thread's wait result.
     waiting_thread->SetWaitResult(wait_result);
 
@@ -46,7 +48,8 @@ void KThreadQueue::CancelWait(KernelCore& kernel, KThread* waiting_thread, Resul
     }
 }
 
-void KThreadQueueWithoutEndWait::EndWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result) {
+void KThreadQueueWithoutEndWait::EndWait(KernelCore& kernel, KThread* waiting_thread,
+                                         Result wait_result) {
     UNREACHABLE();
 }
 

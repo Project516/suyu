@@ -61,7 +61,8 @@ Result IDaemonController::GetGlobalAutoUploadSetting(Out<bool> out_is_enabled,
 }
 
 Result IDaemonController::SetGlobalAutoUploadSetting(bool is_enabled, Common::UUID user_id) {
-    LOG_INFO(Service_OLSC, "called, user_id={} is_enabled={}", user_id.FormattedString(), is_enabled);
+    LOG_INFO(Service_OLSC, "called, user_id={} is_enabled={}", user_id.FormattedString(),
+             is_enabled);
     global_auto_upload_[user_id] = is_enabled;
     R_SUCCEED();
 }
@@ -87,12 +88,14 @@ Result IDaemonController::GetGlobalAutoDownloadSetting(Out<bool> out_is_enabled,
 }
 
 Result IDaemonController::SetGlobalAutoDownloadSetting(bool is_enabled, Common::UUID user_id) {
-    LOG_INFO(Service_OLSC, "called, user_id={} is_enabled={}", user_id.FormattedString(), is_enabled);
+    LOG_INFO(Service_OLSC, "called, user_id={} is_enabled={}", user_id.FormattedString(),
+             is_enabled);
     global_auto_download_[user_id] = is_enabled;
     R_SUCCEED();
 }
 
-Result IDaemonController::StopAutonomyTaskExecution(Out<SharedPointer<IStopperObject>> out_stopper) {
+Result IDaemonController::StopAutonomyTaskExecution(
+    Out<SharedPointer<IStopperObject>> out_stopper) {
     LOG_WARNING(Service_OLSC, "(STUBBED) called");
 
     *out_stopper = std::make_shared<IStopperObject>(system);

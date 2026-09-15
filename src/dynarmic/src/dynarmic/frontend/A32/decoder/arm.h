@@ -15,11 +15,10 @@
 #include <optional>
 #include <vector>
 
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-
 #include "dynarmic/frontend/decoder/decoder_detail.h"
 #include "dynarmic/frontend/decoder/matcher.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::A32 {
 
@@ -39,14 +38,15 @@ static std::optional<ReturnType> DecodeArm(V& visitor, u32 instruction) noexcept
     alignas(64) static const std::array<std::vector<Handler>, 0x1000> table = [&] {
         std::array<std::vector<Handler>, 0x1000> t{};
         for (size_t i = 0; i < t.size(); ++i) {
-#define INST(fn, name, bitstring) \
-    do { \
+#define INST(fn, name, bitstring)                                                                                                      \
+    do {                                                                                                                               \
         auto const [mask, expect] = DYNARMIC_DECODER_GET_MATCHER(ArmMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)); \
-        if ((i & make_fast_index(mask)) == make_fast_index(expect)) { \
-            t[i].emplace_back([](V& visitor, u32 instruction) -> bool { \
-                return DYNARMIC_DECODER_GET_MATCHER_FUNCTION(ArmMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)); \
-            }, mask, expect); \
-        } \
+        if ((i & make_fast_index(mask)) == make_fast_index(expect)) {                                                                  \
+            t[i].emplace_back([](V& visitor, u32 instruction) -> bool {                                                                \
+                return DYNARMIC_DECODER_GET_MATCHER_FUNCTION(ArmMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring));     \
+            },                                                                                                                         \
+                              mask, expect);                                                                                           \
+        }                                                                                                                              \
     } while (0);
 #include "./arm.inc"
 #undef INST
@@ -62,7 +62,7 @@ static std::optional<ReturnType> DecodeArm(V& visitor, u32 instruction) noexcept
 template<typename V>
 static std::optional<std::string_view> GetNameArm(u32 inst) noexcept {
     std::vector<std::pair<std::string_view, ArmMatcher<V>>> list = {
-#define INST(fn, name, bitstring) { name, DYNARMIC_DECODER_GET_MATCHER(ArmMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)) },
+#define INST(fn, name, bitstring) {name, DYNARMIC_DECODER_GET_MATCHER(ArmMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring))},
 #include "./arm.inc"
 #undef INST
     };

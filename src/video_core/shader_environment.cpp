@@ -11,6 +11,7 @@
 #include <optional>
 #include <utility>
 
+#include <ranges>
 #include "common/assert.h"
 #include "common/cityhash.h"
 #include "common/common_types.h"
@@ -19,7 +20,6 @@
 #include "common/fs/path_util.h"
 #include "common/logging.h"
 #include "common/settings.h"
-#include <ranges>
 #include "shader_recompiler/environment.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/memory_manager.h"
@@ -60,7 +60,8 @@ static Shader::TextureType ConvertTextureType(const Tegra::Texture::TICEntry& en
     case Tegra::Texture::TextureType::TextureCubeArray:
         return Shader::TextureType::ColorArrayCube;
     default:
-        LOG_ERROR(Shader, "Invalid texture_type={}. Falling back to texture_type={}", static_cast<int>(entry.texture_type.Value()), Shader::TextureType::Color2D);
+        LOG_ERROR(Shader, "Invalid texture_type={}. Falling back to texture_type={}",
+                  static_cast<int>(entry.texture_type.Value()), Shader::TextureType::Color2D);
         return Shader::TextureType::Color2D;
     }
 }
@@ -101,9 +102,8 @@ static void DumpImpl(u64 /*pipeline_hash*/, u64 shader_hash, std::span<const u64
         return;
     }
     const auto prefix = StageToPrefix(stage);
-    const auto name{dump_dir /
-                    fmt::format("{:016x}_{:016x}_{}.ash",
-                                Settings::GetCurrentProgramID(), shader_hash, prefix)};
+    const auto name{dump_dir / fmt::format("{:016x}_{:016x}_{}.ash",
+                                           Settings::GetCurrentProgramID(), shader_hash, prefix)};
     std::fstream shader_file(name, std::ios::out | std::ios::binary);
     ASSERT(initial_offset % sizeof(u64) == 0);
     const size_t jump_index = initial_offset / sizeof(u64);

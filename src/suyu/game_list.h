@@ -19,8 +19,8 @@
 
 #include "common/common_types.h"
 #include "core/core.h"
-#include "suyu/game_list_p.h"
 #include "suyu/compatibility_list.h"
+#include "suyu/game_list_p.h"
 #include "suyu/play_time_manager.h"
 #include "uisettings.h"
 

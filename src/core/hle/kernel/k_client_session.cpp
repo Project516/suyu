@@ -38,7 +38,8 @@ Result KClientSession::SendSyncRequest(KernelCore& kernel, uintptr_t address, si
     R_RETURN(m_parent->OnRequest(kernel, request));
 }
 
-Result KClientSession::SendAsyncRequest(KernelCore& kernel, KEvent* event, uintptr_t address, size_t size) {
+Result KClientSession::SendAsyncRequest(KernelCore& kernel, KEvent* event, uintptr_t address,
+                                        size_t size) {
     // Create a session request.
     KSessionRequest* request = KSessionRequest::Create(kernel);
     R_UNLESS(request != nullptr, ResultOutOfResource);

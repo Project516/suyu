@@ -56,17 +56,25 @@ public:
         return device.GetDriverName();
     }
 
-    bool IsHeadless() const override { return is_headless; }
-    const std::vector<u8>& GetLastRenderedFrame() const override { return headless_frame_data; }
-    u32 GetHeadlessWidth() const override { return headless_width; }
-    u32 GetHeadlessHeight() const override { return headless_height; }
+    bool IsHeadless() const override {
+        return is_headless;
+    }
+    const std::vector<u8>& GetLastRenderedFrame() const override {
+        return headless_frame_data;
+    }
+    u32 GetHeadlessWidth() const override {
+        return headless_width;
+    }
+    u32 GetHeadlessHeight() const override {
+        return headless_height;
+    }
 
     // Enhanced platform-specific initialization
     void InitializePlatformSpecific();
 
 private:
     void InterpolateFrames(Frame* prev_frame, Frame* curr_frame);
-    Frame* previous_frame = nullptr;  // Store the previous frame for interpolation
+    Frame* previous_frame = nullptr; // Store the previous frame for interpolation
     VkCommandBuffer BeginSingleTimeCommands();
     void EndSingleTimeCommands(VkCommandBuffer command_buffer);
     void Report() const;

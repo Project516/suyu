@@ -11,8 +11,8 @@
 #include <filesystem>
 #include <memory>
 #include <type_traits>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 
 #include "common/common_types.h"
 #include "common/thread_worker.h"
@@ -157,8 +157,10 @@ private:
     GraphicsPipelineCacheKey graphics_key{};
     GraphicsPipeline* current_pipeline{};
 
-    ankerl::unordered_dense::map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>> compute_cache;
-    ankerl::unordered_dense::map<GraphicsPipelineCacheKey, std::unique_ptr<GraphicsPipeline>> graphics_cache;
+    ankerl::unordered_dense::map<ComputePipelineCacheKey, std::unique_ptr<ComputePipeline>>
+        compute_cache;
+    ankerl::unordered_dense::map<GraphicsPipelineCacheKey, std::unique_ptr<GraphicsPipeline>>
+        graphics_cache;
 
     ShaderPools main_pools;
 

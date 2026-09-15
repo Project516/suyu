@@ -7,8 +7,8 @@
 
 #include <memory>
 #include <span>
-#include <vector>
 #include <variant>
+#include <vector>
 
 #include "common/common_types.h"
 #include "common/socket_types.h"

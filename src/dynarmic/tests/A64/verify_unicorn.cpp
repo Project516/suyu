@@ -10,9 +10,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "dynarmic/tests/A64/testenv.h"
 #include "dynarmic/tests/rand_int.h"
 #include "dynarmic/tests/unicorn_emu/a64_unicorn.h"
-#include "dynarmic/tests/A64/testenv.h"
 
 using namespace Dynarmic;
 

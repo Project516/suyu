@@ -9,12 +9,11 @@
 #include "dynarmic/backend/x64/a32_jitstate.h"
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/nzcv_util.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::Backend::X64 {
 

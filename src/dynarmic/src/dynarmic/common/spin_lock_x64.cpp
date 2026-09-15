@@ -8,16 +8,16 @@
 
 #include <mutex>
 #include <optional>
-#include "dynarmic/backend/x64/xbyak.h"
 
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/hostloc.h"
+#include "dynarmic/backend/x64/xbyak.h"
 #include "dynarmic/common/spin_lock.h"
 
 #ifdef DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT
 static const auto default_cg_mode = Xbyak::DontSetProtectRWE;
 #else
-static const auto default_cg_mode = nullptr; //Allow RWE
+static const auto default_cg_mode = nullptr;  // Allow RWE
 #endif
 
 namespace Dynarmic {
@@ -38,8 +38,10 @@ void EmitSpinLockLock(Xbyak::CodeGenerator& code, Xbyak::Reg64 ptr, Xbyak::Reg32
         // XBYAK BUG: code.umonitor(ptr); see issue #255
         // replace once xbyak has been fixed
         code.db(0xF3);
-        if (ptr.getIdx() >= 8) code.db(0x41);
-        code.db(0x0F); code.db(0xAE);
+        if (ptr.getIdx() >= 8)
+            code.db(0x41);
+        code.db(0x0F);
+        code.db(0xAE);
         code.db(uint8_t((3 << 6) | ((6 & 7) << 3) | (ptr.getIdx() & 7)));
 
         // tmp.bit[0] = 0: C0.1 | Slow Wakup | Better Savings

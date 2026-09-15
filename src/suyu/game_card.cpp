@@ -123,13 +123,14 @@ void GameCard::SetupUI() {
     // Hover animation
     hover_animation = new QPropertyAnimation(shadow_effect, "blurRadius");
     hover_animation->setDuration(200);
-    connect(hover_animation, &QPropertyAnimation::finished, this, &GameCard::OnHoverAnimationFinished);
+    connect(hover_animation, &QPropertyAnimation::finished, this,
+            &GameCard::OnHoverAnimationFinished);
 }
 
 void GameCard::SetGameInfo(const QString& title, const QString& game_path, const QString& pid,
-                          const QString& dev, u64 pid_numeric, const QString& ver,
-                          const QString& game_type, u64 size, const QString& compat,
-                          const QPixmap& icon) {
+                           const QString& dev, u64 pid_numeric, const QString& ver,
+                           const QString& game_type, u64 size, const QString& compat,
+                           const QPixmap& icon) {
     this->game_title = title;
     this->file_path = game_path;
     this->program_id = pid;
@@ -174,12 +175,11 @@ void GameCard::SetIcon(const QPixmap& icon) {
             // makes Qt upscale it to fill, which is exactly why artwork looked
             // softer here than everywhere else in the app that does account
             // for dpr.
-            const qreal dpr = icon_label->devicePixelRatioF() > 0.0
-                                  ? icon_label->devicePixelRatioF()
-                                  : 1.0;
+            const qreal dpr =
+                icon_label->devicePixelRatioF() > 0.0 ? icon_label->devicePixelRatioF() : 1.0;
             const int physical = qRound(ICON_SIZE * dpr);
-            QPixmap scaled_icon = icon.scaled(physical, physical, Qt::KeepAspectRatio,
-                                              Qt::SmoothTransformation);
+            QPixmap scaled_icon =
+                icon.scaled(physical, physical, Qt::KeepAspectRatio, Qt::SmoothTransformation);
             scaled_icon.setDevicePixelRatio(dpr);
             icon_label->setPixmap(scaled_icon);
         }
@@ -389,10 +389,8 @@ void GameCard::StartHoverAnimation(bool hover_in) {
 }
 
 QString GameCard::FormatFileSize(u64 size) const {
-    static const QString units[] = {
-        QStringLiteral("B"), QStringLiteral("KB"), QStringLiteral("MB"),
-        QStringLiteral("GB"), QStringLiteral("TB")
-    };
+    static const QString units[] = {QStringLiteral("B"), QStringLiteral("KB"), QStringLiteral("MB"),
+                                    QStringLiteral("GB"), QStringLiteral("TB")};
     int unit_index = 0;
     double size_double = static_cast<double>(size);
 
@@ -448,8 +446,7 @@ QPixmap GameCard::GetDefaultIcon() {
 }
 
 // GameCardLayout implementation
-GameCardLayout::GameCardLayout(QWidget* parent) : QLayout(parent), m_spacing(-1) {
-}
+GameCardLayout::GameCardLayout(QWidget* parent) : QLayout(parent), m_spacing(-1) {}
 
 GameCardLayout::~GameCardLayout() {
     QLayoutItem* item;
@@ -523,8 +520,10 @@ int GameCardLayout::doLayout(const QRect& rect, bool testOnly) const {
         int spaceY = spacing();
 
         if (wid) {
-            spaceX = wid->style()->layoutSpacing(QSizePolicy::PushButton, QSizePolicy::PushButton, Qt::Horizontal);
-            spaceY = wid->style()->layoutSpacing(QSizePolicy::PushButton, QSizePolicy::PushButton, Qt::Vertical);
+            spaceX = wid->style()->layoutSpacing(QSizePolicy::PushButton, QSizePolicy::PushButton,
+                                                 Qt::Horizontal);
+            spaceY = wid->style()->layoutSpacing(QSizePolicy::PushButton, QSizePolicy::PushButton,
+                                                 Qt::Vertical);
         }
 
         int nextX = x + item->sizeHint().width() + spaceX;

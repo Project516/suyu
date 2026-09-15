@@ -7,9 +7,8 @@
 #include <cstddef>
 #include <vector>
 
-#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
-
 #include "common/common_types.h"
+#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
 
 namespace Dynarmic::IR {
 class Block;

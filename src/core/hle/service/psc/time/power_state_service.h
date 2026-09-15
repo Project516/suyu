@@ -20,7 +20,8 @@ namespace Service::PSC::Time {
 
 class IPowerStateRequestHandler final : public ServiceFramework<IPowerStateRequestHandler> {
 public:
-    explicit IPowerStateRequestHandler(Core::System& system, PowerStateRequestManager& power_state_request_manager);
+    explicit IPowerStateRequestHandler(Core::System& system,
+                                       PowerStateRequestManager& power_state_request_manager);
     ~IPowerStateRequestHandler() override = default;
 
     Result GetPowerStateRequestEventReadableHandle(OutCopyHandle<Kernel::KReadableEvent> out_event);

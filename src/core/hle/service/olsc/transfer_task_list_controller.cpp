@@ -76,14 +76,14 @@ Result ITransferTaskListController::GetTransferTaskStartEventNativeHandleHolder(
 }
 
 Result ITransferTaskListController::GetCurrentTransferTaskInfo(Out<std::array<u8, 0x30>> out_info,
-                                                              u8 unknown) {
+                                                               u8 unknown) {
     LOG_WARNING(Service_OLSC, "(STUBBED) called, unknown={:#x}", unknown);
     out_info->fill(0);
     R_SUCCEED();
 }
 
 Result ITransferTaskListController::FindTransferTaskInfo(Out<std::array<u8, 0x30>> out_info,
-                                                        InBuffer<BufferAttr_HipcAutoSelect> in) {
+                                                         InBuffer<BufferAttr_HipcAutoSelect> in) {
     LOG_WARNING(Service_OLSC, "(STUBBED) called, in_size={}", in.size());
     out_info->fill(0);
     R_SUCCEED();

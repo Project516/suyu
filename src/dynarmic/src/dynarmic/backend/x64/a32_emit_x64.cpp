@@ -12,13 +12,12 @@
 #include <optional>
 #include <utility>
 
+#include <boost/container/static_vector.hpp>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
-#include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
-#include "common/common_types.h"
-#include <boost/container/static_vector.hpp>
 
+#include "common/assert.h"
+#include "common/common_types.h"
 #include "dynarmic/backend/x64/a32_jitstate.h"
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
@@ -33,6 +32,7 @@
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/mcl/bit.hpp"
 
 // TODO: Have ARM flags in host flags and not have them use up GPR registers unless necessary.
 // TODO: Actually implement that proper instruction selector you've always wanted to sweetheart.
@@ -60,9 +60,8 @@ static Xbyak::Address MJitStateExtReg(A32::ExtReg reg) {
 }
 
 A32EmitContext::A32EmitContext(const A32::UserConfig& conf, RegAlloc& reg_alloc, IR::Block& block, boost::container::stable_vector<Xbyak::Label>& shared_labels)
-    : EmitContext(reg_alloc, block, shared_labels)
-    , conf(conf)
-{}
+        : EmitContext(reg_alloc, block, shared_labels)
+        , conf(conf) {}
 
 A32::LocationDescriptor A32EmitContext::Location() const {
     return A32::LocationDescriptor{block.Location()};
@@ -110,7 +109,8 @@ A32EmitX64::BlockDescriptor A32EmitX64::Emit(IR::Block& block) {
         if (conf.page_table)
             gprs.reset(size_t(HostLoc::R14));
         return gprs;
-    }(), any_xmm);
+    }(),
+                                    any_xmm);
 
     A32EmitContext ctx{conf, reg_alloc, block, shared_labels};
 
@@ -121,7 +121,7 @@ A32EmitX64::BlockDescriptor A32EmitX64::Emit(IR::Block& block) {
     code.lea(rbp, code.ptr[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, abi_base_pointer) - 8]);
 
     EmitCondPrelude(ctx);
-    typedef void (EmitX64::*EmitHandlerFn)(EmitContext& context, IR::Inst* inst);
+    typedef void (EmitX64::*EmitHandlerFn)(EmitContext & context, IR::Inst * inst);
     constexpr EmitHandlerFn opcode_handlers[] = {
 #define OPCODE(name, type, ...) &EmitX64::Emit##name,
 #define A32OPC(name, type, ...)
@@ -131,7 +131,7 @@ A32EmitX64::BlockDescriptor A32EmitX64::Emit(IR::Block& block) {
 #undef A32OPC
 #undef A64OPC
     };
-    typedef void (A32EmitX64::*A32EmitHandlerFn)(A32EmitContext& context, IR::Inst* inst);
+    typedef void (A32EmitX64::*A32EmitHandlerFn)(A32EmitContext & context, IR::Inst * inst);
     constexpr A32EmitHandlerFn a32_handlers[] = {
 #define OPCODE(...)
 #define A32OPC(name, type, ...) &A32EmitX64::EmitA32##name,
@@ -146,8 +146,12 @@ A32EmitX64::BlockDescriptor A32EmitX64::Emit(IR::Block& block) {
         auto const opcode = inst.GetOpcode();
         // Call the relevant Emit* member function.
         switch (opcode) {
-#define OPCODE(name, type, ...) case IR::Opcode::name: goto opcode_branch;
-#define A32OPC(name, type, ...) case IR::Opcode::A32##name: goto a32_branch;
+#define OPCODE(name, type, ...) \
+    case IR::Opcode::name:      \
+        goto opcode_branch;
+#define A32OPC(name, type, ...) \
+    case IR::Opcode::A32##name: \
+        goto a32_branch;
 #define A64OPC(name, type, ...)
 #include "dynarmic/ir/opcodes.inc"
 #undef OPCODE
@@ -265,7 +269,7 @@ void A32EmitX64::GenTerminalHandlers() {
         calculate_location_descriptor();
         code.L(rsb_cache_miss);
         code.mov(r8, reinterpret_cast<u64>(fast_dispatch_table.data()));
-        //code.mov(r12d, MJitStateReg(A32::Reg::PC));
+        // code.mov(r12d, MJitStateReg(A32::Reg::PC));
         code.mov(r12, rbx);
         if (code.HasHostFeature(HostFeature::SSE42)) {
             code.crc32(r12, r8);
@@ -1244,12 +1248,13 @@ void EmitTerminalImpl(A32EmitX64& e, IR::Term::CheckHalt terminal, IR::LocationD
 void EmitTerminalImpl(A32EmitX64&, IR::Term::Invalid, IR::LocationDescriptor, bool) {
     UNREACHABLE();
 }
-}
+}  // namespace
 
 void A32EmitX64::EmitTerminal(IR::Terminal terminal, IR::LocationDescriptor initial_location, bool is_single_step) noexcept {
     boost::apply_visitor([this, initial_location, is_single_step](auto x) {
         EmitTerminalImpl(*this, x, initial_location, is_single_step);
-    }, terminal);
+    },
+                         terminal);
 }
 
 void A32EmitX64::EmitPatchJg(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr) {

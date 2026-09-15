@@ -19,8 +19,7 @@
 #include "ui_configure_web.h"
 
 ConfigureWeb::ConfigureWeb(QWidget* parent)
-    : QWidget(parent),
-      ui(std::make_unique<Ui::ConfigureWeb>()), m_rng{QRandomGenerator::system()} {
+    : QWidget(parent), ui(std::make_unique<Ui::ConfigureWeb>()), m_rng{QRandomGenerator::system()} {
     ui->setupUi(this);
 
     QString user_regex = QStringLiteral(".{4,20}");
@@ -71,12 +70,9 @@ void ConfigureWeb::SetConfiguration() {
     connect(ui->edit_username, &QLineEdit::textChanged, this, &ConfigureWeb::VerifyLogin);
     connect(ui->edit_token, &QLineEdit::textChanged, this, &ConfigureWeb::VerifyLogin);
 
-    ui->edit_username->setText(
-        QString::fromStdString(Settings::values.suyu_username.GetValue()));
-    ui->edit_token->setText(
-        QString::fromStdString(Settings::values.suyu_token.GetValue()));
-    ui->edit_web_api_url->setText(
-        QString::fromStdString(Settings::values.web_api_url.GetValue()));
+    ui->edit_username->setText(QString::fromStdString(Settings::values.suyu_username.GetValue()));
+    ui->edit_token->setText(QString::fromStdString(Settings::values.suyu_token.GetValue()));
+    ui->edit_web_api_url->setText(QString::fromStdString(Settings::values.web_api_url.GetValue()));
 
     VerifyLogin();
 
@@ -115,8 +111,7 @@ void ConfigureWeb::VerifyLogin() {
         ui->label_username_verified->setToolTip(tr("All Good", "Tooltip"));
     } else {
         ui->label_username_verified->setPixmap(failed);
-        ui->label_username_verified->setToolTip(
-            tr("Must be between 4-20 characters", "Tooltip"));
+        ui->label_username_verified->setToolTip(tr("Must be between 4-20 characters", "Tooltip"));
     }
 
     if (token_good) {

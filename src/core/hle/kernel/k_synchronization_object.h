@@ -27,7 +27,8 @@ public:
         KThread* thread{};
     };
 
-    static Result Wait(KernelCore& kernel, s32* out_index, KSynchronizationObject** objects, const s32 num_objects, s64 timeout);
+    static Result Wait(KernelCore& kernel, s32* out_index, KSynchronizationObject** objects,
+                       const s32 num_objects, s64 timeout);
 
     void Finalize(KernelCore& kernel) override;
 

@@ -10,10 +10,10 @@
 #include <ankerl/unordered_dense.h>
 
 #include "common/common_types.h"
+#include "shader_recompiler/frontend/ir/value.h"
 #include "shader_recompiler/program_header.h"
 #include "shader_recompiler/shader_info.h"
 #include "shader_recompiler/stage.h"
-#include "shader_recompiler/frontend/ir/value.h"
 
 namespace Shader::IR {
 class Inst;
@@ -41,8 +41,10 @@ struct HandleKey {
     u32 count;
     bool has_secondary;
     constexpr bool operator==(const HandleKey& o) const noexcept {
-        return std::tie(index, offset, shift_left, sec_index, sec_offset, sec_shift_left, count, has_secondary)
-            == std::tie(o.index, o.offset, o.shift_left, o.sec_index, o.sec_offset, o.sec_shift_left, o.count, o.has_secondary);
+        return std::tie(index, offset, shift_left, sec_index, sec_offset, sec_shift_left, count,
+                        has_secondary) == std::tie(o.index, o.offset, o.shift_left, o.sec_index,
+                                                   o.sec_offset, o.sec_shift_left, o.count,
+                                                   o.has_secondary);
     }
 };
 struct HandleKeyHash {
@@ -125,9 +127,10 @@ protected:
     Stage stage{};
     u32 start_address{};
     bool is_proprietary_driver{};
+
 public:
     ankerl::unordered_dense::map<CbufWordKey, u32, CbufWordKeyHash> cbuf_word_cache;
-    ankerl::unordered_dense::map<HandleKey,  u32, HandleKeyHash> handle_cache;
+    ankerl::unordered_dense::map<HandleKey, u32, HandleKeyHash> handle_cache;
     ankerl::unordered_dense::map<const IR::Inst*, ConstBufferAddr> track_cache;
 };
 

@@ -96,7 +96,8 @@ public:
         this->SetSecureResource();
     }
 
-    Result Initialize(KernelCore& kernel, size_t size, KResourceLimit* resource_limit, KMemoryManager::Pool pool);
+    Result Initialize(KernelCore& kernel, size_t size, KResourceLimit* resource_limit,
+                      KMemoryManager::Pool pool);
     void Finalize(KernelCore& kernel);
 
     bool IsInitialized() const {

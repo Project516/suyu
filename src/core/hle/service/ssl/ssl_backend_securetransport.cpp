@@ -103,8 +103,7 @@ public:
 
     void SetVerifyOption(u32 option) override {
         skip_cert_verification = (option == 0);
-        LOG_WARNING(Service_SSL, "option={} skip_verification={}", option,
-                    skip_cert_verification);
+        LOG_WARNING(Service_SSL, "option={} skip_verification={}", option, skip_cert_verification);
         if (skip_cert_verification) {
             SSLSetSessionOption(context, kSSLSessionOptionBreakOnServerAuth, true);
         }

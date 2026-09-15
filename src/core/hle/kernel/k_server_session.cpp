@@ -159,9 +159,9 @@ private:
 };
 
 template <bool MoveHandleAllowed>
-Result ProcessMessageSpecialData(KernelCore& kernel, s32& offset, KProcess& dst_process, KProcess& src_process,
-                                 KThread& src_thread, const MessageBuffer& dst_msg,
-                                 const MessageBuffer& src_msg,
+Result ProcessMessageSpecialData(KernelCore& kernel, s32& offset, KProcess& dst_process,
+                                 KProcess& src_process, KThread& src_thread,
+                                 const MessageBuffer& dst_msg, const MessageBuffer& src_msg,
                                  const MessageBuffer::SpecialHeader& src_special_header) {
     // Copy the special header to the destination.
     offset = dst_msg.Set(src_special_header);
@@ -187,7 +187,8 @@ Result ProcessMessageSpecialData(KernelCore& kernel, s32& offset, KProcess& dst_
             KScopedAutoObject obj =
                 src_handle_table.GetObjectForIpc(kernel, src_handle, std::addressof(src_thread));
             if (obj.IsNotNull()) {
-                Result add_result = dst_handle_table.Add(kernel, std::addressof(dst_handle), obj.GetPointerUnsafe());
+                Result add_result = dst_handle_table.Add(kernel, std::addressof(dst_handle),
+                                                         obj.GetPointerUnsafe());
                 if (R_FAILED(add_result)) {
                     result = add_result;
                     dst_handle = Svc::InvalidHandle;
@@ -214,7 +215,8 @@ Result ProcessMessageSpecialData(KernelCore& kernel, s32& offset, KProcess& dst_
                     KScopedAutoObject obj =
                         src_handle_table.GetObjectForIpcWithoutPseudoHandle(kernel, src_handle);
                     if (obj.IsNotNull()) {
-                        Result add_result = dst_handle_table.Add(kernel, std::addressof(dst_handle), obj.GetPointerUnsafe());
+                        Result add_result = dst_handle_table.Add(kernel, std::addressof(dst_handle),
+                                                                 obj.GetPointerUnsafe());
                         src_handle_table.Remove(kernel, src_handle);
 
                         if (R_FAILED(add_result)) {
@@ -333,7 +335,8 @@ constexpr Result GetMapAliasTestStateAndAttributeMask(KMemoryState& out_state,
     R_SUCCEED();
 }
 
-void CleanupSpecialData(KernelCore& kernel, KProcess& dst_process, u32* dst_msg_ptr, size_t dst_buffer_size) {
+void CleanupSpecialData(KernelCore& kernel, KProcess& dst_process, u32* dst_msg_ptr,
+                        size_t dst_buffer_size) {
     // Parse the message.
     const MessageBuffer dst_msg(dst_msg_ptr, dst_buffer_size);
     const MessageBuffer::MessageHeader dst_header(dst_msg);
@@ -367,7 +370,8 @@ void CleanupSpecialData(KernelCore& kernel, KProcess& dst_process, u32* dst_msg_
     }
 }
 
-Result CleanupServerHandles(KernelCore& kernel, uint64_t message, size_t buffer_size, KPhysicalAddress message_paddr) {
+Result CleanupServerHandles(KernelCore& kernel, uint64_t message, size_t buffer_size,
+                            KPhysicalAddress message_paddr) {
     // Server is assumed to be current thread.
     KThread& thread = GetCurrentThread(kernel);
 
@@ -983,8 +987,9 @@ Result SendMessage(KernelCore& kernel, uint64_t src_message_buffer, size_t src_b
         ASSERT(GetCurrentThreadPointer(kernel) == std::addressof(src_thread));
         processed_special_data = true;
         if (src_header.GetHasSpecialHeader()) {
-            R_TRY(ProcessMessageSpecialData<true>(kernel, offset, dst_process, src_process, src_thread,
-                                                  dst_msg, src_msg, src_special_header));
+            R_TRY(ProcessMessageSpecialData<true>(kernel, offset, dst_process, src_process,
+                                                  src_thread, dst_msg, src_msg,
+                                                  src_special_header));
         }
 
         // Process any pointer buffers.
@@ -1086,7 +1091,8 @@ void KServerSession::Destroy(KernelCore& kernel) {
     m_parent->Close(kernel);
 }
 
-Result KServerSession::ReceiveRequest(KernelCore& kernel, uintptr_t server_message, uintptr_t server_buffer_size,
+Result KServerSession::ReceiveRequest(KernelCore& kernel, uintptr_t server_message,
+                                      uintptr_t server_buffer_size,
                                       KPhysicalAddress server_message_paddr,
                                       std::shared_ptr<Service::HLERequestContext>* out_context,
                                       std::weak_ptr<Service::SessionRequestManager> manager) {
@@ -1215,7 +1221,8 @@ Result KServerSession::ReceiveRequest(KernelCore& kernel, uintptr_t server_messa
     R_RETURN(result);
 }
 
-Result KServerSession::SendReply(KernelCore& kernel, uintptr_t server_message, uintptr_t server_buffer_size,
+Result KServerSession::SendReply(KernelCore& kernel, uintptr_t server_message,
+                                 uintptr_t server_buffer_size,
                                  KPhysicalAddress server_message_paddr, bool is_hle) {
     // Lock the session.
     KScopedLightLock lk{m_lock};
@@ -1269,8 +1276,8 @@ Result KServerSession::SendReply(KernelCore& kernel, uintptr_t server_message, u
             (client_process != nullptr) ? std::addressof(client_process->GetPageTable()) : nullptr;
 
         // Cleanup server handles.
-        result = CleanupServerHandles(kernel, server_message, server_buffer_size,
-                                      server_message_paddr);
+        result =
+            CleanupServerHandles(kernel, server_message, server_buffer_size, server_message_paddr);
 
         // Cleanup mappings.
         Result cleanup_map_result = CleanupMap(request, server_process, client_page_table);

@@ -7,10 +7,10 @@
 
 #pragma once
 
+#include <climits>
 #include <cstddef>
 #include <limits>
 #include <type_traits>
-#include <climits>
 #include "common/swap.h"
 
 /*
@@ -94,15 +94,18 @@ private:
     // T is an enumeration. Note that T is wrapped within an enable_if in the
     // former case to workaround compile errors which arise when using
     // std::underlying_type<T>::type directly.
-    using UnderlyingType = typename std::conditional_t<std::is_enum_v<T>, std::underlying_type<T>, std::enable_if<true, T>>::type;
+    using UnderlyingType = typename std::conditional_t<std::is_enum_v<T>, std::underlying_type<T>,
+                                                       std::enable_if<true, T>>::type;
     // We store the value as the unsigned type to avoid undefined behaviour on value shifting
     using StorageType = std::make_unsigned_t<UnderlyingType>;
     using StorageTypeWithEndian = typename AddEndian<StorageType, EndianTag>::type;
+
 public:
     /// Constants to allow limited introspection of fields if needed
     static constexpr std::size_t position = Position;
     static constexpr std::size_t bits = Bits;
-    static constexpr StorageType mask = (StorageType(~0) >> (CHAR_BIT * sizeof(T) - bits)) << position;
+    static constexpr StorageType mask = (StorageType(~0) >> (CHAR_BIT * sizeof(T) - bits))
+                                        << position;
 
     /**
      * Formats a value by masking and shifting it according to the field parameters. A value
@@ -113,9 +116,9 @@ public:
         return (StorageType(value) << position) & mask;
     }
 
-    /// @brief Extracts a value from the passed storage. In most situations prefer use the member functions
-    /// (such as Value() or operator T), but this can be used to extract a value from a bitfield
-    /// union in a constexpr context.
+    /// @brief Extracts a value from the passed storage. In most situations prefer use the member
+    /// functions (such as Value() or operator T), but this can be used to extract a value from a
+    /// bitfield union in a constexpr context.
     [[nodiscard]] static constexpr T ExtractValue(const StorageType& storage) {
         if constexpr (std::numeric_limits<UnderlyingType>::is_signed) {
             std::size_t shift = CHAR_BIT * sizeof(T) - bits;

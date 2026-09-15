@@ -27,8 +27,8 @@ Result GetProcessId(Core::System& system, u64* out_process_id, Handle handle) {
 
     // Get the object from the handle table.
     KScopedAutoObject obj = GetCurrentProcess(system.Kernel())
-        .GetHandleTable()
-        .GetObject<KAutoObject>(system.Kernel(), Handle(handle));
+                                .GetHandleTable()
+                                .GetObject<KAutoObject>(system.Kernel(), Handle(handle));
     R_UNLESS(obj.IsNotNull(), ResultInvalidHandle);
 
     // Get the process from the object.

@@ -6,7 +6,6 @@
 #include <memory>
 #include <utility>
 
-#include "game_settings.h"
 #include "audio_core/audio_core.h"
 #include "common/fs/fs.h"
 #include "common/logging.h"
@@ -15,8 +14,8 @@
 #include "common/string_util.h"
 #include "core/arm/exclusive_monitor.h"
 #include "core/core.h"
+#include "game_settings.h"
 
-#include "launch_timestamp_cache.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"
 #include "core/debugger/debugger.h"
@@ -60,6 +59,7 @@
 #include "core/tools/freezer.h"
 #include "core/tools/renderdoc.h"
 #include "hid_core/hid_core.h"
+#include "launch_timestamp_cache.h"
 #include "network/network.h"
 #include "video_core/host1x/host1x.h"
 #include "video_core/renderer_base.h"
@@ -117,7 +117,8 @@ struct System::Impl {
         device_memory.emplace();
 
         is_multicore = Settings::values.use_multi_core.GetValue();
-        extended_memory_layout = Settings::values.memory_layout_mode.GetValue() != Settings::MemoryLayout::Memory_4Gb;
+        extended_memory_layout =
+            Settings::values.memory_layout_mode.GetValue() != Settings::MemoryLayout::Memory_4Gb;
 
         core_timing.SetMulticore(is_multicore);
         core_timing.Initialize([&system]() { system.RegisterHostThread(); });
@@ -309,7 +310,9 @@ struct System::Impl {
         // Create the application process
         Loader::ResultStatus load_result{};
         std::vector<u8> control;
-        auto process = Service::AM::CreateApplicationProcess(control, app_loader, load_result, system, file, params.program_id, params.program_index);
+        auto process =
+            Service::AM::CreateApplicationProcess(control, app_loader, load_result, system, file,
+                                                  params.program_id, params.program_index);
         if (load_result != Loader::ResultStatus::Success) {
             LOG_CRITICAL(Core, "Failed to load ROM (Error {})!", load_result);
             ShutdownMainProcess();
@@ -358,9 +361,11 @@ struct System::Impl {
 
         // Register with applet manager
         // All threads are started, begin main process execution, now that we're in the clear
-        LOG_INFO(Core, "SetupForApplicationProcess: calling CreateAndInsertByFrontendAppletParameters");
+        LOG_INFO(Core,
+                 "SetupForApplicationProcess: calling CreateAndInsertByFrontendAppletParameters");
         applet_manager.CreateAndInsertByFrontendAppletParameters(std::move(process), params);
-        LOG_INFO(Core, "SetupForApplicationProcess: CreateAndInsertByFrontendAppletParameters returned");
+        LOG_INFO(Core,
+                 "SetupForApplicationProcess: CreateAndInsertByFrontendAppletParameters returned");
 
         if (Settings::values.gamecard_inserted) {
             if (Settings::values.gamecard_current_game) {
@@ -376,9 +381,11 @@ struct System::Impl {
         GetAndResetPerfStats();
         perf_stats->BeginSystemFrame();
 
-        const FileSys::PatchManager pm(params.program_id, system.GetFileSystemController(), system.GetContentProvider());
+        const FileSys::PatchManager pm(params.program_id, system.GetFileSystemController(),
+                                       system.GetContentProvider());
         auto const metadata = pm.GetControlMetadata();
-        std::string title_version = metadata.first != nullptr ? metadata.first->GetVersionString() : "";
+        std::string title_version =
+            metadata.first != nullptr ? metadata.first->GetVersionString() : "";
 
         if (app_loader->ReadProgramId(program_id) != Loader::ResultStatus::Success) {
             LOG_ERROR(Core, "Failed to find program id for ROM");
@@ -491,7 +498,8 @@ struct System::Impl {
     std::optional<Tools::RenderdocAPI> renderdoc_api;
     std::optional<Tegra::GPU> gpu_core;
 
-    std::array<Core::GPUDirtyMemoryManager, Core::Hardware::NUM_CPU_CORES> gpu_dirty_memory_managers;
+    std::array<Core::GPUDirtyMemoryManager, Core::Hardware::NUM_CPU_CORES>
+        gpu_dirty_memory_managers;
     std::vector<std::vector<u8>> user_channel;
     std::vector<std::vector<u8>> general_channel;
 

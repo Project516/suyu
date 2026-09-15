@@ -7,8 +7,8 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include <variant>
+#include <vector>
 
 #include "common/common_types.h"
 #include "video_core/cdma_pusher.h"
@@ -43,12 +43,8 @@ private:
     void Execute();
 
     NvdecCommon::NvdecRegisters regs{};
-    std::variant<
-        Decoders::H264,
-        Decoders::VP8,
-        Decoders::VP9,
-        std::monostate
-    > decoder = std::monostate{};
+    std::variant<Decoders::H264, Decoders::VP8, Decoders::VP9, std::monostate> decoder =
+        std::monostate{};
     s32 id;
     u32 syncpoint;
 };

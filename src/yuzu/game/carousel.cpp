@@ -3,9 +3,9 @@
 
 #include "qt_common/config/uisettings.h"
 #include "qt_common/game_list/model.h"
+#include "yuzu/game/carousel.h"
 #include "yuzu/game/common.h"
 #include "yuzu/game/game_card.h"
-#include "yuzu/game/carousel.h"
 
 GameCarousel::GameCarousel(QWidget* parent) : QListView{parent} {
     m_gameCard = new GameCard(this);

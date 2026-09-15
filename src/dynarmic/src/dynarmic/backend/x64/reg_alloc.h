@@ -12,18 +12,18 @@
 #include <functional>
 #include <optional>
 
-#include "boost/container/small_vector.hpp"
-#include "common/common_types.h"
-#include "dynarmic/backend/x64/xbyak.h"
-#include <boost/container/static_vector.hpp>
 #include <boost/container/flat_set.hpp>
+#include <boost/container/static_vector.hpp>
 #include <boost/pool/pool_alloc.hpp>
 
+#include "boost/container/small_vector.hpp"
+#include "common/common_types.h"
+#include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/hostloc.h"
-#include "dynarmic/backend/x64/stack_layout.h"
 #include "dynarmic/backend/x64/oparg.h"
-#include "dynarmic/backend/x64/abi.h"
+#include "dynarmic/backend/x64/stack_layout.h"
+#include "dynarmic/backend/x64/xbyak.h"
 #include "dynarmic/ir/cond.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/value.h"
@@ -75,26 +75,27 @@ public:
 #ifndef NDEBUG
     void EmitVerboseDebuggingOutput(BlockOfCode& code, size_t host_loc_index) const noexcept;
 #endif
+
 private:
-    boost::container::small_vector<IR::Inst*, 3> values; //24
-//non trivial
-    // Block state, the total amount of uses for this particular arg
-    uint16_t total_uses = 0; //2
+    boost::container::small_vector<IR::Inst*, 3> values;  // 24
+    // non trivial
+    //  Block state, the total amount of uses for this particular arg
+    uint16_t total_uses = 0;  // 2
     // Sometimes zeroed, accumulated (non referenced) uses
-    uint16_t accumulated_uses = 0; //2
-//always zeroed
-    // Current instruction state
-    uint8_t current_references = 0; //1
-    uint8_t is_being_used_count = 0; //1
+    uint16_t accumulated_uses = 0;  // 2
+    // always zeroed
+    //  Current instruction state
+    uint8_t current_references = 0;   // 1
+    uint8_t is_being_used_count = 0;  // 1
     // Value state, count for LRU selection in registers
-    uint8_t lru_counter : 2 = 0; //1
+    uint8_t lru_counter : 2 = 0;  // 1
     // Log 2 of bit width, valid values: log2(1,2,4,8,16,32,128) = (0, 1, 2, 3, 4, 5, 6)
     uint8_t max_bit_width : 4 = 0;
-    bool is_scratch : 1 = false; //1
-    bool is_set_last_use : 1 = false; //1
+    bool is_scratch : 1 = false;       // 1
+    bool is_set_last_use : 1 = false;  // 1
     friend class RegAlloc;
 };
-//static_assert(sizeof(HostLocInfo) == 64);
+// static_assert(sizeof(HostLocInfo) == 64);
 
 struct Argument {
 public:
@@ -126,13 +127,14 @@ public:
     bool IsInGpr(RegAlloc& reg_alloc) const noexcept;
     bool IsInXmm(RegAlloc& reg_alloc) const noexcept;
     bool IsInMemory(RegAlloc& reg_alloc) const noexcept;
+
 private:
     friend class RegAlloc;
     explicit Argument() {}
 
-//data
-    IR::Value value; //8
-    bool allocated = false; //1
+    // data
+    IR::Value value;         // 8
+    bool allocated = false;  // 1
 };
 
 class RegAlloc final {
@@ -193,8 +195,7 @@ public:
         const std::optional<Argument::copyable_reference> arg0 = {},
         const std::optional<Argument::copyable_reference> arg1 = {},
         const std::optional<Argument::copyable_reference> arg2 = {},
-        const std::optional<Argument::copyable_reference> arg3 = {}
-    ) noexcept;
+        const std::optional<Argument::copyable_reference> arg3 = {}) noexcept;
 
     // TODO: Values in host flags
     void AllocStackSpace(BlockOfCode& code, const size_t stack_space) noexcept;
@@ -213,6 +214,7 @@ public:
             hostloc_info[i].EmitVerboseDebuggingOutput(code, i);
     }
 #endif
+
 private:
     friend struct Argument;
 
@@ -245,7 +247,7 @@ private:
     void EmitMove(BlockOfCode& code, const size_t bit_width, const HostLoc to, const HostLoc from) noexcept;
     void EmitExchange(BlockOfCode& code, const HostLoc a, const HostLoc b) noexcept;
 
-//data
+    // data
     alignas(64) std::array<HostLocInfo, NonSpillHostLocCount + SpillCount> hostloc_info;
     std::bitset<32> gpr_order;
     std::bitset<32> xmm_order;

@@ -13,9 +13,9 @@
 #include <memory>
 #include <vector>
 
-#include "common/common_types.h"
 #include <ankerl/unordered_dense.h>
 
+#include "common/common_types.h"
 #include "dynarmic/backend/arm64/fastmem.h"
 #include "dynarmic/interface/A32/coprocessor.h"
 #include "dynarmic/interface/optimization_flags.h"

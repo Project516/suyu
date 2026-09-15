@@ -43,8 +43,7 @@ std::vector<ExternalToolInfo> ExternalDecryptionTool::KnownTools() {
          QStringLiteral("Nintendo Switch emulator whose key derivation can be used for "
                         "decryption. Point to the Ryujinx executable."),
          {QStringLiteral("Ryujinx.exe"), QStringLiteral("Ryujinx"),
-          QStringLiteral("Ryujinx.Headless.SDL2.exe"),
-          QStringLiteral("Ryujinx.Headless.SDL2")}},
+          QStringLiteral("Ryujinx.Headless.SDL2.exe"), QStringLiteral("Ryujinx.Headless.SDL2")}},
         {QStringLiteral("suyu"),
          QStringLiteral("suyu"),
          QStringLiteral("suyu emulator. Point to the suyu executable; "
@@ -54,14 +53,14 @@ std::vector<ExternalToolInfo> ExternalDecryptionTool::KnownTools() {
          QStringLiteral("yuzu (legacy)"),
          QStringLiteral("Previous yuzu builds. Point to yuzu.exe or yuzu-cmd.exe. "
                         "Keys must be installed in yuzu's key directory."),
-         {QStringLiteral("yuzu.exe"), QStringLiteral("yuzu-cmd.exe"),
-          QStringLiteral("yuzu"), QStringLiteral("yuzu-cmd")}},
+         {QStringLiteral("yuzu.exe"), QStringLiteral("yuzu-cmd.exe"), QStringLiteral("yuzu"),
+          QStringLiteral("yuzu-cmd")}},
         {QStringLiteral("suyu_legacy"),
          QStringLiteral("suyu (previous build)"),
          QStringLiteral("An older suyu build. Point to suyu.exe or suyu-cmd.exe. "
                         "suyu will invoke it for decryption support."),
-         {QStringLiteral("suyu.exe"), QStringLiteral("suyu-cmd.exe"),
-          QStringLiteral("suyu"), QStringLiteral("suyu-cmd")}},
+         {QStringLiteral("suyu.exe"), QStringLiteral("suyu-cmd.exe"), QStringLiteral("suyu"),
+          QStringLiteral("suyu-cmd")}},
         {QStringLiteral("custom"),
          QStringLiteral("Custom tool"),
          QStringLiteral("Any hactool-compatible CLI tool. Must accept the same argument "
@@ -105,9 +104,9 @@ void ExternalDecryptionTool::ClearTool() {
 // ---------------------------------------------------------------------------
 
 QStringList ExternalDecryptionTool::BuildHactoolArgs(const QString& input,
-                                                      const QString& output_dir,
-                                                      const QString& keys_path,
-                                                      const QString& operation) {
+                                                     const QString& output_dir,
+                                                     const QString& keys_path,
+                                                     const QString& operation) {
     // All supported tools use hactool-compatible CLI flags, or we adapt here.
     QStringList args;
 
@@ -180,9 +179,9 @@ bool ExternalDecryptionTool::RunTool(const QStringList& args, int timeout_ms) {
         const QString stderr_output = QString::fromUtf8(process.readAllStandardError());
         const QString stdout_output = QString::fromUtf8(process.readAllStandardOutput());
         last_error_ = QStringLiteral("Tool exited with code %1.\nstderr: %2\nstdout: %3")
-                           .arg(process.exitCode())
-                           .arg(stderr_output.left(2000))
-                           .arg(stdout_output.left(2000));
+                          .arg(process.exitCode())
+                          .arg(stderr_output.left(2000))
+                          .arg(stdout_output.left(2000));
         LOG_ERROR(Frontend, "{}", last_error_.toStdString());
         return false;
     }
@@ -192,27 +191,27 @@ bool ExternalDecryptionTool::RunTool(const QStringList& args, int timeout_ms) {
 }
 
 bool ExternalDecryptionTool::DecryptNca(const QString& nca_path, const QString& output_dir,
-                                         const QString& keys_path) {
+                                        const QString& keys_path) {
     emit DecryptionStarted(nca_path);
-    const auto args = BuildHactoolArgs(nca_path, output_dir, keys_path,
-                                        QStringLiteral("decrypt_nca"));
+    const auto args =
+        BuildHactoolArgs(nca_path, output_dir, keys_path, QStringLiteral("decrypt_nca"));
     const bool ok = RunTool(args);
     emit DecryptionFinished(nca_path, ok);
     return ok;
 }
 
 bool ExternalDecryptionTool::ExtractExeFs(const QString& nca_path, const QString& output_dir,
-                                           const QString& keys_path) {
+                                          const QString& keys_path) {
     emit DecryptionStarted(nca_path);
-    const auto args = BuildHactoolArgs(nca_path, output_dir, keys_path,
-                                        QStringLiteral("extract_exefs"));
+    const auto args =
+        BuildHactoolArgs(nca_path, output_dir, keys_path, QStringLiteral("extract_exefs"));
     const bool ok = RunTool(args);
     emit DecryptionFinished(nca_path, ok);
     return ok;
 }
 
 bool ExternalDecryptionTool::DecryptRom(const QString& rom_path, const QString& output_dir,
-                                         const QString& keys_path) {
+                                        const QString& keys_path) {
     emit DecryptionStarted(rom_path);
 
     // Determine operation based on file extension
@@ -244,7 +243,7 @@ QString ExternalDecryptionTool::LastError() const {
 // ============================================================================
 
 ExternalDecryptionToolDialog::ExternalDecryptionToolDialog(ExternalDecryptionTool* tool,
-                                                            QWidget* parent)
+                                                           QWidget* parent)
     : QDialog(parent), tool_(tool) {
     setWindowTitle(QStringLiteral("Configure External Decryption Tool"));
     setMinimumWidth(520);
@@ -324,18 +323,14 @@ void ExternalDecryptionToolDialog::SetupUi() {
     edit_path_->setText(tool_->ConfiguredToolPath());
 
     // Connections
-    connect(combo_tool_, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &ExternalDecryptionToolDialog::OnToolSelected);
-    connect(btn_browse_, &QPushButton::clicked,
-            this, &ExternalDecryptionToolDialog::OnBrowse);
-    connect(btn_auto_detect_, &QPushButton::clicked,
-            this, &ExternalDecryptionToolDialog::OnAutoDetect);
-    connect(btn_ok_, &QPushButton::clicked,
-            this, &ExternalDecryptionToolDialog::OnAccept);
-    connect(btn_cancel_, &QPushButton::clicked,
-            this, &QDialog::reject);
-    connect(edit_path_, &QLineEdit::textChanged,
-            this, [this](const QString&) { RefreshStatus(); });
+    connect(combo_tool_, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &ExternalDecryptionToolDialog::OnToolSelected);
+    connect(btn_browse_, &QPushButton::clicked, this, &ExternalDecryptionToolDialog::OnBrowse);
+    connect(btn_auto_detect_, &QPushButton::clicked, this,
+            &ExternalDecryptionToolDialog::OnAutoDetect);
+    connect(btn_ok_, &QPushButton::clicked, this, &ExternalDecryptionToolDialog::OnAccept);
+    connect(btn_cancel_, &QPushButton::clicked, this, &QDialog::reject);
+    connect(edit_path_, &QLineEdit::textChanged, this, [this](const QString&) { RefreshStatus(); });
 
     OnToolSelected(combo_tool_->currentIndex());
 }
@@ -384,10 +379,9 @@ void ExternalDecryptionToolDialog::OnAutoDetect() {
         }
     }
 
-    QMessageBox::warning(
-        this, QStringLiteral("Not Found"),
-        QStringLiteral("Could not find %1 in PATH.\nPlease browse manually.")
-            .arg(info.display_name));
+    QMessageBox::warning(this, QStringLiteral("Not Found"),
+                         QStringLiteral("Could not find %1 in PATH.\nPlease browse manually.")
+                             .arg(info.display_name));
 }
 
 void ExternalDecryptionToolDialog::OnAccept() {
@@ -417,10 +411,9 @@ void ExternalDecryptionToolDialog::RefreshStatus() {
         lbl_status_->setText(QStringLiteral(
             "<span style='color:orange;'>No tool configured — decryption disabled</span>"));
     } else if (QFileInfo::exists(path)) {
-        lbl_status_->setText(QStringLiteral(
-            "<span style='color:green;font-size:12pt;'>✓ Tool found</span>"));
+        lbl_status_->setText(
+            QStringLiteral("<span style='color:green;font-size:12pt;'>✓ Tool found</span>"));
     } else {
-        lbl_status_->setText(QStringLiteral(
-            "<span style='color:red;'>✗ File not found</span>"));
+        lbl_status_->setText(QStringLiteral("<span style='color:red;'>✗ File not found</span>"));
     }
 }

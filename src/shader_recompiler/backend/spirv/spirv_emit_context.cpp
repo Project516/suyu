@@ -1578,8 +1578,8 @@ void EmitContext::DefineInputs(const IR::Program& program) {
         if (stage != Stage::Fragment) {
             continue;
         }
-        const bool is_integer = input_type == AttributeType::SignedInt ||
-                                input_type == AttributeType::UnsignedInt;
+        const bool is_integer =
+            input_type == AttributeType::SignedInt || input_type == AttributeType::UnsignedInt;
         if (is_integer) {
             Decorate(id, spv::Decoration::Flat);
         } else {

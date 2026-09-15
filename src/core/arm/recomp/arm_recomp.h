@@ -71,10 +71,10 @@ RecompLookupFn GetRecompLookup();
 /// the game. `jit_transitions` is the number that settles it: an image that
 /// never reaches the JIT reports zero, and one transition is one too many.
 struct RecompLiveStats {
-    u64 static_blocks;      ///< blocks executed from recompiled images
-    u64 jit_transitions;    ///< times execution had to leave them
-    bool backend_active;    ///< ArmRecomp is the CPU for this process
-    bool jit_available;     ///< false when built without a dynamic recompiler
+    u64 static_blocks;   ///< blocks executed from recompiled images
+    u64 jit_transitions; ///< times execution had to leave them
+    bool backend_active; ///< ArmRecomp is the CPU for this process
+    bool jit_available;  ///< false when built without a dynamic recompiler
 };
 RecompLiveStats GetRecompLiveStats();
 

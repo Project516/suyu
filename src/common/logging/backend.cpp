@@ -88,8 +88,8 @@ public:
         auto old_filename = filename;
         old_filename += ".old.txt";
 
-               // Existence checks are done within the functions themselves.
-               // We don't particularly care if these succeed or not.
+        // Existence checks are done within the functions themselves.
+        // We don't particularly care if these succeed or not.
         static_cast<void>(FS::RemoveFile(old_filename));
         static_cast<void>(FS::RenameFile(filename, old_filename));
 

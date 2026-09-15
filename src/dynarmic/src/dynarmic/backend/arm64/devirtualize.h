@@ -9,18 +9,20 @@
 #pragma once
 
 #include <bit>
+
 #include "common/common_types.h"
 #include "dynarmic/mcl/function_info.hpp"
 
 namespace Dynarmic::Backend::Arm64 {
 
 namespace impl {
-template<typename T, typename P> inline T bit_cast_pointee(const P source_ptr) noexcept {
+template<typename T, typename P>
+inline T bit_cast_pointee(const P source_ptr) noexcept {
     std::aligned_storage_t<sizeof(T), alignof(T)> dest;
     std::memcpy(&dest, std::bit_cast<void*>(source_ptr), sizeof(T));
     return reinterpret_cast<T&>(dest);
 }
-};
+};  // namespace impl
 
 struct DevirtualizedCall {
     u64 fn_ptr;

@@ -145,7 +145,8 @@ void KScheduler::RescheduleCurrentCoreImpl(KernelCore& kernel) {
     }
 }
 
-void KScheduler::Initialize(KernelCore& kernel, KThread* main_thread, KThread* idle_thread, s32 core_id) {
+void KScheduler::Initialize(KernelCore& kernel, KThread* main_thread, KThread* idle_thread,
+                            s32 core_id) {
     // Set core ID/idle thread/interrupt task manager.
     m_core_id = core_id;
     m_idle_thread = idle_thread;
@@ -185,8 +186,7 @@ u64 KScheduler::UpdateHighestPriorityThread(KernelCore& kernel, KThread* highest
         prev_highest_thread != highest_thread) [[likely]] {
         if (prev_highest_thread != nullptr) [[likely]] {
             IncrementScheduledCount(prev_highest_thread);
-            prev_highest_thread->SetLastScheduledTick(
-                kernel.System().CoreTiming().GetClockTicks());
+            prev_highest_thread->SetLastScheduledTick(kernel.System().CoreTiming().GetClockTicks());
         }
         if (m_state.should_count_idle) {
             if (highest_thread != nullptr) [[likely]] {
@@ -243,7 +243,8 @@ u64 KScheduler::UpdateHighestPriorityThreadsImpl(KernelCore& kernel) {
         }
 
         top_threads[core_id] = top_thread;
-        cores_needing_scheduling |= kernel.Scheduler(core_id).UpdateHighestPriorityThread(kernel, top_threads[core_id]);
+        cores_needing_scheduling |=
+            kernel.Scheduler(core_id).UpdateHighestPriorityThread(kernel, top_threads[core_id]);
     }
 
     // Idle cores are bad. We're going to try to migrate threads to each idle core in turn.
@@ -271,7 +272,9 @@ u64 KScheduler::UpdateHighestPriorityThreadsImpl(KernelCore& kernel) {
                     suggested->SetActiveCore(core_id);
                     priority_queue.ChangeCore(suggested_core, suggested);
                     top_threads[core_id] = suggested;
-                    cores_needing_scheduling |= kernel.Scheduler(core_id).UpdateHighestPriorityThread(kernel, top_threads[core_id]);
+                    cores_needing_scheduling |=
+                        kernel.Scheduler(core_id).UpdateHighestPriorityThread(kernel,
+                                                                              top_threads[core_id]);
                     break;
                 }
 
@@ -294,13 +297,17 @@ u64 KScheduler::UpdateHighestPriorityThreadsImpl(KernelCore& kernel) {
                         // The candidate core can run some other thread! We'll migrate its current
                         // top thread to us.
                         top_threads[candidate_core] = next_on_candidate_core;
-                        cores_needing_scheduling |= kernel.Scheduler(candidate_core).UpdateHighestPriorityThread(kernel, top_threads[candidate_core]);
+                        cores_needing_scheduling |=
+                            kernel.Scheduler(candidate_core)
+                                .UpdateHighestPriorityThread(kernel, top_threads[candidate_core]);
 
                         // Perform the migration.
                         suggested->SetActiveCore(core_id);
                         priority_queue.ChangeCore(candidate_core, suggested);
                         top_threads[core_id] = suggested;
-                        cores_needing_scheduling |= kernel.Scheduler(core_id).UpdateHighestPriorityThread(kernel, top_threads[core_id]);
+                        cores_needing_scheduling |=
+                            kernel.Scheduler(core_id).UpdateHighestPriorityThread(
+                                kernel, top_threads[core_id]);
                         break;
                     }
                 }

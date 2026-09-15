@@ -63,7 +63,8 @@ public:
 private:
     void CheckAndSetupServicesSAndP();
     void SetupSAndP();
-    Result GetStaticService(OutInterface<StaticService> out_service, StaticServiceSetupInfo setup_info, const char* name);
+    Result GetStaticService(OutInterface<StaticService> out_service,
+                            StaticServiceSetupInfo setup_info, const char* name);
 
     std::shared_ptr<TimeManager> m_time;
     ServerManager& m_server_manager;

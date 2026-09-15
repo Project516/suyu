@@ -34,7 +34,8 @@ namespace Kernel {
 
 namespace {
 
-Result TerminateChildren(KernelCore& kernel, KProcess* process, const KThread* thread_to_not_terminate) {
+Result TerminateChildren(KernelCore& kernel, KProcess* process,
+                         const KThread* thread_to_not_terminate) {
     // Request that all children threads terminate.
     {
         KScopedLightLock proc_lk(process->GetListLock());
@@ -89,7 +90,8 @@ Result TerminateChildren(KernelCore& kernel, KProcess* process, const KThread* t
             cur_child->Close(kernel);
         };
 
-        if (const Result terminate_result = cur_child->Terminate(kernel); ResultTerminationRequested == terminate_result) {
+        if (const Result terminate_result = cur_child->Terminate(kernel);
+            ResultTerminationRequested == terminate_result) {
             R_THROW(terminate_result);
         }
     }
@@ -177,7 +179,8 @@ void KProcess::Finalize(KernelCore& kernel) {
     // Release memory to the resource limit.
     if (m_resource_limit != nullptr) {
         ASSERT(used_memory_size >= m_memory_release_hint);
-        m_resource_limit->Release(kernel, Svc::LimitableResource::PhysicalMemoryMax, used_memory_size, used_memory_size - m_memory_release_hint);
+        m_resource_limit->Release(kernel, Svc::LimitableResource::PhysicalMemoryMax,
+                                  used_memory_size, used_memory_size - m_memory_release_hint);
         m_resource_limit->Close(kernel);
     }
 
@@ -191,7 +194,8 @@ void KProcess::Finalize(KernelCore& kernel) {
     KSynchronizationObject::Finalize(kernel);
 }
 
-Result KProcess::Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params, KResourceLimit* res_limit, bool is_real) {
+Result KProcess::Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params,
+                            KResourceLimit* res_limit, bool is_real) {
     // TODO: remove this special case
     if (is_real) {
         // Create and clear the process local region.
@@ -269,9 +273,9 @@ Result KProcess::Initialize(KernelCore& kernel, const Svc::CreateProcessParamete
     R_SUCCEED();
 }
 
-Result KProcess::Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params, const KPageGroup& pg,
-                            std::span<const u32> caps, KResourceLimit* res_limit,
-                            KMemoryManager::Pool pool, bool immortal) {
+Result KProcess::Initialize(KernelCore& kernel, const Svc::CreateProcessParameter& params,
+                            const KPageGroup& pg, std::span<const u32> caps,
+                            KResourceLimit* res_limit, KMemoryManager::Pool pool, bool immortal) {
     ASSERT(res_limit != nullptr);
     ASSERT((params.code_num_pages * PageSize) / PageSize ==
            static_cast<size_t>(params.code_num_pages));
@@ -293,7 +297,8 @@ Result KProcess::Initialize(KernelCore& kernel, const Svc::CreateProcessParamete
         };
 
         // Initialize the secure resource.
-        R_TRY(secure_resource->Initialize(kernel, system_resource_num_pages * PageSize, res_limit, m_memory_pool));
+        R_TRY(secure_resource->Initialize(kernel, system_resource_num_pages * PageSize, res_limit,
+                                          m_memory_pool));
 
         // Set our system resource.
         m_system_resource = secure_resource;
@@ -379,8 +384,8 @@ Result KProcess::Initialize(KernelCore& kernel, const Svc::CreateProcessParamete
     const size_t system_resource_size = system_resource_num_pages * PageSize;
 
     // Reserve memory for our code resource.
-    KScopedResourceReservation memory_reservation(kernel,
-        res_limit, Svc::LimitableResource::PhysicalMemoryMax, code_size);
+    KScopedResourceReservation memory_reservation(
+        kernel, res_limit, Svc::LimitableResource::PhysicalMemoryMax, code_size);
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
     // Setup our system resource.
@@ -501,7 +506,8 @@ void KProcess::FinishTermination(KernelCore& kernel) {
         // Release resource limit hint.
         if (m_resource_limit != nullptr) {
             m_memory_release_hint = this->GetUsedNonSystemUserPhysicalMemorySize(kernel);
-            m_resource_limit->Release(kernel, Svc::LimitableResource::PhysicalMemoryMax, 0, m_memory_release_hint);
+            m_resource_limit->Release(kernel, Svc::LimitableResource::PhysicalMemoryMax, 0,
+                                      m_memory_release_hint);
         }
 
         // Change state.
@@ -526,7 +532,8 @@ void KProcess::Exit(KernelCore& kernel) {
         ASSERT(m_state != State::CreatedAttached);
         ASSERT(m_state != State::Crashed);
         ASSERT(m_state != State::Terminated);
-        if (m_state == State::Running || m_state == State::RunningAttached || m_state == State::DebugBreak) {
+        if (m_state == State::Running || m_state == State::RunningAttached ||
+            m_state == State::DebugBreak) {
             this->ChangeState(kernel, State::Terminating);
             needs_terminate = true;
         }
@@ -578,7 +585,8 @@ Result KProcess::Terminate(KernelCore& kernel) {
     R_SUCCEED();
 }
 
-Result KProcess::AddSharedMemory(KernelCore& kernel, KSharedMemory* shmem, KProcessAddress address, size_t size) {
+Result KProcess::AddSharedMemory(KernelCore& kernel, KSharedMemory* shmem, KProcessAddress address,
+                                 size_t size) {
     // Lock ourselves, to prevent concurrent access.
     KScopedLightLock lk(m_state_lock);
 
@@ -609,7 +617,8 @@ Result KProcess::AddSharedMemory(KernelCore& kernel, KSharedMemory* shmem, KProc
     R_SUCCEED();
 }
 
-void KProcess::RemoveSharedMemory(KernelCore& kernel, KSharedMemory* shmem, KProcessAddress address, size_t size) {
+void KProcess::RemoveSharedMemory(KernelCore& kernel, KSharedMemory* shmem, KProcessAddress address,
+                                  size_t size) {
     // Lock ourselves, to prevent concurrent access.
     KScopedLightLock lk(m_state_lock);
 
@@ -741,7 +750,8 @@ bool KProcess::ReserveResource(KernelCore& kernel, Svc::LimitableResource which,
     }
 }
 
-bool KProcess::ReserveResource(KernelCore& kernel, Svc::LimitableResource which, s64 value, s64 timeout) {
+bool KProcess::ReserveResource(KernelCore& kernel, Svc::LimitableResource which, s64 value,
+                               s64 timeout) {
     if (KResourceLimit* rl = this->GetResourceLimit(); rl != nullptr) {
         return rl->Reserve(kernel, which, value, timeout);
     } else {
@@ -755,7 +765,8 @@ void KProcess::ReleaseResource(KernelCore& kernel, Svc::LimitableResource which,
     }
 }
 
-void KProcess::ReleaseResource(KernelCore& kernel, Svc::LimitableResource which, s64 value, s64 hint) {
+void KProcess::ReleaseResource(KernelCore& kernel, Svc::LimitableResource which, s64 value,
+                               s64 hint) {
     if (KResourceLimit* rl = this->GetResourceLimit(); rl != nullptr) {
         rl->Release(kernel, which, value, hint);
     }
@@ -831,8 +842,8 @@ bool KProcess::ReleaseUserException(KernelCore& kernel, KThread* thread) {
 
         // Remove waiter thread.
         bool has_waiters;
-        if (KThread* next = thread->RemoveKernelWaiterByKey(kernel,
-                std::addressof(has_waiters),
+        if (KThread* next = thread->RemoveKernelWaiterByKey(
+                kernel, std::addressof(has_waiters),
                 reinterpret_cast<uintptr_t>(std::addressof(m_exception_thread)) | 1);
             next != nullptr) {
             next->EndWait(kernel, ResultSuccess);
@@ -928,7 +939,8 @@ Result KProcess::Run(KernelCore& kernel, s32 priority, size_t stack_size) {
     R_UNLESS(state == State::Created || state == State::CreatedAttached, ResultInvalidState);
 
     // Place a tentative reservation of a thread for this process.
-    KScopedResourceReservation thread_reservation(kernel, this, Svc::LimitableResource::ThreadCountMax);
+    KScopedResourceReservation thread_reservation(kernel, this,
+                                                  Svc::LimitableResource::ThreadCountMax);
     R_UNLESS(thread_reservation.Succeeded(), ResultLimitReached);
 
     // Ensure that we haven't already allocated stack.
@@ -940,8 +952,8 @@ Result KProcess::Run(KernelCore& kernel, s32 priority, size_t stack_size) {
     R_UNLESS(stack_size + m_code_size >= m_code_size, ResultOutOfMemory);
 
     // Place a tentative reservation of memory for our new stack.
-    KScopedResourceReservation mem_reservation(kernel, this, Svc::LimitableResource::PhysicalMemoryMax,
-                                               stack_size);
+    KScopedResourceReservation mem_reservation(
+        kernel, this, Svc::LimitableResource::PhysicalMemoryMax, stack_size);
     R_UNLESS(mem_reservation.Succeeded(), ResultLimitReached);
 
     // Allocate and map our stack.
@@ -1148,8 +1160,8 @@ void KProcess::UnpinThread(KernelCore& kernel, KThread* thread) {
     KScheduler::SetSchedulerUpdateNeeded(kernel);
 }
 
-Result KProcess::GetThreadList(KernelCore& kernel, s32* out_num_threads, KProcessAddress out_thread_ids,
-                               s32 max_out_count) {
+Result KProcess::GetThreadList(KernelCore& kernel, s32* out_num_threads,
+                               KProcessAddress out_thread_ids, s32 max_out_count) {
     auto& memory = this->GetMemory();
 
     // Lock the list.
@@ -1181,25 +1193,19 @@ Result KProcess::GetThreadList(KernelCore& kernel, s32* out_num_threads, KProces
 void KProcess::Switch(KernelCore& kernel, KProcess* cur_process, KProcess* next_process) {}
 
 KProcess::KProcess(KernelCore& kernel)
-    : KAutoObjectWithSlabHeapAndContainer(kernel)
-    , m_exclusive_monitor{}
-    , m_memory{kernel.System()}
-    , m_handle_table{kernel}
-    , m_page_table{kernel}
-    , m_state_lock{kernel}
-    , m_list_lock{kernel}
-    , m_cond_var{kernel.System()}
-    , m_address_arbiter{kernel.System()}
-{}
+    : KAutoObjectWithSlabHeapAndContainer(kernel), m_exclusive_monitor{}, m_memory{kernel.System()},
+      m_handle_table{kernel}, m_page_table{kernel}, m_state_lock{kernel}, m_list_lock{kernel},
+      m_cond_var{kernel.System()}, m_address_arbiter{kernel.System()} {}
 
 KProcess::~KProcess() = default;
 
-Result KProcess::LoadFromMetadata(KernelCore& kernel, const FileSys::ProgramMetadata& metadata, std::size_t code_size, KProcessAddress aslr_space_start, size_t aslr_space_offset) {
+Result KProcess::LoadFromMetadata(KernelCore& kernel, const FileSys::ProgramMetadata& metadata,
+                                  std::size_t code_size, KProcessAddress aslr_space_start,
+                                  size_t aslr_space_offset) {
     // Create a resource limit for the process.
     const auto pool = static_cast<KMemoryManager::Pool>(metadata.GetPoolPartition());
     const auto physical_memory_size = kernel.MemoryManager().GetSize(pool);
-    auto* res_limit =
-        Kernel::CreateResourceLimitForProcess(kernel.System(), physical_memory_size);
+    auto* res_limit = Kernel::CreateResourceLimitForProcess(kernel.System(), physical_memory_size);
 
     // Ensure we maintain a clean state on exit.
     SCOPE_EXIT {
@@ -1262,7 +1268,8 @@ Result KProcess::LoadFromMetadata(KernelCore& kernel, const FileSys::ProgramMeta
     std::memcpy(params.name.data(), name.data(), sizeof(params.name));
 
     // Initialize for application process.
-    R_TRY(this->Initialize(kernel, params, metadata.GetKernelCapabilities(), res_limit, pool, aslr_space_start));
+    R_TRY(this->Initialize(kernel, params, metadata.GetKernelCapabilities(), res_limit, pool,
+                           aslr_space_start));
 
     // Assign remaining properties.
     m_ideal_core_id = metadata.GetMainThreadCore();
@@ -1275,7 +1282,8 @@ Result KProcess::LoadFromMetadata(KernelCore& kernel, const FileSys::ProgramMeta
 }
 
 void KProcess::LoadModule(KernelCore& kernel, CodeSet code_set, KProcessAddress base_addr) {
-    const auto ReprotectSegment = [&](const CodeSet::Segment& segment, Svc::MemoryPermission permission) {
+    const auto ReprotectSegment = [&](const CodeSet::Segment& segment,
+                                      Svc::MemoryPermission permission) {
         m_page_table.SetProcessMemoryPermission(segment.addr + base_addr, segment.size, permission);
     };
 
@@ -1354,7 +1362,7 @@ void KProcess::InitializeInterfaces(KernelCore& kernel) {
                      this->GetName());
     }
 #else
-        if (this->Is64Bit()) {
+    if (this->Is64Bit()) {
         for (size_t i = 0; i < Core::Hardware::NUM_CPU_CORES; i++) {
             m_arm_interfaces[i] = std::make_unique<Core::ArmDynarmic64>(
                 kernel.System(), kernel.IsMulticore(), this,
@@ -1370,7 +1378,8 @@ void KProcess::InitializeInterfaces(KernelCore& kernel) {
 #endif
 }
 
-bool KProcess::InsertWatchpoint(KernelCore& kernel, KProcessAddress addr, u64 size, DebugWatchpointType type) {
+bool KProcess::InsertWatchpoint(KernelCore& kernel, KProcessAddress addr, u64 size,
+                                DebugWatchpointType type) {
     const auto watch{std::find_if(m_watchpoints.begin(), m_watchpoints.end(), [&](const auto& wp) {
         return wp.type == DebugWatchpointType::None;
     })};
@@ -1392,7 +1401,8 @@ bool KProcess::InsertWatchpoint(KernelCore& kernel, KProcessAddress addr, u64 si
     return true;
 }
 
-bool KProcess::RemoveWatchpoint(KernelCore& kernel, KProcessAddress addr, u64 size, DebugWatchpointType type) {
+bool KProcess::RemoveWatchpoint(KernelCore& kernel, KProcessAddress addr, u64 size,
+                                DebugWatchpointType type) {
     const auto watch{std::find_if(m_watchpoints.begin(), m_watchpoints.end(), [&](const auto& wp) {
         return wp.start_address == addr && wp.end_address == addr + size && wp.type == type;
     })};

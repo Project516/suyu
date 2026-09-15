@@ -14,8 +14,7 @@
 namespace Service::HID {
 
 NPadResource::NPadResource(Kernel::KernelCore& kernel_, KernelHelpers::ServiceContext& context)
-    : service_context{context}
-{}
+    : service_context{context} {}
 
 NPadResource::~NPadResource() = default;
 
@@ -507,7 +506,9 @@ Result NPadResource::IsAssigningSingleOnSlSrPressEnabled(bool& is_enabled, u64 a
     return ResultSuccess;
 }
 
-Result NPadResource::AcquireNpadStyleSetUpdateEventHandle(Kernel::KernelCore& kernel, u64 aruid, Kernel::KReadableEvent** out_event, Core::HID::NpadIdType npad_id) {
+Result NPadResource::AcquireNpadStyleSetUpdateEventHandle(Kernel::KernelCore& kernel, u64 aruid,
+                                                          Kernel::KReadableEvent** out_event,
+                                                          Core::HID::NpadIdType npad_id) {
     const u64 aruid_index = GetIndexFromAruid(aruid);
     if (aruid_index >= AruidIndexMax) {
         return ResultNpadNotConnected;
@@ -532,7 +533,8 @@ Result NPadResource::AcquireNpadStyleSetUpdateEventHandle(Kernel::KernelCore& ke
     return ResultSuccess;
 }
 
-Result NPadResource::SignalStyleSetUpdateEvent(Kernel::KernelCore& kernel, u64 aruid, Core::HID::NpadIdType npad_id) {
+Result NPadResource::SignalStyleSetUpdateEvent(Kernel::KernelCore& kernel, u64 aruid,
+                                               Core::HID::NpadIdType npad_id) {
     const u64 aruid_index = GetIndexFromAruid(aruid);
     if (aruid_index >= AruidIndexMax) {
         return ResultNpadNotConnected;
@@ -544,7 +546,8 @@ Result NPadResource::SignalStyleSetUpdateEvent(Kernel::KernelCore& kernel, u64 a
     return ResultSuccess;
 }
 
-Result NPadResource::GetHomeProtectionEnabled(bool& is_enabled, u64 aruid, Core::HID::NpadIdType npad_id) const {
+Result NPadResource::GetHomeProtectionEnabled(bool& is_enabled, u64 aruid,
+                                              Core::HID::NpadIdType npad_id) const {
     const u64 aruid_index = GetIndexFromAruid(aruid);
     if (aruid_index >= AruidIndexMax) {
         return ResultNpadNotConnected;
@@ -554,7 +557,8 @@ Result NPadResource::GetHomeProtectionEnabled(bool& is_enabled, u64 aruid, Core:
     return ResultSuccess;
 }
 
-Result NPadResource::SetHomeProtectionEnabled(u64 aruid, Core::HID::NpadIdType npad_id, bool is_enabled) {
+Result NPadResource::SetHomeProtectionEnabled(u64 aruid, Core::HID::NpadIdType npad_id,
+                                              bool is_enabled) {
     const u64 aruid_index = GetIndexFromAruid(aruid);
     if (aruid_index >= AruidIndexMax) {
         return ResultNpadNotConnected;

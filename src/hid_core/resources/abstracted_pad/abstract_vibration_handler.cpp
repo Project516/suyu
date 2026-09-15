@@ -20,8 +20,7 @@
 namespace Service::HID {
 
 NpadAbstractVibrationHandler::NpadAbstractVibrationHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+    : kernel{kernel_} {}
 
 NpadAbstractVibrationHandler::~NpadAbstractVibrationHandler() = default;
 

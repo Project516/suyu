@@ -3,26 +3,26 @@
 
 #pragma once
 
-#include <QWidget>
-#include <QScrollArea>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QLabel>
-#include <QComboBox>
-#include <QTimer>
-#include <QPropertyAnimation>
-#include <QGraphicsOpacityEffect>
-#include <QVector>
-#include <QHash>
-#include <QMutex>
 #include <set>
+#include <QComboBox>
+#include <QGraphicsOpacityEffect>
+#include <QHBoxLayout>
+#include <QHash>
+#include <QLabel>
+#include <QLineEdit>
+#include <QMutex>
+#include <QPropertyAnimation>
+#include <QPushButton>
+#include <QScrollArea>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QVector>
+#include <QWidget>
 
 #include "common/common_types.h"
+#include "suyu/compatibility_list.h"
 #include "suyu/game_card.h"
 #include "suyu/game_list.h"
-#include "suyu/compatibility_list.h"
 #include "suyu/uisettings.h"
 
 class GameLibraryWorker;
@@ -41,30 +41,18 @@ namespace Core {
 class System;
 }
 
-enum class GameLibraryViewMode {
-    Grid,
-    List
-};
+enum class GameLibraryViewMode { Grid, List };
 
-enum class GameLibrarySortMode {
-    Title,
-    Developer,
-    Size,
-    PlayTime,
-    Compatibility,
-    Type,
-    DateAdded
-};
+enum class GameLibrarySortMode { Title, Developer, Size, PlayTime, Compatibility, Type, DateAdded };
 
 class GameLibrary : public QWidget {
     Q_OBJECT
 
 public:
     explicit GameLibrary(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
-                        FileSys::ManualContentProvider* provider_,
-                        PlayTime::PlayTimeManager& play_time_manager_,
-                        Core::System& system_,
-                        GMainWindow* parent = nullptr);
+                         FileSys::ManualContentProvider* provider_,
+                         PlayTime::PlayTimeManager& play_time_manager_, Core::System& system_,
+                         GMainWindow* parent = nullptr);
     ~GameLibrary() override;
 
     void LoadCompatibilityList();
@@ -91,14 +79,18 @@ public:
 signals:
     void GameChosen(const QString& game_path, const u64 title_id);
     void ShouldCancelWorker();
-    void OpenFolderRequested(u64 program_id, GameListOpenTarget target, const std::string& game_path);
+    void OpenFolderRequested(u64 program_id, GameListOpenTarget target,
+                             const std::string& game_path);
     void OpenTransferableShaderCacheRequested(u64 program_id);
     void RemoveInstalledEntryRequested(u64 program_id, InstalledEntryType type);
-    void RemoveFileRequested(u64 program_id, GameListRemoveTarget target, const std::string& game_path);
+    void RemoveFileRequested(u64 program_id, GameListRemoveTarget target,
+                             const std::string& game_path);
     void DumpRomFSRequested(u64 program_id, const std::string& game_path, DumpRomFSTarget target);
     void CopyTIDRequested(u64 program_id);
-    void NavigateToGamedbEntryRequested(u64 program_id, const CompatibilityList& compatibility_list);
-    void CreateShortcutRequested(u64 program_id, const std::string& game_path, GameListShortcutTarget target);
+    void NavigateToGamedbEntryRequested(u64 program_id,
+                                        const CompatibilityList& compatibility_list);
+    void CreateShortcutRequested(u64 program_id, const std::string& game_path,
+                                 GameListShortcutTarget target);
     void OpenDirectory(const QString& directory);
     void AddDirectory();
     void ShowList(bool show);
@@ -129,9 +121,9 @@ private:
     void ApplyFilter();
     void SortGameCards();
     void AddGameCard(const QString& title, const QString& file_path, const QString& program_id,
-                    const QString& developer, u64 program_id_numeric, const QString& version,
-                    const QString& type, u64 size, const QString& compatibility,
-                    const QPixmap& icon, const QString& play_time);
+                     const QString& developer, u64 program_id_numeric, const QString& version,
+                     const QString& type, u64 size, const QString& compatibility,
+                     const QPixmap& icon, const QString& play_time);
     void RemoveGameCard(const QString& file_path);
     void ClearGameCards();
     void UpdateGameCardPlayTime(u64 program_id, const QString& play_time);
@@ -198,20 +190,22 @@ class GameLibraryWorker : public QObject {
 
 public:
     explicit GameLibraryWorker(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
-                              FileSys::ManualContentProvider* provider_,
-                              PlayTime::PlayTimeManager& play_time_manager_,
-                              Core::System& system_);
+                               FileSys::ManualContentProvider* provider_,
+                               PlayTime::PlayTimeManager& play_time_manager_,
+                               Core::System& system_);
     ~GameLibraryWorker() override;
 
 public slots:
     void FillControllerList(const QVector<UISettings::GameDir>& game_dirs);
-    void RequestStop() { stop_processing.store(true, std::memory_order_relaxed); }
+    void RequestStop() {
+        stop_processing.store(true, std::memory_order_relaxed);
+    }
 
 signals:
     void EntryReady(const QString& title, const QString& file_path, const QString& program_id,
-                   const QString& developer, u64 program_id_numeric, const QString& version,
-                   const QString& type, u64 size, const QString& compatibility,
-                   const QPixmap& icon, const QString& play_time);
+                    const QString& developer, u64 program_id_numeric, const QString& version,
+                    const QString& type, u64 size, const QString& compatibility,
+                    const QPixmap& icon, const QString& play_time);
     void Finished();
     void DirEntryReady(GameListDir* parent_dir, const QVector<QStandardItem*>& entry_items);
 

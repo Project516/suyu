@@ -491,9 +491,9 @@ void Module::Interface::CreateNotificationService(HLERequestContext& ctx) {
     rb.PushIpcInterface<INotificationService>(ctx, system, uuid);
 }
 
-Module::Interface::Interface(std::shared_ptr<Module> module_, Core::System& system_, const char* name)
-    : ServiceFramework{system_, name}, module{std::move(module_)}
-{}
+Module::Interface::Interface(std::shared_ptr<Module> module_, Core::System& system_,
+                             const char* name)
+    : ServiceFramework{system_, name}, module{std::move(module_)} {}
 
 Module::Interface::~Interface() = default;
 

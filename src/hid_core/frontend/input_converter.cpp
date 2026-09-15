@@ -7,8 +7,8 @@
 #include <algorithm>
 #include <random>
 
-#include "common/random.h"
 #include "common/input.h"
+#include "common/random.h"
 #include "hid_core/frontend/input_converter.h"
 
 namespace Core::HID {

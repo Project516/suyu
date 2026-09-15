@@ -230,8 +230,7 @@ GameListWorker::GameListWorker(FileSys::VirtualFilesystem vfs_,
                                const PlayTime::PlayTimeManager& play_time_manager_,
                                Core::System& system_)
     : vfs{std::move(vfs_)}, provider{provider_}, game_dirs{game_dirs_},
-      play_time_manager{play_time_manager_},
-      system{system_} {
+      play_time_manager{play_time_manager_}, system{system_} {
     // We want the game list to manage our lifetime.
     setAutoDelete(false);
 }
@@ -394,9 +393,9 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::string& dir_pa
                     const FileSys::PatchManager patch{id, system.GetFileSystemController(),
                                                       system.GetContentProvider()};
 
-                    auto entry = MakeGameListEntry(
-                        physical_name, name, Common::FS::GetSize(physical_name), icon, *app_loader,
-                        id, play_time_manager, patch);
+                    auto entry =
+                        MakeGameListEntry(physical_name, name, Common::FS::GetSize(physical_name),
+                                          icon, *app_loader, id, play_time_manager, patch);
 
                     RecordEvent([=](GameListModel* model) { model->AddEntry(entry, parent_dir); });
                 };

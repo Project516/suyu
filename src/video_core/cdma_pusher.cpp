@@ -20,9 +20,7 @@
 namespace Tegra {
 
 CDmaPusher::CDmaPusher(Host1x::Host1x& host1x_, s32 id)
-    : host1x{host1x_}
-    , current_class{ChClassId(id)}
-{
+    : host1x{host1x_}, current_class{ChClassId(id)} {
     thread = std::jthread([this](std::stop_token stop_token) {
         Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
         ChCommandHeaderList command_list{host1x.System().ApplicationMemory(), 0, 0};
@@ -83,7 +81,8 @@ CDmaPusher::CDmaPusher(Host1x::Host1x& host1x_, s32 id)
                     break;
                 }
                 default:
-                    LOG_ERROR(HW_GPU, "Bad command at index {} (bytes {:#X}), buffer size {}", i - 1, (i - 1) * sizeof(u32), command_list.size());
+                    LOG_ERROR(HW_GPU, "Bad command at index {} (bytes {:#X}), buffer size {}",
+                              i - 1, (i - 1) * sizeof(u32), command_list.size());
                     UNIMPLEMENTED_MSG("ChSubmission mode {} is not implemented!", u32(mode));
                     break;
                 }
@@ -97,7 +96,8 @@ CDmaPusher::~CDmaPusher() = default;
 void CDmaPusher::ExecuteCommand(u32 method, u32 arg) {
     switch (current_class) {
     case ChClassId::Control:
-        LOG_TRACE(Service_NVDRV, "Class {} method {:#X} arg 0x{:X}", u32(current_class), method, arg);
+        LOG_TRACE(Service_NVDRV, "Class {} method {:#X} arg 0x{:X}", u32(current_class), method,
+                  arg);
         host_processor.ProcessMethod(host1x, Host1x::Control::Method(method), arg);
         break;
     default:
@@ -106,14 +106,16 @@ void CDmaPusher::ExecuteCommand(u32 method, u32 arg) {
         case ThiMethod::IncSyncpt: {
             const auto syncpoint_id = u32(arg & 0xFF);
             [[maybe_unused]] const auto cond = u32((arg >> 8) & 0xFF);
-            LOG_TRACE(Service_NVDRV, "Class {} IncSyncpt Method, syncpt {} cond {}", u32(current_class), syncpoint_id, cond);
+            LOG_TRACE(Service_NVDRV, "Class {} IncSyncpt Method, syncpt {} cond {}",
+                      u32(current_class), syncpoint_id, cond);
             auto& syncpoint_manager = host1x.GetSyncpointManager();
             syncpoint_manager.IncrementGuest(syncpoint_id);
             syncpoint_manager.IncrementHost(syncpoint_id);
             break;
         }
         case ThiMethod::SetMethod1:
-            LOG_TRACE(Service_NVDRV, "Class {} method {:#X} arg 0x{:X}", u32(current_class), u32(thi_regs.method_0), arg);
+            LOG_TRACE(Service_NVDRV, "Class {} method {:#X} arg 0x{:X}", u32(current_class),
+                      u32(thi_regs.method_0), arg);
             ProcessMethod(thi_regs.method_0, arg);
             break;
         default:

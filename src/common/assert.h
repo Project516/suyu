@@ -24,10 +24,10 @@ void AssertFailSoftImpl();
 #endif
 
 #define ASSERT_MSG(_a_, ...)                                                                       \
-    ([&]() YUZU_NO_INLINE {                                                                         \
+    ([&]() YUZU_NO_INLINE {                                                                        \
         auto&& assert_condition = (_a_);                                                           \
-        if (!(assert_condition)) [[unlikely]] {                                                   \
-            LOG_CRITICAL(Debug, __FILE__ ": assert " __VA_ARGS__);                                \
+        if (!(assert_condition)) [[unlikely]] {                                                    \
+            LOG_CRITICAL(Debug, __FILE__ ": assert " __VA_ARGS__);                                 \
             AssertFailSoftImpl();                                                                  \
         }                                                                                          \
     }())
@@ -35,7 +35,7 @@ void AssertFailSoftImpl();
 
 #define UNREACHABLE_MSG(...)                                                                       \
     do {                                                                                           \
-        LOG_CRITICAL(Debug, __FILE__ ": unreachable " __VA_ARGS__);                               \
+        LOG_CRITICAL(Debug, __FILE__ ": unreachable " __VA_ARGS__);                                \
         AssertFatalImpl();                                                                         \
     } while (0)
 #define UNREACHABLE() UNREACHABLE_MSG("")
@@ -62,7 +62,9 @@ void AssertFailSoftImpl();
 #define ASSERT_OR_EXECUTE_MSG(_a_, _b_, ...)                                                       \
     do {                                                                                           \
         ASSERT_MSG(_a_, __VA_ARGS__);                                                              \
-        if (!(_a_)) { _b_ }                                                                        \
+        if (!(_a_)) {                                                                              \
+            _b_                                                                                    \
+        }                                                                                          \
     } while (0)
 
 // If the assert is ignored, execute _b_

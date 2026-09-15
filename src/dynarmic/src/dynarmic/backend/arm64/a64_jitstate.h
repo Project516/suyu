@@ -11,7 +11,6 @@
 #include <array>
 
 #include "common/common_types.h"
-
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
 
 namespace Dynarmic::Backend::Arm64 {

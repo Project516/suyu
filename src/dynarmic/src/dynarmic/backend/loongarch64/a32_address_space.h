@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
 #include <ankerl/unordered_dense.h>
 
 #include "dynarmic/backend/loongarch64/code_block.h"
 #include "dynarmic/backend/loongarch64/emit_loongarch64.h"
+#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
 #include "dynarmic/interface/A32/config.h"
 #include "dynarmic/interface/halt_reason.h"
 #include "dynarmic/ir/basic_block.h"

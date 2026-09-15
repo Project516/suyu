@@ -8,8 +8,8 @@
 
 #include <array>
 #include <optional>
-#include <vector>
 #include <variant>
+#include <vector>
 
 #include "common/common_funcs.h"
 #include "common/common_types.h"
@@ -125,6 +125,7 @@ std::string IPv4AddressToString(IPv4Address ip_addr);
 u32 IPv4AddressToInteger(IPv4Address ip_addr);
 
 // named to avoid name collision with Windows macro
-std::variant<std::vector<AddrInfo>, GetAddrInfoError> GetAddressInfo(const std::string& host, const std::optional<std::string>& service);
+std::variant<std::vector<AddrInfo>, GetAddrInfoError> GetAddressInfo(
+    const std::string& host, const std::optional<std::string>& service);
 
 } // namespace Network

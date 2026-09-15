@@ -10,12 +10,12 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
-#include "common/common_types.h"
 
-#include "dynarmic/tests/rand_int.h"
+#include "common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/unpacked.h"
+#include "dynarmic/tests/rand_int.h"
 
 using namespace Dynarmic;
 using namespace Dynarmic::FP;

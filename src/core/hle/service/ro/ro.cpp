@@ -25,7 +25,7 @@ namespace {
 // Sessions = 0x03, NrrInfos = 0x40, NroInfos = 0x40
 // This may not be enough for some mods (plugin.nro dependant games) like SSBU
 // Suppose someone loads like 64 plugins of these, now what?
-constexpr size_t MaxSessions = 0x03; // No change
+constexpr size_t MaxSessions = 0x03;  // No change
 constexpr size_t MaxNrrInfos = 0x100; // Up to 256 NRRs
 constexpr size_t MaxNroInfos = 0x100; // Up to 256 NROs
 
@@ -183,7 +183,8 @@ struct ProcessContext {
             std::vector<u8> nro_data(size);
             m_process->GetMemory().ReadBlock(base_address, nro_data.data(), size);
             u32 hash_len = 0;
-            EVP_Digest(nro_data.data(), nro_data.size(), hash.data(), &hash_len, EVP_sha256(), nullptr);
+            EVP_Digest(nro_data.data(), nro_data.size(), hash.data(), &hash_len, EVP_sha256(),
+                       nullptr);
         }
 
         for (size_t i = 0; i < MaxNrrInfos; i++) {
@@ -205,7 +206,9 @@ struct ProcessContext {
         R_THROW(RO::ResultNotAuthorized);
     }
 
-    Result ValidateNro(ModuleId* out_module_id, u64* out_rx_size, u64* out_ro_size, u64* out_rw_size, u64 base_address, u64 expected_nro_size, u64 expected_bss_size) {
+    Result ValidateNro(ModuleId* out_module_id, u64* out_rx_size, u64* out_ro_size,
+                       u64* out_rw_size, u64 base_address, u64 expected_nro_size,
+                       u64 expected_bss_size) {
         // Ensure we have a process to work on.
         R_UNLESS(m_process != nullptr, RO::ResultInvalidProcess);
 
@@ -307,7 +310,8 @@ class RoContext {
 public:
     explicit RoContext() = default;
 
-    Result RegisterProcess(Kernel::KernelCore& kernel, size_t* out_context_id, Kernel::KProcess* process, u64 process_id) {
+    Result RegisterProcess(Kernel::KernelCore& kernel, size_t* out_context_id,
+                           Kernel::KProcess* process, u64 process_id) {
         // Validate process id.
         R_UNLESS(process->GetProcessId() == process_id, RO::ResultInvalidProcess);
 
@@ -551,16 +555,20 @@ public:
         R_RETURN(m_ro->UnregisterModuleInfo(m_context_id, nrr_address));
     }
 
-    Result RegisterProcessHandle(ClientProcessId client_pid, InCopyHandle<Kernel::KProcess> process) {
+    Result RegisterProcessHandle(ClientProcessId client_pid,
+                                 InCopyHandle<Kernel::KProcess> process) {
         // Register the process.
-        R_RETURN(m_ro->RegisterProcess(system.Kernel(), std::addressof(m_context_id), process.Get(), *client_pid));
+        R_RETURN(m_ro->RegisterProcess(system.Kernel(), std::addressof(m_context_id), process.Get(),
+                                       *client_pid));
     }
 
-    Result RegisterProcessModuleInfo(ClientProcessId client_pid, u64 nrr_address, u64 nrr_size, InCopyHandle<Kernel::KProcess> process) {
+    Result RegisterProcessModuleInfo(ClientProcessId client_pid, u64 nrr_address, u64 nrr_size,
+                                     InCopyHandle<Kernel::KProcess> process) {
         // Validate the process.
         R_TRY(m_ro->ValidateProcess(m_context_id, *client_pid));
         // Register the module.
-        R_RETURN(m_ro->RegisterModuleInfo(m_context_id, nrr_address, nrr_size, m_nrr_kind, m_nrr_kind == NrrKind::JitPlugin));
+        R_RETURN(m_ro->RegisterModuleInfo(m_context_id, nrr_address, nrr_size, m_nrr_kind,
+                                          m_nrr_kind == NrrKind::JitPlugin));
     }
 
 private:

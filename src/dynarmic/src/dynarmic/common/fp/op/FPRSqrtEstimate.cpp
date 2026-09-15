@@ -9,7 +9,6 @@
 #include "dynarmic/common/fp/op/FPRSqrtEstimate.h"
 
 #include "common/common_types.h"
-
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"

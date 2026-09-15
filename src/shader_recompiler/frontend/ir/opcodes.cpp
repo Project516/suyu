@@ -27,7 +27,7 @@ u8 NUM_ARGS[532] = {
 #undef OPCODE
 };
 
-}
+} // namespace Detail
 
 std::string_view NameOf(Opcode op) {
     return Detail::META_TABLE[static_cast<size_t>(op)].name;

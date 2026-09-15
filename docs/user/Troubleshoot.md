@@ -22,7 +22,7 @@
 *Platform(s) Affected*:
 - **Windows**
 
-**Error Log Entries:** 
+**Error Log Entries:**
 
 ```
 None
@@ -38,7 +38,7 @@ Faulting application start time: 0x1DB7C30D2972402
 Faulting application path: C:\temp\Eden-Windows\eden.exe
 Faulting module path: C:\WINDOWS\SYSTEM32\ntdll.dll
 Report Id: 4c8a6e13-9637-438c-b4d0-e802d279af66
-Faulting package full name: 
+Faulting package full name:
 Faulting package-relative application ID:
 ```
 
@@ -68,11 +68,11 @@ Faulting package-relative application ID:
 2. Confirm there are no logs created in the log directory.
     1. See the [How to Access Logs](./HowToAccessLogs.md) page for the log location if you need it.
     2. If there are any entries in here since you tried step 1, this is likely not your issue.
-3. Navigate to your *Windows Event Viewer* (Start Menu > **eventvwr.msc)**. 
+3. Navigate to your *Windows Event Viewer* (Start Menu > **eventvwr.msc)**.
 4. Expand **Windows Logs** and select **Application.**
-    
+
 5. Look for an entry with the Level of Error, and look for a message similar to the following
-    
+
     ```
     Faulting application name: Eden.exe, version: 0.0.0.0, time stamp: 0x6795dc3c
     Faulting module name: ntdll.dll, version: 10.0.26100.3037, time stamp: 0x95e6c489
@@ -83,17 +83,17 @@ Faulting package-relative application ID:
     Faulting application path: C:\temp\Eden-Windows\Eden.exe
     Faulting module path: C:\WINDOWS\SYSTEM32\ntdll.dll
     Report Id: 4c8a6e13-9637-438c-b4d0-e802d279af66
-    Faulting package full name: 
+    Faulting package full name:
     Faulting package-relative application ID:
     ```
-    
+
 6. Run a Command Prompt terminal Window as Administrator.
 7. Enter the following command and wait for it to complete.  It will take a while, just be patient and do other things while it completes.
-    
+
     ```
     DISM /Online /Cleanup-Image /RestoreHealth
     ```
-    
+
 8. Reboot your computer.
 9. Launch Eden and verify it is now working.
 </aside>

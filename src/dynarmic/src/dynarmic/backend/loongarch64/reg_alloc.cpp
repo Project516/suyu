@@ -7,11 +7,9 @@
 #include <array>
 #include <limits>
 
-#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
-
 #include "common/assert.h"
 #include "common/common_types.h"
-
+#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
 #include "dynarmic/common/always_false.h"
 
 namespace Dynarmic::Backend::LoongArch64 {

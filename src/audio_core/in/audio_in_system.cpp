@@ -15,9 +15,10 @@
 #include "core/hle/kernel/k_event.h"
 
 // See texture_cache/util.h
-template<typename T, size_t N>
+template <typename T, size_t N>
 #if BOOST_VERSION >= 108100 || __GNUC__ > 12
-[[nodiscard]] boost::container::static_vector<T, N> FixStaticVectorADL(const boost::container::static_vector<T, N>& v) {
+[[nodiscard]] boost::container::static_vector<T, N> FixStaticVectorADL(
+    const boost::container::static_vector<T, N>& v) {
     return v;
 }
 #else

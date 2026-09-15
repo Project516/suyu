@@ -49,12 +49,12 @@ Loader::ResultStatus ProgramMetadata::Load(VirtualFile file) {
     }
 
     LOG_INFO(Loader,
-                 "DIAG NPDM name='{}' size={} hash={:016x} flags={:#04x} is64={} addr_space={} "
-                 "prio={}",
-                 file->GetName(), total_size, fnv, npdm_header.flags,
-                 npdm_header.has_64_bit_instructions.Value(),
-                 static_cast<u32>(npdm_header.address_space_type.Value()),
-                 npdm_header.main_thread_priority);
+             "DIAG NPDM name='{}' size={} hash={:016x} flags={:#04x} is64={} addr_space={} "
+             "prio={}",
+             file->GetName(), total_size, fnv, npdm_header.flags,
+             npdm_header.has_64_bit_instructions.Value(),
+             static_cast<u32>(npdm_header.address_space_type.Value()),
+             npdm_header.main_thread_priority);
 
     if (sizeof(AcidHeader) != file->ReadObject(&acid_header, npdm_header.acid_offset)) {
         return Loader::ResultStatus::ErrorBadACIDHeader;

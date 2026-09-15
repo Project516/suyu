@@ -18,11 +18,10 @@
 #include "common/scope_exit.h"
 #include "common/settings.h"
 #include "video_core/buffer_cache/buffer_cache.h"
-#include "video_core/gpu_logging/gpu_logging.h"
 #include "video_core/control/channel_state.h"
-#include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/gpu_logging/gpu_logging.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
 #include "video_core/renderer_vulkan/blit_image.h"
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
@@ -48,7 +47,6 @@ namespace Vulkan {
 using Maxwell = Tegra::Engines::Maxwell3D::Regs;
 using VideoCommon::ImageViewId;
 using VideoCommon::ImageViewType;
-
 
 namespace {
 struct DrawParams {
@@ -150,7 +148,8 @@ VkRect2D GetScissorState(const Maxwell& regs, size_t index, u32 up_scale = 1, u3
     return scissor;
 }
 
-DrawParams MakeDrawParams(const Tegra::Engines::Maxwell3D::DrawManager::State& draw_state, u32 num_instances, bool is_indexed) {
+DrawParams MakeDrawParams(const Tegra::Engines::Maxwell3D::DrawManager::State& draw_state,
+                          u32 num_instances, bool is_indexed) {
     DrawParams params{
         .base_instance = draw_state.base_instance,
         .num_instances = num_instances,
@@ -213,7 +212,8 @@ RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra
                            guest_descriptor_queue, compute_pass_descriptor_queue, descriptor_pool),
       buffer_cache(device_memory, buffer_cache_runtime),
       query_cache_runtime(this, device_memory, buffer_cache, device, memory_allocator, scheduler,
-                          staging_pool, compute_pass_descriptor_queue, descriptor_pool, texture_cache),
+                          staging_pool, compute_pass_descriptor_queue, descriptor_pool,
+                          texture_cache),
       query_cache(gpu, *this, device_memory, query_cache_runtime),
       pipeline_cache(device_memory, device, scheduler, descriptor_pool, guest_descriptor_queue,
                      render_pass_cache, buffer_cache, texture_cache, gpu.ShaderNotify()),
@@ -251,7 +251,8 @@ void RasterizerVulkan::PrepareDraw(bool is_indexed, Func&& draw_func) {
 
     query_cache.NotifySegment(true);
     HandleTransformFeedback();
-    query_cache.CounterEnable(VideoCommon::QueryType::ZPassPixelCount64, maxwell3d->regs.zpass_pixel_count_enable);
+    query_cache.CounterEnable(VideoCommon::QueryType::ZPassPixelCount64,
+                              maxwell3d->regs.zpass_pixel_count_enable);
     draw_func();
 }
 
@@ -273,15 +274,17 @@ void RasterizerVulkan::Draw(bool is_indexed, u32 instance_count) {
         });
 
         // Log draw call
-        if (GPU::Logging::IsActive() &&
-            Settings::values.gpu_log_vulkan_calls.GetValue()) {
-            const std::string params = is_indexed ?
-                fmt::format("vertices={}, instances={}, firstIndex={}, baseVertex={}, baseInstance={}",
-                    draw_params.num_vertices, draw_params.num_instances,
-                    draw_params.first_index, draw_params.base_vertex, draw_params.base_instance) :
-                fmt::format("vertices={}, instances={}, firstVertex={}, firstInstance={}",
-                    draw_params.num_vertices, draw_params.num_instances,
-                    draw_params.base_vertex, draw_params.base_instance);
+        if (GPU::Logging::IsActive() && Settings::values.gpu_log_vulkan_calls.GetValue()) {
+            const std::string params =
+                is_indexed
+                    ? fmt::format("vertices={}, instances={}, firstIndex={}, baseVertex={}, "
+                                  "baseInstance={}",
+                                  draw_params.num_vertices, draw_params.num_instances,
+                                  draw_params.first_index, draw_params.base_vertex,
+                                  draw_params.base_instance)
+                    : fmt::format("vertices={}, instances={}, firstVertex={}, firstInstance={}",
+                                  draw_params.num_vertices, draw_params.num_instances,
+                                  draw_params.base_vertex, draw_params.base_instance);
             GPU::Logging::GPULogger::GetInstance().LogVulkanCall(
                 is_indexed ? "vkCmdDrawIndexed" : "vkCmdDraw", params, VK_SUCCESS);
         }
@@ -334,13 +337,12 @@ void RasterizerVulkan::DrawIndirect() {
         });
 
         // Log indirect draw call
-        if (GPU::Logging::IsActive() &&
-            Settings::values.gpu_log_vulkan_calls.GetValue()) {
-            const std::string log_params = fmt::format("drawCount={}, stride={}",
-                params.max_draw_counts, params.stride);
+        if (GPU::Logging::IsActive() && Settings::values.gpu_log_vulkan_calls.GetValue()) {
+            const std::string log_params =
+                fmt::format("drawCount={}, stride={}", params.max_draw_counts, params.stride);
             GPU::Logging::GPULogger::GetInstance().LogVulkanCall(
-                params.is_indexed ? "vkCmdDrawIndexedIndirect" : "vkCmdDrawIndirect",
-                log_params, VK_SUCCESS);
+                params.is_indexed ? "vkCmdDrawIndexedIndirect" : "vkCmdDrawIndirect", log_params,
+                VK_SUCCESS);
         }
     });
     buffer_cache.SetDrawIndirect(nullptr);
@@ -360,7 +362,8 @@ void RasterizerVulkan::DrawTexture() {
     UpdateDynamicStates();
 
     query_cache.NotifySegment(true);
-    query_cache.CounterEnable(VideoCommon::QueryType::ZPassPixelCount64, maxwell3d->regs.zpass_pixel_count_enable);
+    query_cache.CounterEnable(VideoCommon::QueryType::ZPassPixelCount64,
+                              maxwell3d->regs.zpass_pixel_count_enable);
     const auto& draw_texture_state = maxwell3d->draw_manager.draw_texture_state;
     const auto& sampler = texture_cache.GetSampler(draw_texture_state.src_sampler, false);
     const auto& texture = texture_cache.GetImageView(draw_texture_state.src_texture);
@@ -413,7 +416,8 @@ void RasterizerVulkan::Clear(u32 layer_count) {
     scheduler.RequestRenderpass(framebuffer);
 
     query_cache.NotifySegment(true);
-    query_cache.CounterEnable(VideoCommon::QueryType::ZPassPixelCount64, maxwell3d->regs.zpass_pixel_count_enable);
+    query_cache.CounterEnable(VideoCommon::QueryType::ZPassPixelCount64,
+                              maxwell3d->regs.zpass_pixel_count_enable);
     u32 up_scale = 1;
     u32 down_shift = 0;
     if (texture_cache.IsRescaling()) {
@@ -479,22 +483,26 @@ void RasterizerVulkan::Clear(u32 layer_count) {
 
     const u32 color_attachment = regs.clear_surface.RT;
     if (use_color && framebuffer->HasAspectColorBit(color_attachment)) {
-        const auto format = VideoCore::Surface::PixelFormatFromRenderTargetFormat(regs.rt[color_attachment].format);
+        const auto format =
+            VideoCore::Surface::PixelFormatFromRenderTargetFormat(regs.rt[color_attachment].format);
         bool is_integer = IsPixelFormatInteger(format);
         bool is_signed = IsPixelFormatSignedInteger(format);
         size_t int_size = PixelComponentSizeBitsInteger(format);
         VkClearValue clear_value{};
         if (!is_integer) {
-            std::memcpy(clear_value.color.float32, regs.clear_color.data(), regs.clear_color.size() * sizeof(f32));
+            std::memcpy(clear_value.color.float32, regs.clear_color.data(),
+                        regs.clear_color.size() * sizeof(f32));
         } else if (!is_signed) {
             for (size_t i = 0; i < 4; i++)
                 clear_value.color.uint32[i] = u32(f32(u64(int_size) << 1U) * regs.clear_color[i]);
         } else {
             for (size_t i = 0; i < 4; i++)
-                clear_value.color.int32[i] = s32(f32(s64(int_size - 1) << 1) * (regs.clear_color[i] - 0.5f));
+                clear_value.color.int32[i] =
+                    s32(f32(s64(int_size - 1) << 1) * (regs.clear_color[i] - 0.5f));
         }
 
-        if (regs.clear_surface.R && regs.clear_surface.G && regs.clear_surface.B && regs.clear_surface.A) {
+        if (regs.clear_surface.R && regs.clear_surface.G && regs.clear_surface.B &&
+            regs.clear_surface.A) {
             scheduler.Record([color_attachment, clear_value, clear_rect](vk::CommandBuffer cmdbuf) {
                 const VkClearAttachment attachment{
                     .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -504,7 +512,8 @@ void RasterizerVulkan::Clear(u32 layer_count) {
                 cmdbuf.ClearAttachments(attachment, clear_rect);
             });
         } else {
-            u8 color_mask = u8(regs.clear_surface.R | regs.clear_surface.G << 1 | regs.clear_surface.B << 2 | regs.clear_surface.A << 3);
+            u8 color_mask = u8(regs.clear_surface.R | regs.clear_surface.G << 1 |
+                               regs.clear_surface.B << 2 | regs.clear_surface.A << 3);
             Region2D dst_region = {
                 Offset2D{.x = clear_rect.rect.offset.x, .y = clear_rect.rect.offset.y},
                 Offset2D{.x = clear_rect.rect.offset.x + s32(clear_rect.rect.extent.width),
@@ -583,17 +592,17 @@ void RasterizerVulkan::DispatchCompute() {
         .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
         .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
     };
-    scheduler.Record([](vk::CommandBuffer cmdbuf) { cmdbuf.PipelineBarrier(vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                               0, READ_BARRIER); });
+    scheduler.Record([](vk::CommandBuffer cmdbuf) {
+        cmdbuf.PipelineBarrier(vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER,
+                               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, READ_BARRIER);
+    });
     scheduler.Record([dim](vk::CommandBuffer cmdbuf) { cmdbuf.Dispatch(dim[0], dim[1], dim[2]); });
 
     // Log compute dispatch
-    if (GPU::Logging::IsActive() &&
-        Settings::values.gpu_log_vulkan_calls.GetValue()) {
-        const std::string params = fmt::format("groupCountX={}, groupCountY={}, groupCountZ={}",
-            dim[0], dim[1], dim[2]);
-        GPU::Logging::GPULogger::GetInstance().LogVulkanCall(
-            "vkCmdDispatch", params, VK_SUCCESS);
+    if (GPU::Logging::IsActive() && Settings::values.gpu_log_vulkan_calls.GetValue()) {
+        const std::string params =
+            fmt::format("groupCountX={}, groupCountY={}, groupCountZ={}", dim[0], dim[1], dim[2]);
+        GPU::Logging::GPULogger::GetInstance().LogVulkanCall("vkCmdDispatch", params, VK_SUCCESS);
     }
 }
 
@@ -1040,10 +1049,9 @@ void RasterizerVulkan::UpdateDynamicStates() {
             UpdateStencilTestEnable(regs);
         }
         if (topology_changed) {
-            scheduler.Record([topology_vk = MaxwellToVK::PrimitiveTopology(device, topology)](
-                                 vk::CommandBuffer cmdbuf) {
-                cmdbuf.SetPrimitiveTopologyEXT(topology_vk);
-            });
+            scheduler.Record(
+                [topology_vk = MaxwellToVK::PrimitiveTopology(device, topology)](
+                    vk::CommandBuffer cmdbuf) { cmdbuf.SetPrimitiveTopologyEXT(topology_vk); });
         }
     }
 
@@ -1062,12 +1070,11 @@ void RasterizerVulkan::UpdateDynamicStates() {
         // AMD Workaround: LogicOp incompatible with float render targets
         if (device.GetDriverID() == VkDriverIdKHR::VK_DRIVER_ID_AMD_OPEN_SOURCE ||
             device.GetDriverID() == VkDriverIdKHR::VK_DRIVER_ID_AMD_PROPRIETARY) {
-            const auto has_float = std::any_of(
-                regs.vertex_attrib_format.begin(), regs.vertex_attrib_format.end(),
-                [](const auto& attrib) {
-                    return attrib.type == Maxwell3D::Regs::VertexAttribute::Type::Float;
-                }
-            );
+            const auto has_float =
+                std::any_of(regs.vertex_attrib_format.begin(), regs.vertex_attrib_format.end(),
+                            [](const auto& attrib) {
+                                return attrib.type == Maxwell3D::Regs::VertexAttribute::Type::Float;
+                            });
             if (regs.logic_op.enable) {
                 regs.logic_op.enable = static_cast<u32>(!has_float);
             }
@@ -1088,7 +1095,8 @@ void RasterizerVulkan::UpdateDynamicStates() {
     }
 
     if (device.IsExtVertexInputDynamicStateSupported()) {
-        if (auto* gp = pipeline_cache.CurrentGraphicsPipeline(); gp && gp->HasDynamicVertexInput()) {
+        if (auto* gp = pipeline_cache.CurrentGraphicsPipeline();
+            gp && gp->HasDynamicVertexInput()) {
             UpdateVertexInput(regs);
         }
     }
@@ -1101,7 +1109,9 @@ void RasterizerVulkan::HandleTransformFeedback() {
     if (!device.IsExtTransformFeedbackSupported()) {
         if (regs.transform_feedback_enabled != 0) {
             std::call_once(warn_unsupported, [&] {
-                LOG_WARNING(Render_Vulkan, "Transform feedback requested by guest but VK_EXT_transform_feedback is unavailable; queries disabled");
+                LOG_WARNING(Render_Vulkan,
+                            "Transform feedback requested by guest but VK_EXT_transform_feedback "
+                            "is unavailable; queries disabled");
             });
         } else {
             std::call_once(warn_unsupported, [&] {
@@ -1115,8 +1125,8 @@ void RasterizerVulkan::HandleTransformFeedback() {
     if (regs.transform_feedback_enabled != 0) {
         // Log extension usage for transform feedback
         if (GPU::Logging::IsActive()) {
-            GPU::Logging::GPULogger::GetInstance().LogExtensionUsage(
-                "VK_EXT_transform_feedback", "HandleTransformFeedback");
+            GPU::Logging::GPULogger::GetInstance().LogExtensionUsage("VK_EXT_transform_feedback",
+                                                                     "HandleTransformFeedback");
         }
         UNIMPLEMENTED_IF(regs.IsShaderConfigEnabled(Maxwell::ShaderType::TessellationInit) ||
                          regs.IsShaderConfigEnabled(Maxwell::ShaderType::Tessellation));
@@ -1148,7 +1158,8 @@ void RasterizerVulkan::UpdateViewportsState(Tegra::Engines::Maxwell3D::Regs& reg
             .maxDepth = 1.0f,
         };
         scheduler.Record([this, viewport](vk::CommandBuffer cmdbuf) {
-            const u32 num_viewports = std::min<u32>(device.GetMaxViewports(), Maxwell::NumViewports);
+            const u32 num_viewports =
+                std::min<u32>(device.GetMaxViewports(), Maxwell::NumViewports);
             std::array<VkViewport, Maxwell::NumViewports> viewport_list{};
             viewport_list.fill(viewport);
             const vk::Span<VkViewport> viewports(viewport_list.data(), num_viewports);
@@ -1190,7 +1201,7 @@ void RasterizerVulkan::UpdateScissorsState(Tegra::Engines::Maxwell3D::Regs& regs
         VkRect2D scissor{};
         scissor.offset.x = static_cast<int32_t>(x);
         scissor.offset.y = static_cast<int32_t>(y);
-        scissor.extent.width  = width;
+        scissor.extent.width = width;
         scissor.extent.height = height;
         scheduler.Record([this, scissor](vk::CommandBuffer cmdbuf) {
             const u32 num_scissors = std::min<u32>(device.GetMaxViewports(), Maxwell::NumViewports);
@@ -1447,13 +1458,13 @@ void RasterizerVulkan::UpdatePrimitiveRestartEnable(Tegra::Engines::Maxwell3D::R
     if (device.IsMoltenVK()) {
         enable = true;
     } else if (enable) {
-        const auto topology = MaxwellToVK::PrimitiveTopology(device, maxwell3d->draw_manager.draw_state.topology);
+        const auto topology =
+            MaxwellToVK::PrimitiveTopology(device, maxwell3d->draw_manager.draw_state.topology);
         enable = IsPrimitiveRestartSupported(device, topology);
     }
 
-    scheduler.Record([enable](vk::CommandBuffer cmdbuf) {
-        cmdbuf.SetPrimitiveRestartEnableEXT(enable);
-    });
+    scheduler.Record(
+        [enable](vk::CommandBuffer cmdbuf) { cmdbuf.SetPrimitiveRestartEnableEXT(enable); });
 }
 
 void RasterizerVulkan::UpdateRasterizerDiscardEnable(Tegra::Engines::Maxwell3D::Regs& regs) {
@@ -1527,9 +1538,8 @@ void RasterizerVulkan::UpdateLineRasterizationMode(Tegra::Engines::Maxwell3D::Re
             });
         }
     }
-    scheduler.Record([mode](vk::CommandBuffer cmdbuf) {
-        cmdbuf.SetLineRasterizationModeEXT(mode);
-    });
+    scheduler.Record(
+        [mode](vk::CommandBuffer cmdbuf) { cmdbuf.SetLineRasterizationModeEXT(mode); });
 }
 
 void RasterizerVulkan::UpdateDepthBiasEnable(Tegra::Engines::Maxwell3D::Regs& regs) {
@@ -1563,7 +1573,8 @@ void RasterizerVulkan::UpdateDepthBiasEnable(Tegra::Engines::Maxwell3D::Regs& re
     };
     const u32 topology_index = u32(maxwell3d->draw_manager.draw_state.topology);
     const u32 enable = enabled_lut[POLYGON_OFFSET_ENABLE_LUT[topology_index]];
-    scheduler.Record([enable](vk::CommandBuffer cmdbuf) { cmdbuf.SetDepthBiasEnableEXT(enable != 0); });
+    scheduler.Record(
+        [enable](vk::CommandBuffer cmdbuf) { cmdbuf.SetDepthBiasEnableEXT(enable != 0); });
 }
 
 void RasterizerVulkan::UpdateLogicOpEnable(Tegra::Engines::Maxwell3D::Regs& regs) {
@@ -1820,13 +1831,10 @@ void RasterizerVulkan::UpdateVertexInput(Tegra::Engines::Maxwell3D::Regs& regs) 
     boost::container::static_vector<VkVertexInputBindingDescription2EXT, 32> bindings;
     boost::container::static_vector<VkVertexInputAttributeDescription2EXT, 32> attributes;
 
-    const u32 max_attributes =
-        static_cast<u32>(std::min<size_t>(Maxwell::NumVertexAttributes,
-                                          device.GetMaxVertexInputAttributes()));
-    const u32 max_bindings =
-        static_cast<u32>(std::min<size_t>(Maxwell::NumVertexArrays,
-                                          device.GetMaxVertexInputBindings()));
-
+    const u32 max_attributes = static_cast<u32>(
+        std::min<size_t>(Maxwell::NumVertexAttributes, device.GetMaxVertexInputAttributes()));
+    const u32 max_bindings = static_cast<u32>(
+        std::min<size_t>(Maxwell::NumVertexArrays, device.GetMaxVertexInputBindings()));
 
     for (u32 index = 0; index < max_attributes; ++index) {
         const Maxwell::VertexAttribute attribute{regs.vertex_attrib_format[index]};

@@ -10,12 +10,13 @@
 
 #include <cstddef>
 #include <tuple>
+
 #include <ankerl/unordered_dense.h>
 
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
 #include "dynarmic/backend/exception_handler.h"
 #include "dynarmic/ir/location_descriptor.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::Backend::Arm64 {
 

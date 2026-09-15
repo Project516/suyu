@@ -13,10 +13,7 @@
 namespace Tegra {
 
 Decoder::Decoder(Host1x::Host1x& host1x_, s32 id_, const Host1x::NvdecCommon::NvdecRegisters& regs_)
-    : host1x(host1x_)
-    , regs{regs_}
-    , id{id_}
-{}
+    : host1x(host1x_), regs{regs_}, id{id_} {}
 
 Decoder::~Decoder() = default;
 

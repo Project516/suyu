@@ -13,10 +13,7 @@
 namespace Kernel {
 
 KLightSession::KLightSession(KernelCore& kernel)
-    : KAutoObjectWithSlabHeapAndContainer(kernel)
-    , m_server(kernel)
-    , m_client(kernel)
-{}
+    : KAutoObjectWithSlabHeapAndContainer(kernel), m_server(kernel), m_client(kernel) {}
 KLightSession::~KLightSession() = default;
 
 void KLightSession::Initialize(KernelCore& kernel, KClientPort* client_port, uintptr_t name) {

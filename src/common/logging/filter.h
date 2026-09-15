@@ -6,5 +6,4 @@
 // Filter, GetLogClassName, GetLevelName come from common/logging.h
 #include "common/logging.h"
 
-namespace Common::Log {
-} // namespace Common::Log
+namespace Common::Log {} // namespace Common::Log

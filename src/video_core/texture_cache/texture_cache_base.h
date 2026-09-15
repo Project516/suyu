@@ -14,17 +14,17 @@
 #include <type_traits>
 // TODO: find out which don't require stable iters
 #include <unordered_map>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 #include <boost/container/small_vector.hpp>
 #include <boost/container/static_vector.hpp>
 #include <queue>
 
+#include <ranges>
 #include "common/common_types.h"
 #include "common/hash.h"
 #include "common/literals.h"
 #include "common/lru_cache.h"
-#include <ranges>
 #include "common/scratch_buffer.h"
 #include "common/slot_vector.h"
 #include "common/thread_worker.h"
@@ -68,7 +68,8 @@ struct AsyncDecodeContext {
     std::atomic_bool complete;
 };
 
-using TextureCacheGPUMap = ankerl::unordered_dense::map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>;
+using TextureCacheGPUMap =
+    ankerl::unordered_dense::map<u64, std::vector<ImageId>, Common::IdentityHash<u64>>;
 
 class TextureCacheChannelInfo : public ChannelInfo {
 public:
@@ -443,8 +444,10 @@ private:
     u64 last_framebuffer_serial = 0;
 
     ankerl::unordered_dense::map<RenderTargets, FramebufferId> framebuffers;
-    ankerl::unordered_dense::map<u64, std::vector<ImageMapId>, Common::IdentityHash<u64>> page_table;
-    ankerl::unordered_dense::map<ImageId, boost::container::small_vector<ImageViewId, 16>> sparse_views;
+    ankerl::unordered_dense::map<u64, std::vector<ImageMapId>, Common::IdentityHash<u64>>
+        page_table;
+    ankerl::unordered_dense::map<ImageId, boost::container::small_vector<ImageViewId, 16>>
+        sparse_views;
 
     DAddr virtual_invalid_space{};
 
@@ -491,9 +494,9 @@ private:
     };
     Common::LeastRecentlyUsedCache<LRUItemParams> lru_cache;
 
- #ifdef YUZU_LEGACY
+#ifdef YUZU_LEGACY
     static constexpr size_t TICKS_TO_DESTROY = 6;
- #else
+#else
     static constexpr size_t TICKS_TO_DESTROY = 8;
 #endif
     DelayedDestructionRing<Image, TICKS_TO_DESTROY> sentenced_images;

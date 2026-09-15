@@ -14,8 +14,9 @@
 
 namespace Service::NS {
 
-IQueryService::IQueryService(Core::System& system_) : ServiceFramework{system_, "pdm:qry"},
-    play_time_manager{std::make_unique<PlayTime::PlayTimeManager>()} {
+IQueryService::IQueryService(Core::System& system_)
+    : ServiceFramework{system_, "pdm:qry"}, play_time_manager{
+                                                std::make_unique<PlayTime::PlayTimeManager>()} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, nullptr, "QueryAppletEvent"},

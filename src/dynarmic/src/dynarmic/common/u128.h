@@ -11,8 +11,8 @@
 #include <tuple>
 #include <type_traits>
 
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic {
 
@@ -22,7 +22,8 @@ struct u128 {
     u128(u128&&) = default;
     u128& operator=(const u128&) = default;
     u128& operator=(u128&&) = default;
-    explicit u128(u64 lower_, u64 upper_) : lower(lower_), upper(upper_) {}
+    explicit u128(u64 lower_, u64 upper_)
+            : lower(lower_), upper(upper_) {}
 
     u64 lower = 0;
     u64 upper = 0;

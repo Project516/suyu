@@ -15,7 +15,9 @@ namespace Service::HID {
 
 Result SharedMemoryHolder::Initialize(Core::System& system) {
     shared_memory = Kernel::KSharedMemory::Create(system.Kernel());
-    const Result result = shared_memory->Initialize(system.Kernel(), system.DeviceMemory(), nullptr, Kernel::Svc::MemoryPermission::None, Kernel::Svc::MemoryPermission::Read, sizeof(SharedMemoryFormat));
+    const Result result = shared_memory->Initialize(
+        system.Kernel(), system.DeviceMemory(), nullptr, Kernel::Svc::MemoryPermission::None,
+        Kernel::Svc::MemoryPermission::Read, sizeof(SharedMemoryFormat));
     if (result.IsError()) {
         return result;
     }

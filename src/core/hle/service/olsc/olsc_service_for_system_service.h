@@ -45,7 +45,8 @@ private:
     Result GetRemoteStorageController(Out<SharedPointer<IRemoteStorageController>> out_interface);
     Result GetDaemonController(Out<SharedPointer<IDaemonController>> out_interface);
     Result GetDataTransferPolicy(Out<DataTransferPolicy> out_policy, u64 application_id);
-    Result GetTransferTaskErrorInfo(Out<TransferTaskErrorInfo> out_info, Common::UUID uid, u64 application_id);
+    Result GetTransferTaskErrorInfo(Out<TransferTaskErrorInfo> out_info, Common::UUID uid,
+                                    u64 application_id);
     Result GetOlscServiceForSystemService(
         Out<SharedPointer<IOlscServiceForSystemService>> out_interface);
 };

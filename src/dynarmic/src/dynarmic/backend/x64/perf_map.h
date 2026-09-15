@@ -8,9 +8,8 @@
 
 #pragma once
 
-#include <string_view>
-
 #include <bit>
+#include <string_view>
 
 namespace Dynarmic::Backend::X64 {
 
@@ -25,7 +24,8 @@ void PerfMapRegister(T start, const void* end, std::string_view friendly_name) n
 void PerfMapClear();
 #else
 // Resolve to no-op (compiler thinks fmt has side effects)
-template<typename T> inline void PerfMapRegister(T, const void*, std::string_view) noexcept {}
+template<typename T>
+inline void PerfMapRegister(T, const void*, std::string_view) noexcept {}
 inline void PerfMapClear() noexcept {}
 #endif
 

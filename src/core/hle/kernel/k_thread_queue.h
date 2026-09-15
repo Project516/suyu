@@ -22,9 +22,11 @@ public:
         m_hardware_timer = timer;
     }
 
-    virtual void NotifyAvailable(KernelCore& kernel, KThread* waiting_thread, KSynchronizationObject* signaled_object, Result wait_result);
+    virtual void NotifyAvailable(KernelCore& kernel, KThread* waiting_thread,
+                                 KSynchronizationObject* signaled_object, Result wait_result);
     virtual void EndWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result);
-    virtual void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result, bool cancel_timer_task);
+    virtual void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result,
+                            bool cancel_timer_task);
 
 private:
     KHardwareTimer* m_hardware_timer{};

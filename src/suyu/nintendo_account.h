@@ -4,15 +4,15 @@
 #pragma once
 
 #include <cstdio>
+#include <vector>
+#include <QDialog>
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSettings>
 #include <QString>
-#include <vector>
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -120,7 +120,7 @@ private:
     class QDialog* vgc_dialog_ = nullptr;
     class QTimer* vgc_poll_timer_ = nullptr;
     int vgc_poll_attempts_ = 0;
-    QJsonArray vgc_accum_;   ///< pages accumulated across FetchVgcPage calls
+    QJsonArray vgc_accum_; ///< pages accumulated across FetchVgcPage calls
 
     QLabel* status_label{};
     QLabel* nickname_label{};

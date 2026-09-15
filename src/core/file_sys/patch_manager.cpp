@@ -133,8 +133,7 @@ std::string GetUpdateVersionStringFromSlot(const ContentProvider* provider, u64 
     }
 
     auto control_nca = provider->GetEntry(update_tid, ContentRecordType::Control);
-    if (control_nca == nullptr ||
-        control_nca->GetStatus() != Loader::ResultStatus::Success) {
+    if (control_nca == nullptr || control_nca->GetStatus() != Loader::ResultStatus::Success) {
         return {};
     }
 
@@ -223,11 +222,12 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
                     // which is how a title can boot an old on-cart update
                     // while a newer one sits unused in NAND.
                     for (const auto& update_entry : manual_update_versions) {
-                        LOG_INFO(Loader,
-                                 "DIAG update candidate (manual): version={} ({}.{}.{}) tid={:016X}",
-                                 update_entry.version, (update_entry.version >> 26) & 0x3F,
-                                 (update_entry.version >> 20) & 0x3F,
-                                 (update_entry.version >> 16) & 0xF, update_tid);
+                        LOG_INFO(
+                            Loader,
+                            "DIAG update candidate (manual): version={} ({}.{}.{}) tid={:016X}",
+                            update_entry.version, (update_entry.version >> 26) & 0x3F,
+                            (update_entry.version >> 20) & 0x3F, (update_entry.version >> 16) & 0xF,
+                            update_tid);
                     }
                     for (const auto& update_entry : manual_update_versions) {
                         if (!IsVersionedExternalUpdateDisabled(disabled, update_entry.version)) {
@@ -246,20 +246,26 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     if (!checked_external && !checked_manual) {
         // Only enable NAND update if it exists AND is not disabled
         // We need to check if an update actually exists in the content provider
-        const bool has_nand_update = content_provider.HasEntry(update_tid, ContentRecordType::Program);
+        const bool has_nand_update =
+            content_provider.HasEntry(update_tid, ContentRecordType::Program);
 
         if (has_nand_update) {
-            const bool nand_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update (NAND)") != disabled.cend();
-            const bool sdmc_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update (SDMC)") != disabled.cend();
-            const bool generic_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update") != disabled.cend();
+            const bool nand_disabled =
+                std::find(disabled.cbegin(), disabled.cend(), "Update (NAND)") != disabled.cend();
+            const bool sdmc_disabled =
+                std::find(disabled.cbegin(), disabled.cend(), "Update (SDMC)") != disabled.cend();
+            const bool generic_disabled =
+                std::find(disabled.cbegin(), disabled.cend(), "Update") != disabled.cend();
 
             if (!nand_disabled && !sdmc_disabled && !generic_disabled) {
                 update_disabled = false;
             }
         }
     } else if (update_disabled && content_union) {
-        const bool nand_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update (NAND)") != disabled.cend();
-        const bool sdmc_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update (SDMC)") != disabled.cend();
+        const bool nand_disabled =
+            std::find(disabled.cbegin(), disabled.cend(), "Update (NAND)") != disabled.cend();
+        const bool sdmc_disabled =
+            std::find(disabled.cbegin(), disabled.cend(), "Update (SDMC)") != disabled.cend();
 
         if (!nand_disabled || !sdmc_disabled) {
             const auto nand_sdmc_entries = content_union->ListEntriesFilterOrigin(
@@ -289,7 +295,8 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
     if (enabled_version.has_value() && content_union) {
         const auto* external_provider = content_union->GetExternalProvider();
         if (external_provider) {
-            auto file = external_provider->GetEntryForVersion(update_tid, ContentRecordType::Program, *enabled_version);
+            auto file = external_provider->GetEntryForVersion(
+                update_tid, ContentRecordType::Program, *enabled_version);
             if (file != nullptr) {
                 update = std::make_unique<NCA>(file);
             }
@@ -300,7 +307,8 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
             const auto* manual_provider = static_cast<const ManualContentProvider*>(
                 content_union->GetSlotProvider(ContentProviderUnionSlot::FrontendManual));
             if (manual_provider) {
-                auto file = manual_provider->GetEntryForVersion(update_tid, ContentRecordType::Program, *enabled_version);
+                auto file = manual_provider->GetEntryForVersion(
+                    update_tid, ContentRecordType::Program, *enabled_version);
                 if (file != nullptr) {
                     update = std::make_unique<NCA>(file);
                 }
@@ -317,7 +325,8 @@ VirtualDir PatchManager::PatchExeFS(VirtualDir exefs) const {
         // to NAND. Naming the slot is the difference between knowing that and
         // guessing at it.
         if (content_union) {
-            const auto slot = content_union->GetSlotForEntry(update_tid, ContentRecordType::Program);
+            const auto slot =
+                content_union->GetSlotForEntry(update_tid, ContentRecordType::Program);
             LOG_INFO(Loader, "DIAG update source: tid={:016X} slot={}", update_tid,
                      slot.has_value() ? static_cast<int>(*slot) : -1);
         }
@@ -496,7 +505,8 @@ bool PatchManager::HasNSOPatch(const BuildID& build_id_, std::string_view name) 
     return !CollectPatches(patch_dirs, build_id).empty();
 }
 
-std::vector<Core::Memory::CheatEntry> PatchManager::CreateCheatList(const BuildID& build_id_) const {
+std::vector<Core::Memory::CheatEntry> PatchManager::CreateCheatList(
+    const BuildID& build_id_) const {
     const auto load_dir = fs_controller.GetModificationLoadRoot(title_id);
     if (load_dir == nullptr) {
         LOG_ERROR(Loader, "Cannot load mods for invalid title_id={:016X}", title_id);
@@ -505,16 +515,19 @@ std::vector<Core::Memory::CheatEntry> PatchManager::CreateCheatList(const BuildI
 
     const auto& disabled = Settings::values.disabled_addons[title_id];
     auto patch_dirs = load_dir->GetSubdirectories();
-    std::sort(patch_dirs.begin(), patch_dirs.end(), [](auto const& l, auto const& r) { return l->GetName() < r->GetName(); });
+    std::sort(patch_dirs.begin(), patch_dirs.end(),
+              [](auto const& l, auto const& r) { return l->GetName() < r->GetName(); });
 
     // <mod dir> / <folder> / cheats / <build id>.txt
     std::vector<Core::Memory::CheatEntry> out;
     for (const auto& subdir : patch_dirs) {
         if (std::find(disabled.cbegin(), disabled.cend(), subdir->GetName()) == disabled.cend()) {
-            if (auto cheats_dir = FindSubdirectoryCaseless(subdir, "cheats"); cheats_dir != nullptr) {
+            if (auto cheats_dir = FindSubdirectoryCaseless(subdir, "cheats");
+                cheats_dir != nullptr) {
                 if (auto const res = ReadCheatFileFromFolder(title_id, build_id_, cheats_dir, true))
                     std::copy(res->begin(), res->end(), std::back_inserter(out));
-                if (auto const res = ReadCheatFileFromFolder(title_id, build_id_, cheats_dir, false))
+                if (auto const res =
+                        ReadCheatFileFromFolder(title_id, build_id_, cheats_dir, false))
                     std::copy(res->begin(), res->end(), std::back_inserter(out));
             }
         }
@@ -523,14 +536,17 @@ std::vector<Core::Memory::CheatEntry> PatchManager::CreateCheatList(const BuildI
     // <mod dir> / <cheat file>.txt
     for (auto const& f : load_dir->GetFiles()) {
         auto const name = f->GetName();
-        if (name.starts_with("cheat_") && std::find(disabled.cbegin(), disabled.cend(), name) == disabled.cend()) {
+        if (name.starts_with("cheat_") &&
+            std::find(disabled.cbegin(), disabled.cend(), name) == disabled.cend()) {
             std::vector<u8> data(f->GetSize());
             if (f->Read(data.data(), data.size()) == data.size()) {
                 const Core::Memory::TextCheatParser parser;
-                auto const res = parser.Parse(std::string_view(reinterpret_cast<const char*>(data.data()), data.size()));
+                auto const res = parser.Parse(
+                    std::string_view(reinterpret_cast<const char*>(data.data()), data.size()));
                 std::copy(res.begin(), res.end(), std::back_inserter(out));
             } else {
-                LOG_INFO(Common_Filesystem, "Failed to read cheats file for title_id={:016X}", title_id);
+                LOG_INFO(Common_Filesystem, "Failed to read cheats file for title_id={:016X}",
+                         title_id);
             }
         }
     }
@@ -669,7 +685,8 @@ VirtualFile PatchManager::PatchRomFS(const NCA* base_nca, VirtualFile base_romfs
                     if (!IsVersionedExternalUpdateDisabled(disabled, update_entry.version)) {
                         update_disabled = false;
                         enabled_version = update_entry.version;
-                        update_raw = external_provider->GetEntryForVersion(update_tid, type, update_entry.version);
+                        update_raw = external_provider->GetEntryForVersion(update_tid, type,
+                                                                           update_entry.version);
                         break;
                     }
                 }
@@ -688,7 +705,8 @@ VirtualFile PatchManager::PatchRomFS(const NCA* base_nca, VirtualFile base_romfs
                         if (!IsVersionedExternalUpdateDisabled(disabled, update_entry.version)) {
                             update_disabled = false;
                             enabled_version = update_entry.version;
-                            update_raw = manual_provider->GetEntryForVersion(update_tid, type, update_entry.version);
+                            update_raw = manual_provider->GetEntryForVersion(update_tid, type,
+                                                                             update_entry.version);
                             break;
                         }
                     }
@@ -698,9 +716,12 @@ VirtualFile PatchManager::PatchRomFS(const NCA* base_nca, VirtualFile base_romfs
     }
 
     if (!checked_external && !checked_manual) {
-        const bool nand_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update (NAND)") != disabled.cend();
-        const bool sdmc_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update (SDMC)") != disabled.cend();
-        const bool generic_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update") != disabled.cend();
+        const bool nand_disabled =
+            std::find(disabled.cbegin(), disabled.cend(), "Update (NAND)") != disabled.cend();
+        const bool sdmc_disabled =
+            std::find(disabled.cbegin(), disabled.cend(), "Update (SDMC)") != disabled.cend();
+        const bool generic_disabled =
+            std::find(disabled.cbegin(), disabled.cend(), "Update") != disabled.cend();
 
         if (!nand_disabled && !sdmc_disabled && !generic_disabled) {
             update_disabled = false;
@@ -709,8 +730,10 @@ VirtualFile PatchManager::PatchRomFS(const NCA* base_nca, VirtualFile base_romfs
             update_raw = content_provider.GetEntryRaw(update_tid, type);
         }
     } else if (update_disabled && content_union) {
-        const bool nand_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update (NAND)") != disabled.cend();
-        const bool sdmc_disabled = std::find(disabled.cbegin(), disabled.cend(), "Update (SDMC)") != disabled.cend();
+        const bool nand_disabled =
+            std::find(disabled.cbegin(), disabled.cend(), "Update (NAND)") != disabled.cend();
+        const bool sdmc_disabled =
+            std::find(disabled.cbegin(), disabled.cend(), "Update (SDMC)") != disabled.cend();
 
         if (!nand_disabled || !sdmc_disabled) {
             const auto nand_sdmc_entries = content_union->ListEntriesFilterOrigin(
@@ -838,7 +861,6 @@ std::vector<Patch> PatchManager::GetPatches(VirtualFile update_raw) const {
                 const auto update_disabled =
                     IsVersionedExternalUpdateDisabled(disabled, update_entry.version);
 
-
                 Patch update_patch = {.enabled = !update_disabled,
                                       .name = "Update",
                                       .version = version_str,
@@ -883,17 +905,17 @@ std::vector<Patch> PatchManager::GetPatches(VirtualFile update_raw) const {
             std::string source_suffix;
 
             switch (slot) {
-                case ContentProviderUnionSlot::UserNAND:
-                case ContentProviderUnionSlot::SysNAND:
-                    source_type = PatchSource::NAND;
-                    source_suffix = " (NAND)";
-                    break;
-                case ContentProviderUnionSlot::SDMC:
-                    source_type = PatchSource::SDMC;
-                    source_suffix = " (SDMC)";
-                    break;
-                default:
-                    break;
+            case ContentProviderUnionSlot::UserNAND:
+            case ContentProviderUnionSlot::SysNAND:
+                source_type = PatchSource::NAND;
+                source_suffix = " (NAND)";
+                break;
+            case ContentProviderUnionSlot::SDMC:
+                source_type = PatchSource::SDMC;
+                source_suffix = " (SDMC)";
+                break;
+            default:
+                break;
             }
 
             std::string version_str;
@@ -969,7 +991,8 @@ std::vector<Patch> PatchManager::GetPatches(VirtualFile update_raw) const {
     if (mod_dir != nullptr) {
         for (auto const& f : mod_dir->GetFiles())
             if (auto const name = f->GetName(); name.starts_with("cheat_")) {
-                auto const mod_disabled = std::find(disabled.begin(), disabled.end(), name) != disabled.end();
+                auto const mod_disabled =
+                    std::find(disabled.begin(), disabled.end(), name) != disabled.end();
                 out.push_back({
                     .enabled = !mod_disabled,
                     .name = name,
@@ -999,7 +1022,7 @@ std::vector<Patch> PatchManager::GetPatches(VirtualFile update_raw) const {
                     } else if (std::find(EXEFS_FILE_NAMES.begin(), EXEFS_FILE_NAMES.end(),
                                          file->GetName()) != EXEFS_FILE_NAMES.end()) {
                         layeredfs = true;
-                                         }
+                    }
                 }
 
                 if (ips)
@@ -1020,7 +1043,8 @@ std::vector<Patch> PatchManager::GetPatches(VirtualFile update_raw) const {
             if (types.empty())
                 continue;
 
-            const auto mod_disabled = std::find(disabled.begin(), disabled.end(), mod->GetName()) != disabled.end();
+            const auto mod_disabled =
+                std::find(disabled.begin(), disabled.end(), mod->GetName()) != disabled.end();
             out.push_back({.enabled = !mod_disabled,
                            .name = mod->GetName(),
                            .version = types,
@@ -1063,8 +1087,8 @@ std::vector<Patch> PatchManager::GetPatches(VirtualFile update_raw) const {
     bool has_nand_dlc = false;
     bool has_sdmc_dlc = false;
     bool has_other_dlc = false;
-    const auto dlc_entries_with_origin =
-        content_union->ListEntriesFilterOrigin(std::nullopt, TitleType::AOC, ContentRecordType::Data);
+    const auto dlc_entries_with_origin = content_union->ListEntriesFilterOrigin(
+        std::nullopt, TitleType::AOC, ContentRecordType::Data);
 
     dlc_match.reserve(dlc_entries_with_origin.size());
     for (const auto& [slot, entry] : dlc_entries_with_origin) {
@@ -1095,20 +1119,20 @@ std::vector<Patch> PatchManager::GetPatches(VirtualFile update_raw) const {
         }
 
         switch (slot) {
-            case ContentProviderUnionSlot::External:
-            case ContentProviderUnionSlot::FrontendManual:
-                has_external_dlc = true;
-                break;
-            case ContentProviderUnionSlot::UserNAND:
-            case ContentProviderUnionSlot::SysNAND:
-                has_nand_dlc = true;
-                break;
-            case ContentProviderUnionSlot::SDMC:
-                has_sdmc_dlc = true;
-                break;
-            default:
-                has_other_dlc = true;
-                break;
+        case ContentProviderUnionSlot::External:
+        case ContentProviderUnionSlot::FrontendManual:
+            has_external_dlc = true;
+            break;
+        case ContentProviderUnionSlot::UserNAND:
+        case ContentProviderUnionSlot::SysNAND:
+            has_nand_dlc = true;
+            break;
+        case ContentProviderUnionSlot::SDMC:
+            has_sdmc_dlc = true;
+            break;
+        default:
+            has_other_dlc = true;
+            break;
         }
         dlc_match.push_back(entry);
     }

@@ -25,7 +25,6 @@
 #include "shader_recompiler/frontend/maxwell/control_flow.h"
 #include "shader_recompiler/frontend/maxwell/translate_program.h"
 #include "shader_recompiler/profile.h"
-#include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/kepler_compute.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/memory_manager.h"
@@ -245,29 +244,29 @@ ShaderCache::ShaderCache(Tegra::MaxwellDeviceMemoryManager& device_memory_,
               std::min<u32>(device.GetMaxUserClipDistances(), Maxwell::Regs::NumClipDistances),
       },
       host_info{
-        .min_ssbo_alignment = static_cast<u32>(device.GetShaderStorageBufferAlignment()),
-        .max_per_stage_descriptor_sampled_images =
-            Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .max_per_stage_resources = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .max_descriptor_set_samplers = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .max_descriptor_set_uniform_buffers = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .max_descriptor_set_uniform_buffers_dynamic =
-            Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .max_descriptor_set_storage_buffers = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .max_descriptor_set_storage_buffers_dynamic =
-            Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .max_descriptor_set_sampled_images = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .max_descriptor_set_storage_images = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .max_descriptor_set_input_attachements =
-            Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
-        .support_float64 = true,
-        .support_float16 = false,
-        .support_int64 = device.HasShaderInt64(),
-        .needs_demote_reorder = device.IsAmd(),
-        .support_snorm_render_buffer = false,
-        .support_viewport_index_layer = device.HasVertexViewportLayer(),
-        .support_geometry_shader_passthrough = device.HasGeometryShaderPassthrough(),
-        .support_conditional_barrier = device.SupportsConditionalBarriers(),
+          .min_ssbo_alignment = static_cast<u32>(device.GetShaderStorageBufferAlignment()),
+          .max_per_stage_descriptor_sampled_images =
+              Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .max_per_stage_resources = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .max_descriptor_set_samplers = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .max_descriptor_set_uniform_buffers = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .max_descriptor_set_uniform_buffers_dynamic =
+              Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .max_descriptor_set_storage_buffers = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .max_descriptor_set_storage_buffers_dynamic =
+              Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .max_descriptor_set_sampled_images = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .max_descriptor_set_storage_images = Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .max_descriptor_set_input_attachements =
+              Shader::HostTranslateInfo::DEFAULT_DESCRIPTOR_LIMIT,
+          .support_float64 = true,
+          .support_float16 = false,
+          .support_int64 = device.HasShaderInt64(),
+          .needs_demote_reorder = device.IsAmd(),
+          .support_snorm_render_buffer = false,
+          .support_viewport_index_layer = device.HasVertexViewportLayer(),
+          .support_geometry_shader_passthrough = device.HasGeometryShaderPassthrough(),
+          .support_conditional_barrier = device.SupportsConditionalBarriers(),
       } {
     host_info.ApplyDescriptorLimitPolicy();
     if (use_asynchronous_shaders) {
@@ -479,8 +478,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
     Shader::IR::Program* layer_source_program{};
 
     for (size_t index = 0; index < Maxwell::MaxShaderProgram; ++index) {
-        const bool is_emulated_stage = layer_source_program != nullptr
-            && index == u32(Maxwell::ShaderType::Geometry);
+        const bool is_emulated_stage =
+            layer_source_program != nullptr && index == u32(Maxwell::ShaderType::Geometry);
         if (key.unique_hashes[index] == 0 && is_emulated_stage) {
             auto topology = MaxwellToOutputTopology(key.gs_input_topology);
             programs[index] = GenerateGeometryPassthrough(pools.inst, pools.block, host_info,
@@ -504,12 +503,14 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
             // Normal path
             programs[index] = TranslateProgram(pools.inst, pools.block, env, cfg, host_info);
 
-            total_storage_buffers += Shader::NumDescriptors(programs[index].info.storage_buffers_descriptors);
+            total_storage_buffers +=
+                Shader::NumDescriptors(programs[index].info.storage_buffers_descriptors);
         } else {
             // VertexB path when VertexA is present.
             auto& program_va{programs[0]};
             auto program_vb{TranslateProgram(pools.inst, pools.block, env, cfg, host_info)};
-            total_storage_buffers += Shader::NumDescriptors(program_vb.info.storage_buffers_descriptors);
+            total_storage_buffers +=
+                Shader::NumDescriptors(program_vb.info.storage_buffers_descriptors);
             programs[index] = MergeDualVertexPrograms(program_va, program_vb, env);
         }
 
@@ -540,7 +541,8 @@ std::unique_ptr<GraphicsPipeline> ShaderCache::CreateGraphicsPipeline(
         const size_t stage_index{index - 1};
         infos[stage_index] = &program.info;
 
-        const auto runtime_info = MakeRuntimeInfo(key, program, previous_program, glasm_use_storage_buffers, use_glasm);
+        const auto runtime_info =
+            MakeRuntimeInfo(key, program, previous_program, glasm_use_storage_buffers, use_glasm);
         switch (::Settings::values.renderer_backend.GetValue()) {
         case Settings::RendererBackend::OpenGL_GLSL:
             ConvertLegacyToGeneric(program, runtime_info);
@@ -617,7 +619,8 @@ std::unique_ptr<ComputePipeline> ShaderCache::CreateComputePipeline(
     default:
         UNREACHABLE();
     }
-    return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, program_manager, program.info, code, code_spirv, force_context_flush);
+    return std::make_unique<ComputePipeline>(device, texture_cache, buffer_cache, program_manager,
+                                             program.info, code, code_spirv, force_context_flush);
 } catch (Shader::Exception& exception) {
     LOG_ERROR(Render_OpenGL, "{}", exception.what());
     return nullptr;

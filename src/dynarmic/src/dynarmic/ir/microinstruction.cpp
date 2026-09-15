@@ -11,7 +11,6 @@
 #include <algorithm>
 
 #include "common/assert.h"
-
 #include "dynarmic/ir/opcodes.h"
 #include "dynarmic/ir/type.h"
 
@@ -44,8 +43,8 @@ Type Inst::GetType() const {
 void Inst::SetArg(size_t index, Value value) noexcept {
     DEBUG_ASSERT(index < GetNumArgsOf(op));
     DEBUG_ASSERT(AreTypesCompatible(value.GetType(), GetArgTypeOf(op, index)));
-    //DEBUG_ASSERT(index < GetNumArgsOf(op) && "Inst::SetArg: index {} >= number of arguments of {} ({})", index, op, GetNumArgsOf(op));
-    //DEBUG_ASSERT(AreTypesCompatible(value.GetType(), GetArgTypeOf(op, index)) && "Inst::SetArg: type {} of argument {} not compatible with operation {} ({})", value.GetType(), index, op, GetArgTypeOf(op, index));
+    // DEBUG_ASSERT(index < GetNumArgsOf(op) && "Inst::SetArg: index {} >= number of arguments of {} ({})", index, op, GetNumArgsOf(op));
+    // DEBUG_ASSERT(AreTypesCompatible(value.GetType(), GetArgTypeOf(op, index)) && "Inst::SetArg: type {} of argument {} not compatible with operation {} ({})", value.GetType(), index, op, GetArgTypeOf(op, index));
     if (!args[index].IsImmediate()) {
         UndoUse(args[index]);
     }

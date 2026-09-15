@@ -19,10 +19,9 @@ EmuWindow_SDL2_Null::EmuWindow_SDL2_Null(InputCommon::InputSubsystem* input_subs
     : EmuWindow_SDL2{input_subsystem_, system_} {
     const std::string window_title = fmt::format("suyu {} | {}-{} (Null)", Common::g_build_name,
                                                  Common::g_scm_branch, Common::g_scm_desc);
-    render_window =
-        SDL_CreateWindow(window_title.c_str(),
-                         Layout::ScreenUndocked::Width, Layout::ScreenUndocked::Height,
-                         SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    render_window = SDL_CreateWindow(window_title.c_str(), Layout::ScreenUndocked::Width,
+                                     Layout::ScreenUndocked::Height,
+                                     SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
     SetWindowIcon();
 

@@ -513,7 +513,7 @@ endfunction()
 # Put these BEFORE EXTERNALS or Boost WILL die
 # =============================================
 
-if (APPLE)
+if (APPLE AND NOT IOS)
     foreach(fw Carbon Metal Cocoa IOKit CoreVideo CoreMedia Security UniformTypeIdentifiers)
         find_library(${fw}_LIBRARY ${fw} REQUIRED)
         list(APPEND PLATFORM_LIBRARIES ${${fw}_LIBRARY})

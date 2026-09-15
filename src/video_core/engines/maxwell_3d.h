@@ -22,10 +22,10 @@
 #include "video_core/engines/const_buffer_info.h"
 #include "video_core/engines/engine_interface.h"
 #include "video_core/engines/engine_upload.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"
 #include "video_core/macro.h"
 #include "video_core/textures/texture.h"
-#include "video_core/engines/maxwell_3d.h"
 
 namespace Core {
 class System;
@@ -542,7 +542,7 @@ public:
             }
             GPUVAddr StorageLimitAddress() const {
                 return (GPUVAddr{storage_limit_address_high} << 32) |
-                        GPUVAddr{storage_limit_address_low};
+                       GPUVAddr{storage_limit_address_low};
             }
         };
 
@@ -818,7 +818,7 @@ public:
 
             u32 Map(std::size_t index) const {
                 const std::array<u32, NumRenderTargets> maps{target0, target1, target2, target3,
-                                                                target4, target5, target6, target7};
+                                                             target4, target5, target6, target7};
                 ASSERT(index < maps.size());
                 return maps[index];
             }
@@ -1830,7 +1830,7 @@ public:
 
             bool AnyEnabled() const {
                 return output0_enable || output1_enable || output2_enable || output3_enable ||
-                        output4_enable || output5_enable || output6_enable || output7_enable;
+                       output4_enable || output5_enable || output6_enable || output7_enable;
             }
         };
 
@@ -1869,7 +1869,7 @@ public:
 
                 bool AnyEnabled() const {
                     return plane0 || plane1 || plane2 || plane3 || plane4 || plane5 || plane6 ||
-                            plane7;
+                           plane7;
                 }
             };
 
@@ -2257,7 +2257,7 @@ public:
             /// Returns whether the vertex array specified by index is supposed to be
             /// accessed per instance or not.
             bool IsInstancingEnabled(std::size_t index) const {
-                return bool(is_instanced[index]); //FUCK YOU MSVC
+                return bool(is_instanced[index]); // FUCK YOU MSVC
             }
         };
 
@@ -3071,13 +3071,19 @@ public:
         void ProcessMethodCall(Maxwell3D& maxwell3d, u32 method, u32 argument);
         void Clear(Maxwell3D& maxwell3d, u32 layer_count);
         void DrawDeferred(Maxwell3D& maxwell3d);
-        void DrawArray(Maxwell3D& maxwell3d, Maxwell3D::Regs::PrimitiveTopology topology, u32 vertex_first, u32 vertex_count, u32 base_instance, u32 num_instances);
-        void DrawArrayInstanced(Maxwell3D& maxwell3d, Maxwell3D::Regs::PrimitiveTopology topology, u32 vertex_first, u32 vertex_count, bool subsequent);
-        void DrawIndex(Maxwell3D& maxwell3d, Maxwell3D::Regs::PrimitiveTopology topology, u32 index_first, u32 index_count, u32 base_index, u32 base_instance, u32 num_instances);
+        void DrawArray(Maxwell3D& maxwell3d, Maxwell3D::Regs::PrimitiveTopology topology,
+                       u32 vertex_first, u32 vertex_count, u32 base_instance, u32 num_instances);
+        void DrawArrayInstanced(Maxwell3D& maxwell3d, Maxwell3D::Regs::PrimitiveTopology topology,
+                                u32 vertex_first, u32 vertex_count, bool subsequent);
+        void DrawIndex(Maxwell3D& maxwell3d, Maxwell3D::Regs::PrimitiveTopology topology,
+                       u32 index_first, u32 index_count, u32 base_index, u32 base_instance,
+                       u32 num_instances);
         void DrawArrayIndirect(Maxwell3D& maxwell3d, Maxwell3D::Regs::PrimitiveTopology topology);
-        void DrawIndexedIndirect(Maxwell3D& maxwell3d, Maxwell3D::Regs::PrimitiveTopology topology, u32 index_first, u32 index_count);
+        void DrawIndexedIndirect(Maxwell3D& maxwell3d, Maxwell3D::Regs::PrimitiveTopology topology,
+                                 u32 index_first, u32 index_count);
         void SetInlineIndexBuffer(Maxwell3D& maxwell3d, u32 index);
-        void SetInlineIndexBuffer(Maxwell3D& maxwell3d, u32 method, const u32* base_start, u32 amount);
+        void SetInlineIndexBuffer(Maxwell3D& maxwell3d, u32 method, const u32* base_start,
+                                  u32 amount);
         void DrawBegin(Maxwell3D& maxwell3d);
         void DrawEnd(Maxwell3D& maxwell3d, u32 instance_count = 1, bool force_draw = false);
         void DrawIndexSmall(Maxwell3D& maxwell3d, u32 argument);
@@ -3130,10 +3136,12 @@ public:
     u32 GetRegisterValue(u32 method) const;
 
     /// Write the value to the register identified by method.
-    void CallMethod(Core::System& system, u32 method, u32 method_argument, bool is_last_call) override;
+    void CallMethod(Core::System& system, u32 method, u32 method_argument,
+                    bool is_last_call) override;
 
     /// Write multiple values to the register identified by method.
-    void CallMultiMethod(Core::System& system, u32 method, const u32* base_start, u32 amount, u32 methods_pending) override;
+    void CallMultiMethod(Core::System& system, u32 method, const u32* base_start, u32 amount,
+                         u32 methods_pending) override;
 
     bool ShouldExecute() const {
         return execute_on;
@@ -3199,7 +3207,8 @@ public:
 private:
     void InitializeRegisterDefaults();
 
-    void ProcessMacro(Core::System& system, u32 method, const u32* base_start, u32 amount, bool is_last_call);
+    void ProcessMacro(Core::System& system, u32 method, const u32* base_start, u32 amount,
+                      bool is_last_call);
 
     u32 ProcessShadowRam(u32 method, u32 argument);
 

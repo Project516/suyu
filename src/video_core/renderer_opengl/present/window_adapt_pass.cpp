@@ -114,7 +114,8 @@ void WindowAdaptPass::DrawToFramebuffer(ProgramManager& program_manager, std::li
         }
 
         glBindTextureUnit(0, textures[i]);
-        glProgramUniformMatrix3x2fv(vert.handle, ModelViewMatrixLocation, 1, GL_FALSE, matrices[i].data());
+        glProgramUniformMatrix3x2fv(vert.handle, ModelViewMatrixLocation, 1, GL_FALSE,
+                                    matrices[i].data());
         glNamedBufferSubData(vertex_buffer.handle, 0, sizeof(vertices[i]), std::data(vertices[i]));
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }

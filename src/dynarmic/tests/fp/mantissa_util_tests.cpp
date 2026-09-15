@@ -10,11 +10,11 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
-#include "common/common_types.h"
 
-#include "dynarmic/tests/rand_int.h"
+#include "common/common_types.h"
 #include "dynarmic/common/fp/mantissa_util.h"
 #include "dynarmic/common/safe_ops.h"
+#include "dynarmic/tests/rand_int.h"
 
 using namespace Dynarmic;
 using namespace Dynarmic::FP;

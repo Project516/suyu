@@ -7,20 +7,20 @@
 #include <QApplication>
 #include <QBuffer>
 #include <QCheckBox>
+#include <QCloseEvent>
 #include <QCoreApplication>
-#include <QPixmap>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QDirIterator>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
-#include <QDialogButtonBox>
 #include <QImage>
 #include <QListWidget>
 #include <QMessageBox>
-#include <QCloseEvent>
-#include <QEventLoop>
+#include <QPixmap>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QSettings>
@@ -144,8 +144,8 @@ static bool CopyFileReplacingExisting(const QString& src, const QString& dst) {
 // True when both paths name the same location on disk, so a "copy" between
 // them would be a no-op at best.
 static bool IsSamePath(const QString& a, const QString& b) {
-    return QDir::cleanPath(QFileInfo(a).absoluteFilePath()).compare(
-               QDir::cleanPath(QFileInfo(b).absoluteFilePath()), Qt::CaseInsensitive) == 0;
+    return QDir::cleanPath(QFileInfo(a).absoluteFilePath())
+               .compare(QDir::cleanPath(QFileInfo(b).absoluteFilePath()), Qt::CaseInsensitive) == 0;
 }
 
 // Copy a directory unless it is already in place.
@@ -193,7 +193,8 @@ static bool CopyTitleSaveData(const QString& save_root, const QString& dst_root,
         return true;
     }
 
-    const QString title_id_hex = QStringLiteral("%1").arg(title_id, 16, 16, QLatin1Char('0')).toUpper();
+    const QString title_id_hex =
+        QStringLiteral("%1").arg(title_id, 16, 16, QLatin1Char('0')).toUpper();
 
     QDirIterator it(save_root, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     while (it.hasNext()) {
@@ -213,9 +214,9 @@ static bool CopyTitleSaveData(const QString& save_root, const QString& dst_root,
 }
 
 static bool CopyPortableSupportData(quint64 program_id, const QString& package_root,
-                                      bool include_save, bool include_shader,
-                                      bool include_config) {
-    const QString title_id_hex = QStringLiteral("%1").arg(program_id, 16, 16, QLatin1Char('0')).toUpper();
+                                    bool include_save, bool include_shader, bool include_config) {
+    const QString title_id_hex =
+        QStringLiteral("%1").arg(program_id, 16, 16, QLatin1Char('0')).toUpper();
     const QString output_user_root = package_root + QDir::separator() + QStringLiteral("user");
 
     if (!QDir().mkpath(output_user_root)) {
@@ -223,24 +224,28 @@ static bool CopyPortableSupportData(quint64 program_id, const QString& package_r
     }
 
     if (include_save) {
-        const QString nand_save_root = QString::fromStdString(
-            Common::FS::PathToUTF8String(Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir))) +
+        const QString nand_save_root =
+            QString::fromStdString(Common::FS::PathToUTF8String(
+                Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir))) +
             QDir::separator() + QStringLiteral("user") + QDir::separator() + QStringLiteral("save");
-        const QString output_nand_root = output_user_root + QDir::separator() + QStringLiteral("nand") +
-                                         QDir::separator() + QStringLiteral("user") +
-                                         QDir::separator() + QStringLiteral("save");
+        const QString output_nand_root =
+            output_user_root + QDir::separator() + QStringLiteral("nand") + QDir::separator() +
+            QStringLiteral("user") + QDir::separator() + QStringLiteral("save");
         if (!CopyTitleSaveData(nand_save_root, output_nand_root, program_id)) {
             return false;
         }
     }
 
     if (include_config) {
-        const QString config_file_name = QStringLiteral("%1.ini").arg(program_id, 16, 16, QLatin1Char('0')).toUpper();
-        const QString config_src = QString::fromStdString(
-            Common::FS::PathToUTF8String(Common::FS::GetSuyuPath(Common::FS::SuyuPath::ConfigDir))) +
-            QDir::separator() + QStringLiteral("custom") + QDir::separator() + config_file_name;
-        const QString config_dst_dir = output_user_root + QDir::separator() + QStringLiteral("config") +
-                                       QDir::separator() + QStringLiteral("custom");
+        const QString config_file_name =
+            QStringLiteral("%1.ini").arg(program_id, 16, 16, QLatin1Char('0')).toUpper();
+        const QString config_src = QString::fromStdString(Common::FS::PathToUTF8String(
+                                       Common::FS::GetSuyuPath(Common::FS::SuyuPath::ConfigDir))) +
+                                   QDir::separator() + QStringLiteral("custom") +
+                                   QDir::separator() + config_file_name;
+        const QString config_dst_dir = output_user_root + QDir::separator() +
+                                       QStringLiteral("config") + QDir::separator() +
+                                       QStringLiteral("custom");
         if (QFile::exists(config_src)) {
             if (!QDir().mkpath(config_dst_dir)) {
                 return false;
@@ -253,9 +258,9 @@ static bool CopyPortableSupportData(quint64 program_id, const QString& package_r
     }
 
     if (include_shader) {
-        const QString shader_src = QString::fromStdString(
-            Common::FS::PathToUTF8String(Common::FS::GetSuyuPath(Common::FS::SuyuPath::ShaderDir))) +
-            QDir::separator() + title_id_hex;
+        const QString shader_src = QString::fromStdString(Common::FS::PathToUTF8String(
+                                       Common::FS::GetSuyuPath(Common::FS::SuyuPath::ShaderDir))) +
+                                   QDir::separator() + title_id_hex;
         const QString shader_dst = output_user_root + QDir::separator() + QStringLiteral("shader") +
                                    QDir::separator() + title_id_hex;
         if (QDir(shader_src).exists()) {
@@ -305,7 +310,8 @@ void GameExportDialog::SetupUi() {
     out_row->addWidget(browse_btn);
     layout->addLayout(out_row);
 
-    const QString default_output = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+    const QString default_output =
+        QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
     if (!default_output.isEmpty()) {
         output_path_edit->setText(default_output);
     }
@@ -314,7 +320,8 @@ void GameExportDialog::SetupUi() {
     auto* plat_row = new QHBoxLayout();
     plat_row->addWidget(new QLabel(tr("Target:"), this));
     platform_combo = new QComboBox(this);
-    platform_combo->addItem(tr("Windows artifact bundle"), static_cast<int>(TargetPlatform::Windows));
+    platform_combo->addItem(tr("Windows artifact bundle"),
+                            static_cast<int>(TargetPlatform::Windows));
     platform_combo->addItem(tr("Linux artifact bundle"), static_cast<int>(TargetPlatform::Linux));
     platform_combo->addItem(tr("macOS artifact bundle"), static_cast<int>(TargetPlatform::MacOS));
 #ifdef _WIN32
@@ -331,10 +338,8 @@ void GameExportDialog::SetupUi() {
     auto* backend_row = new QHBoxLayout();
     backend_row->addWidget(new QLabel(tr("AOT Backend:"), this));
     backend_combo = new QComboBox(this);
-    backend_combo->addItem(tr("Dynarmic (stable)"),
-                           static_cast<int>(RecompileBackend::Dynarmic));
-    backend_combo->addItem(tr("Ballistic (WIP)"),
-                           static_cast<int>(RecompileBackend::Ballistic));
+    backend_combo->addItem(tr("Dynarmic (stable)"), static_cast<int>(RecompileBackend::Dynarmic));
+    backend_combo->addItem(tr("Ballistic (WIP)"), static_cast<int>(RecompileBackend::Ballistic));
     backend_combo->setCurrentIndex(0);
     backend_row->addWidget(backend_combo);
     layout->addLayout(backend_row);
@@ -345,7 +350,8 @@ void GameExportDialog::SetupUi() {
     aot_full_scan_checkbox->setChecked(false);
     layout->addWidget(aot_full_scan_checkbox);
 
-    steam_shortcut_checkbox = new QCheckBox(tr("Add to Steam library when the export finishes"), this);
+    steam_shortcut_checkbox =
+        new QCheckBox(tr("Add to Steam library when the export finishes"), this);
     steam_shortcut_checkbox->setChecked(false);
     steam_shortcut_checkbox->setToolTip(
         tr("Creates a non-Steam shortcut for the exported game and pulls its store artwork "
@@ -364,8 +370,8 @@ void GameExportDialog::SetupUi() {
             &QWidget::setEnabled);
     steam_replace_rom_checkbox->setEnabled(false);
 
-    fallback_to_interpreter_checkbox = new QCheckBox(
-        tr("Fall back to interpreter if a module fails to recompile"), this);
+    fallback_to_interpreter_checkbox =
+        new QCheckBox(tr("Fall back to interpreter if a module fails to recompile"), this);
     fallback_to_interpreter_checkbox->setChecked(true);
     fallback_to_interpreter_checkbox->setToolTip(
         tr("When checked: if a module cannot be recompiled (e.g. too complex, "
@@ -412,11 +418,11 @@ void GameExportDialog::SetupUi() {
     layout->addWidget(include_custom_config_checkbox);
 
     auto* note_label = new QLabel(
-          tr("Translates the game's ARM64 code into C. Output mirrors the ROM structure: "
-             "exefs/ holds one C project per module (main, rtld, sdk, ...). "
-             "Build has suyu compile it for you (slow on large titles). "
-             "Source gives you the C + CMakeLists.txt to compile yourself. "
-             "With fallback enabled, modules that fail recompile use the dynarmic JIT at runtime."),
+        tr("Translates the game's ARM64 code into C. Output mirrors the ROM structure: "
+           "exefs/ holds one C project per module (main, rtld, sdk, ...). "
+           "Build has suyu compile it for you (slow on large titles). "
+           "Source gives you the C + CMakeLists.txt to compile yourself. "
+           "With fallback enabled, modules that fail recompile use the dynarmic JIT at runtime."),
         this);
     note_label->setWordWrap(true);
     note_label->setStyleSheet(QStringLiteral("color: #888;"));
@@ -471,8 +477,7 @@ void GameExportDialog::SetRomPath(const QString& path, quint64 program_id) {
 
 void GameExportDialog::TriggerExportForTesting(const QString& rom_path, const QString& output_dir,
                                                int format_index) {
-    if (format_index >= 0 && output_format_combo &&
-        format_index < output_format_combo->count()) {
+    if (format_index >= 0 && output_format_combo && format_index < output_format_combo->count()) {
         output_format_combo->setCurrentIndex(format_index);
     }
     SetRomPath(rom_path);
@@ -514,8 +519,8 @@ void GameExportDialog::OnSelectFromLibrary() {
     list->setAlternatingRowColors(true);
 
     for (const auto& entry : library_entries_) {
-        auto* item = new QListWidgetItem(
-            QStringLiteral("%1\n%2").arg(entry.title, entry.path), list);
+        auto* item =
+            new QListWidgetItem(QStringLiteral("%1\n%2").arg(entry.title, entry.path), list);
         item->setData(Qt::UserRole, entry.path);
         item->setData(Qt::UserRole + 1, QVariant::fromValue<qulonglong>(entry.program_id));
         item->setToolTip(entry.path);
@@ -529,9 +534,8 @@ void GameExportDialog::OnSelectFromLibrary() {
                                          Qt::Horizontal, &chooser);
     connect(buttons, &QDialogButtonBox::accepted, &chooser, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, &chooser, &QDialog::reject);
-    connect(list, &QListWidget::itemDoubleClicked, &chooser, [&chooser](QListWidgetItem*) {
-        chooser.accept();
-    });
+    connect(list, &QListWidget::itemDoubleClicked, &chooser,
+            [&chooser](QListWidgetItem*) { chooser.accept(); });
 
     layout->addWidget(list);
     layout->addWidget(buttons);
@@ -554,7 +558,8 @@ void GameExportDialog::OnSelectFromLibrary() {
 }
 
 void GameExportDialog::OnBrowseOutput() {
-    const QString start_dir = output_path_edit->text().isEmpty() ? QString() : output_path_edit->text();
+    const QString start_dir =
+        output_path_edit->text().isEmpty() ? QString() : output_path_edit->text();
     const QString dir = QFileDialog::getExistingDirectory(
         this, tr("Select Output Directory"), start_dir,
         QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
@@ -571,37 +576,48 @@ namespace {
 
 /// Represents a discovered ARM64 basic block in the NSO .text segment.
 struct Arm64BasicBlock {
-    u32 vaddr;       ///< Virtual address offset within the segment
-    u32 size;        ///< Block size in bytes
+    u32 vaddr; ///< Virtual address offset within the segment
+    u32 size;  ///< Block size in bytes
     u32 instruction_count;
-    bool is_entry;   ///< Whether this is the segment entry point
+    bool is_entry; ///< Whether this is the segment entry point
 };
 
 /// Classify ARM64 instructions to detect basic block boundaries.
 /// Returns true if the instruction is a block-terminating branch/system call.
 static bool IsBlockTerminator(u32 insn) {
     // B  (unconditional branch immediate)
-    if ((insn & 0xFC000000) == 0x14000000) return true;
+    if ((insn & 0xFC000000) == 0x14000000)
+        return true;
     // BL (branch with link — call, but still ends the block)
-    if ((insn & 0xFC000000) == 0x94000000) return true;
+    if ((insn & 0xFC000000) == 0x94000000)
+        return true;
     // BR (branch register — indirect jump)
-    if ((insn & 0xFFFFFC1F) == 0xD61F0000) return true;
+    if ((insn & 0xFFFFFC1F) == 0xD61F0000)
+        return true;
     // BLR (branch with link register)
-    if ((insn & 0xFFFFFC1F) == 0xD63F0000) return true;
+    if ((insn & 0xFFFFFC1F) == 0xD63F0000)
+        return true;
     // RET
-    if ((insn & 0xFFFFFC1F) == 0xD65F0000) return true;
+    if ((insn & 0xFFFFFC1F) == 0xD65F0000)
+        return true;
     // CBZ
-    if ((insn & 0x7F000000) == 0x34000000) return true;
+    if ((insn & 0x7F000000) == 0x34000000)
+        return true;
     // CBNZ
-    if ((insn & 0x7F000000) == 0x35000000) return true;
+    if ((insn & 0x7F000000) == 0x35000000)
+        return true;
     // TBZ
-    if ((insn & 0x7F000000) == 0x36000000) return true;
+    if ((insn & 0x7F000000) == 0x36000000)
+        return true;
     // TBNZ
-    if ((insn & 0x7F000000) == 0x37000000) return true;
+    if ((insn & 0x7F000000) == 0x37000000)
+        return true;
     // B.cond (conditional branch)
-    if ((insn & 0xFF000010) == 0x54000000) return true;
+    if ((insn & 0xFF000010) == 0x54000000)
+        return true;
     // SVC (supervisor call — system call boundary)
-    if ((insn & 0xFFE0001F) == 0xD4000001) return true;
+    if ((insn & 0xFFE0001F) == 0xD4000001)
+        return true;
     return false;
 }
 
@@ -625,7 +641,7 @@ static bool GetDirectBranchTarget(u32 insn, u32 pc, u32& target_out) {
 /// Perform a linear sweep over ARM64 .text to identify basic blocks.
 /// This discovers block boundaries by looking for branch instructions and branch targets.
 static std::vector<Arm64BasicBlock> AnalyzeArm64BasicBlocks(std::span<const u8> text_data,
-                                                             u32 base_vaddr, bool full_scan) {
+                                                            u32 base_vaddr, bool full_scan) {
     if (text_data.size() < 4) {
         return {};
     }
@@ -745,14 +761,15 @@ static u32 FindNsoEntryOffset(std::span<const u8> text) {
 /// need one accessor spanning all three rather than assuming a segment.
 static bool ReadModuleBytes(const NsoAnalysisResult& mod, u64 vaddr, u8* out, size_t len) {
     auto try_seg = [&](u64 seg_vaddr, const std::vector<u8>& bytes) {
-        if (vaddr < seg_vaddr) return false;
+        if (vaddr < seg_vaddr)
+            return false;
         const u64 off = vaddr - seg_vaddr;
-        if (off + len > bytes.size()) return false;
+        if (off + len > bytes.size())
+            return false;
         std::memcpy(out, bytes.data() + off, len);
         return true;
     };
-    return try_seg(mod.text_vaddr, mod.text_bytes) ||
-           try_seg(mod.rodata_vaddr, mod.rodata_bytes) ||
+    return try_seg(mod.text_vaddr, mod.text_bytes) || try_seg(mod.rodata_vaddr, mod.rodata_bytes) ||
            try_seg(mod.data_vaddr, mod.data_bytes);
 }
 
@@ -800,7 +817,8 @@ static std::vector<u64> ScanDataForCodePointers(const NsoAnalysisResult& mod) {
     const u64 text_lo = mod.text_vaddr;
     const u64 text_hi = mod.text_vaddr + mod.text_bytes.size();
     const auto scan = [&](const std::vector<u8>& bytes) {
-        if (bytes.size() < 8) return;
+        if (bytes.size() < 8)
+            return;
         for (size_t off = 0; off + 8 <= bytes.size(); off += 8) {
             u64 v = 0;
             std::memcpy(&v, bytes.data() + off, sizeof(v));
@@ -832,34 +850,42 @@ static std::vector<u64> ScanDataForCodePointers(const NsoAnalysisResult& mod) {
 /// address only ever costs one extra block boundary, never a wrong block.
 static std::vector<u64> ScanRelocationsForCodePointers(const NsoAnalysisResult& mod) {
     std::vector<u64> out;
-    if (mod.text_bytes.size() < 8) return out;
+    if (mod.text_bytes.size() < 8)
+        return out;
 
     u32 mod0_off = 0;
     std::memcpy(&mod0_off, mod.text_bytes.data() + 4, sizeof(mod0_off));
     const u64 mod0_va = mod.text_vaddr + mod0_off;
-    if (ReadModuleU32(mod, mod0_va) != 0x30444F4Du) return out;
+    if (ReadModuleU32(mod, mod0_va) != 0x30444F4Du)
+        return out;
 
     const u32 dyn_rel_off = ReadModuleU32(mod, mod0_va + 4);
     const u64 dyn_va = mod0_va + dyn_rel_off;
 
     constexpr u32 DT_NULL = 0, DT_PLTRELSZ = 2, DT_SYMTAB = 6, DT_RELA = 7, DT_RELASZ = 8,
-                   DT_JMPREL = 23;
+                  DT_JMPREL = 23;
     u64 rela_va = 0, rela_sz = 0, jmprel_va = 0, jmprel_sz = 0, symtab_va = 0;
     for (u64 p = dyn_va, guard = 0; guard < 0x1000; p += 16, guard += 16) {
         const u64 tag = ReadModuleU64(mod, p);
         const u64 val = ReadModuleU64(mod, p + 8);
-        if (tag == DT_NULL) break;
-        if (tag == DT_RELA) rela_va = val;
-        if (tag == DT_RELASZ) rela_sz = val;
-        if (tag == DT_JMPREL) jmprel_va = val;
-        if (tag == DT_PLTRELSZ) jmprel_sz = val;
-        if (tag == DT_SYMTAB) symtab_va = val;
+        if (tag == DT_NULL)
+            break;
+        if (tag == DT_RELA)
+            rela_va = val;
+        if (tag == DT_RELASZ)
+            rela_sz = val;
+        if (tag == DT_JMPREL)
+            jmprel_va = val;
+        if (tag == DT_PLTRELSZ)
+            jmprel_sz = val;
+        if (tag == DT_SYMTAB)
+            symtab_va = val;
     }
 
     const u64 text_lo = mod.text_vaddr;
     const u64 text_hi = mod.text_vaddr + mod.text_bytes.size();
-    constexpr u32 R_AARCH64_ABS64 = 0x101, R_AARCH64_GLOB_DAT = 0x401,
-                   R_AARCH64_JUMP_SLOT = 0x402, R_AARCH64_RELATIVE = 0x403;
+    constexpr u32 R_AARCH64_ABS64 = 0x101, R_AARCH64_GLOB_DAT = 0x401, R_AARCH64_JUMP_SLOT = 0x402,
+                  R_AARCH64_RELATIVE = 0x403;
     const auto scan_table = [&](u64 table_va, u64 table_sz) {
         for (u64 p = table_va; p + 24 <= table_va + table_sz; p += 24) {
             const u64 r_info = ReadModuleU64(mod, p + 8);
@@ -882,21 +908,25 @@ static std::vector<u64> ScanRelocationsForCodePointers(const NsoAnalysisResult& 
             }
         }
     };
-    if (rela_va && rela_sz) scan_table(rela_va, rela_sz);
-    if (jmprel_va && jmprel_sz) scan_table(jmprel_va, jmprel_sz);
+    if (rela_va && rela_sz)
+        scan_table(rela_va, rela_sz);
+    if (jmprel_va && jmprel_sz)
+        scan_table(jmprel_va, jmprel_sz);
     return out;
 }
 
 static std::vector<u64> CollectExportedSymbolAddresses(const NsoAnalysisResult& mod) {
     std::vector<u64> out;
-    if (mod.text_bytes.size() < 8) return out;
+    if (mod.text_bytes.size() < 8)
+        return out;
 
     // MOD0 offset is stored at text+4, relative to the start of .text (same
     // field FindNsoEntryOffset walks past to find the real entry point).
     u32 mod0_off = 0;
     std::memcpy(&mod0_off, mod.text_bytes.data() + 4, sizeof(mod0_off));
     const u64 mod0_va = mod.text_vaddr + mod0_off;
-    if (ReadModuleU32(mod, mod0_va) != 0x30444F4Du) return out; // "MOD0"
+    if (ReadModuleU32(mod, mod0_va) != 0x30444F4Du)
+        return out; // "MOD0"
 
     const u32 dyn_rel_off = ReadModuleU32(mod, mod0_va + 4);
     const u64 dyn_va = mod0_va + dyn_rel_off;
@@ -906,11 +936,15 @@ static std::vector<u64> CollectExportedSymbolAddresses(const NsoAnalysisResult& 
     for (u64 p = dyn_va, guard = 0; guard < 0x1000; p += 16, guard += 16) {
         const u64 tag = ReadModuleU64(mod, p);
         const u64 val = ReadModuleU64(mod, p + 8);
-        if (tag == DT_NULL) break;
-        if (tag == DT_SYMTAB) symtab_va = val;
-        if (tag == DT_STRTAB) strtab_va = val;
+        if (tag == DT_NULL)
+            break;
+        if (tag == DT_SYMTAB)
+            symtab_va = val;
+        if (tag == DT_STRTAB)
+            strtab_va = val;
     }
-    if (!symtab_va || !strtab_va || strtab_va <= symtab_va) return out;
+    if (!symtab_va || !strtab_va || strtab_va <= symtab_va)
+        return out;
 
     // .dynsym/.dynstr are laid out back to back, so the gap between them
     // bounds the entry count (no explicit count exists for a plain DT_SYMTAB).
@@ -919,16 +953,18 @@ static std::vector<u64> CollectExportedSymbolAddresses(const NsoAnalysisResult& 
     for (u32 i = 1; i < max_index; ++i) { // index 0 is always the null symbol
         const u64 sym_va = symtab_va + static_cast<u64>(i) * 24;
         const u16 shndx = static_cast<u16>(ReadModuleU32(mod, sym_va + 6) & 0xFFFF);
-        if (shndx == 0) continue; // SHN_UNDEF - an import, not an export
+        if (shndx == 0)
+            continue; // SHN_UNDEF - an import, not an export
         const u64 value = ReadModuleU64(mod, sym_va + 8);
-        if (value) out.push_back(value);
+        if (value)
+            out.push_back(value);
     }
     return out;
 }
 
 /// Parse and analyze a single NSO file using the VFS.
 static std::optional<NsoAnalysisResult> AnalyzeNsoFile(const FileSys::VirtualFile& nso_file,
-                                                        bool full_scan) {
+                                                       bool full_scan) {
     if (!nso_file || nso_file->GetSize() < sizeof(Loader::NSOHeader)) {
         return std::nullopt;
     }
@@ -955,8 +991,8 @@ static std::optional<NsoAnalysisResult> AnalyzeNsoFile(const FileSys::VirtualFil
     result.data_size = header.segments[2].size;
 
     // Read and decompress .text segment (segment 0)
-    std::vector<u8> text_data = nso_file->ReadBytes(
-        header.segments_compressed_size[0], header.segments[0].offset);
+    std::vector<u8> text_data =
+        nso_file->ReadBytes(header.segments_compressed_size[0], header.segments[0].offset);
 
     if (text_data.empty()) {
         return std::nullopt;
@@ -970,12 +1006,13 @@ static std::optional<NsoAnalysisResult> AnalyzeNsoFile(const FileSys::VirtualFil
     }
 
     result.text_bytes = text_data;
-    result.entry_vaddr = static_cast<u64>(result.text_vaddr) + FindNsoEntryOffset(result.text_bytes);
+    result.entry_vaddr =
+        static_cast<u64>(result.text_vaddr) + FindNsoEntryOffset(result.text_bytes);
 
     // Read and decompress .rodata segment (segment 1)
     {
-        std::vector<u8> seg = nso_file->ReadBytes(
-            header.segments_compressed_size[1], header.segments[1].offset);
+        std::vector<u8> seg =
+            nso_file->ReadBytes(header.segments_compressed_size[1], header.segments[1].offset);
         if (!seg.empty() && header.IsSegmentCompressed(1)) {
             seg = Common::Compression::DecompressDataLZ4(seg, header.segments[1].size);
         }
@@ -984,8 +1021,8 @@ static std::optional<NsoAnalysisResult> AnalyzeNsoFile(const FileSys::VirtualFil
 
     // Read and decompress .data segment (segment 2)
     {
-        std::vector<u8> seg = nso_file->ReadBytes(
-            header.segments_compressed_size[2], header.segments[2].offset);
+        std::vector<u8> seg =
+            nso_file->ReadBytes(header.segments_compressed_size[2], header.segments[2].offset);
         if (!seg.empty() && header.IsSegmentCompressed(2)) {
             seg = Common::Compression::DecompressDataLZ4(seg, header.segments[2].size);
         }
@@ -1020,7 +1057,8 @@ static FileSys::VirtualDir ExtractExeFsFromRom(const std::string& rom_path) {
     const std::string name = file->GetName();
     const std::string ext = [&name]() {
         auto pos = name.rfind('.');
-        if (pos == std::string::npos) return std::string{};
+        if (pos == std::string::npos)
+            return std::string{};
         std::string e = name.substr(pos);
         std::transform(e.begin(), e.end(), e.begin(), ::tolower);
         return e;
@@ -1033,7 +1071,8 @@ static FileSys::VirtualDir ExtractExeFsFromRom(const std::string& rom_path) {
     // there regardless of whether the NSP parsed successfully. The actual
     // content lives on the Program-type NCA, keyed by the NSP's own program
     // title ID.
-    const auto exefs_from_nsp = [](const std::shared_ptr<FileSys::NSP>& nsp) -> FileSys::VirtualDir {
+    const auto exefs_from_nsp =
+        [](const std::shared_ptr<FileSys::NSP>& nsp) -> FileSys::VirtualDir {
         if (nsp->GetStatus() != Loader::ResultStatus::Success) {
             return nullptr;
         }
@@ -1066,14 +1105,14 @@ static FileSys::VirtualDir ExtractExeFsFromRom(const std::string& rom_path) {
         }
 
         const auto t_nca_start = std::chrono::steady_clock::now();
-        const auto program_nca =
-            nsp->GetNCA(base_tid, FileSys::ContentRecordType::Program);
+        const auto program_nca = nsp->GetNCA(base_tid, FileSys::ContentRecordType::Program);
         const auto t_nca_got = std::chrono::steady_clock::now();
         const auto exefs = program_nca ? program_nca->GetExeFS() : nullptr;
         const auto t_exefs_got = std::chrono::steady_clock::now();
-        LOG_INFO(Frontend, "AOT diag: GetNCA took {} ms, NCA::GetExeFS took {} ms",
-                 std::chrono::duration_cast<std::chrono::milliseconds>(t_nca_got - t_nca_start).count(),
-                 std::chrono::duration_cast<std::chrono::milliseconds>(t_exefs_got - t_nca_got).count());
+        LOG_INFO(
+            Frontend, "AOT diag: GetNCA took {} ms, NCA::GetExeFS took {} ms",
+            std::chrono::duration_cast<std::chrono::milliseconds>(t_nca_got - t_nca_start).count(),
+            std::chrono::duration_cast<std::chrono::milliseconds>(t_exefs_got - t_nca_got).count());
         return exefs;
     };
 
@@ -1083,7 +1122,8 @@ static FileSys::VirtualDir ExtractExeFsFromRom(const std::string& rom_path) {
         auto nsp = std::make_shared<FileSys::NSP>(file);
         const auto t_ctor_end = std::chrono::steady_clock::now();
         LOG_INFO(Frontend, "AOT diag: NSP ctor took {} ms",
-                 std::chrono::duration_cast<std::chrono::milliseconds>(t_ctor_end - t_ctor_start).count());
+                 std::chrono::duration_cast<std::chrono::milliseconds>(t_ctor_end - t_ctor_start)
+                     .count());
         if (auto exefs = exefs_from_nsp(nsp)) {
             return exefs;
         }
@@ -1107,7 +1147,8 @@ static FileSys::VirtualDir ExtractExeFsFromRom(const std::string& rom_path) {
         auto nca = std::make_shared<FileSys::NCA>(file);
         if (nca->GetStatus() == Loader::ResultStatus::Success) {
             auto exefs = nca->GetExeFS();
-            if (exefs) return exefs;
+            if (exefs)
+                return exefs;
         }
     }
 
@@ -1127,21 +1168,23 @@ static FileSys::VirtualDir ExtractExeFsFromRom(const std::string& rom_path) {
 // Save every file in a VirtualDir to disk recursively.
 // Returns number of bytes written, -1 on failure.
 static qint64 DumpVirtualDir(const FileSys::VirtualDir& vdir, const QString& dest_dir) {
-    if (!vdir) return 0;
+    if (!vdir)
+        return 0;
     QDir().mkpath(dest_dir);
     qint64 total = 0;
     for (const auto& f : vdir->GetFiles()) {
         const auto data = f->ReadAllBytes();
         QFile out(dest_dir + QLatin1Char('/') + QString::fromStdString(f->GetName()));
-        if (!out.open(QIODevice::WriteOnly)) return -1;
-        out.write(reinterpret_cast<const char*>(data.data()),
-                  static_cast<qint64>(data.size()));
+        if (!out.open(QIODevice::WriteOnly))
+            return -1;
+        out.write(reinterpret_cast<const char*>(data.data()), static_cast<qint64>(data.size()));
         total += static_cast<qint64>(data.size());
     }
     for (const auto& sub : vdir->GetSubdirectories()) {
-        const qint64 r = DumpVirtualDir(
-            sub, dest_dir + QLatin1Char('/') + QString::fromStdString(sub->GetName()));
-        if (r < 0) return -1;
+        const qint64 r = DumpVirtualDir(sub, dest_dir + QLatin1Char('/') +
+                                                 QString::fromStdString(sub->GetName()));
+        if (r < 0)
+            return -1;
         total += r;
     }
     return total;
@@ -1154,26 +1197,36 @@ static FileSys::VirtualFile ExtractRomFsFromRom(const std::string& rom_path) {
     // function - keep one filesystem instance alive for the process.
     static const auto vfs = std::make_shared<FileSys::RealVfsFilesystem>();
     auto file = vfs->OpenFile(rom_path, FileSys::OpenMode::Read);
-    if (!file) return nullptr;
+    if (!file)
+        return nullptr;
     const std::string name = file->GetName();
-    auto pos = name.rfind('.'); std::string ext;
-    if (pos != std::string::npos) { ext = name.substr(pos); std::transform(ext.begin(),ext.end(),ext.begin(),::tolower); }
+    auto pos = name.rfind('.');
+    std::string ext;
+    if (pos != std::string::npos) {
+        ext = name.substr(pos);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    }
 
-    const auto romfs_from_nsp = [](const std::shared_ptr<FileSys::NSP>& nsp) -> FileSys::VirtualFile {
-        if (nsp->GetStatus() != Loader::ResultStatus::Success) return nullptr;
+    const auto romfs_from_nsp =
+        [](const std::shared_ptr<FileSys::NSP>& nsp) -> FileSys::VirtualFile {
+        if (nsp->GetStatus() != Loader::ResultStatus::Success)
+            return nullptr;
         const auto nca = nsp->GetNCA(nsp->GetProgramTitleID(), FileSys::ContentRecordType::Program);
         return nca ? nca->GetRomFS() : nullptr;
     };
 
     if (ext == ".nsp") {
         auto nsp = std::make_shared<FileSys::NSP>(file);
-        if (auto r = romfs_from_nsp(nsp)) return r;
+        if (auto r = romfs_from_nsp(nsp))
+            return r;
     }
     if (ext == ".xci") {
         auto xci = std::make_shared<FileSys::XCI>(file);
         if (xci->GetStatus() == Loader::ResultStatus::Success) {
             auto sec = xci->GetSecurePartitionNSP();
-            if (sec) if (auto r = romfs_from_nsp(sec)) return r;
+            if (sec)
+                if (auto r = romfs_from_nsp(sec))
+                    return r;
         }
     }
     if (ext == ".nca") {
@@ -1236,8 +1289,7 @@ static bool SerializeTranslatedBlocks(const NsoAnalysisResult& mod, const QStrin
     //
     // An earlier comment here put the block count at "90,000+" and explained
     // the symptom as the window merely failing to repaint. Both were wrong.
-    const bool dump_blocks =
-        !qEnvironmentVariableIsEmpty("SUYU_AOT_DUMP_BLOCKS");
+    const bool dump_blocks = !qEnvironmentVariableIsEmpty("SUYU_AOT_DUMP_BLOCKS");
     if (!dump_blocks) {
         // Leave the count at zero rather than reporting the block total: the
         // manifest publishes this as "ir_blocks_serialized", and nothing was
@@ -1251,9 +1303,8 @@ static bool SerializeTranslatedBlocks(const NsoAnalysisResult& mod, const QStrin
         if (++blocks_processed % 250 == 0) {
             QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
         }
-        const QString stem = QStringLiteral("%1_%2")
-                                 .arg(mod.name)
-                                 .arg(block.vaddr, 8, 16, QLatin1Char('0'));
+        const QString stem =
+            QStringLiteral("%1_%2").arg(mod.name).arg(block.vaddr, 8, 16, QLatin1Char('0'));
 
         const size_t offset = static_cast<size_t>(block.vaddr - mod.text_vaddr);
         if (offset + block.size > mod.text_bytes.size()) {
@@ -1261,7 +1312,8 @@ static bool SerializeTranslatedBlocks(const NsoAnalysisResult& mod, const QStrin
             continue;
         }
 
-        QFile guest_code_file(module_code_dir + QDir::separator() + stem + QStringLiteral(".guest.bin"));
+        QFile guest_code_file(module_code_dir + QDir::separator() + stem +
+                              QStringLiteral(".guest.bin"));
         if (guest_code_file.open(QIODevice::WriteOnly)) {
             guest_code_file.write(reinterpret_cast<const char*>(mod.text_bytes.data() + offset),
                                   static_cast<qint64>(block.size));
@@ -1292,7 +1344,8 @@ static bool SerializeTranslatedBlocks(const NsoAnalysisResult& mod, const QStrin
 
         QTextStream ir_out(&ir_file);
         ir_out << "module=" << mod.name << "\n";
-        ir_out << "block_vaddr=0x" << QStringLiteral("%1").arg(block.vaddr, 8, 16, QLatin1Char('0')) << "\n";
+        ir_out << "block_vaddr=0x" << QStringLiteral("%1").arg(block.vaddr, 8, 16, QLatin1Char('0'))
+               << "\n";
         ir_out << "block_size=" << block.size << "\n";
         ir_out << "instruction_count=" << block.instruction_count << "\n\n";
         ir_out << QString::fromStdString(Dynarmic::IR::DumpBlock(ir_block));
@@ -1372,8 +1425,8 @@ static QString FindBestCmakeExecutable() {
 #ifdef _WIN32
     for (const auto& root : VisualStudioInstallRoots()) {
         const QString c =
-            root + QStringLiteral(
-                       "/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe");
+            root +
+            QStringLiteral("/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe");
         if (QFile::exists(c)) {
             return c;
         }
@@ -1488,13 +1541,12 @@ bool GameExportDialog::WantsCompiledOutput() const {
     return output_format_combo && output_format_combo->currentIndex() == 1;
 }
 
-QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
-                                           const QString& cache_dir,
-                                           RecompileBackend backend,
-                                           const QString& game_name) {
+QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir, const QString& cache_dir,
+                                           RecompileBackend backend, const QString& game_name) {
     QDir().mkpath(cache_dir);
 
-    const QString manifest_path = cache_dir + QDir::separator() + QStringLiteral("aot_manifest.json");
+    const QString manifest_path =
+        cache_dir + QDir::separator() + QStringLiteral("aot_manifest.json");
 
     // blockmaps/, ir/ and code/ are debugging material for a codegen stage that
     // no longer exists: nothing in suyu or in the generated project reads any of
@@ -1505,8 +1557,7 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
     // per-block dumps.
     const bool dump_debug_artifacts = !qEnvironmentVariableIsEmpty("SUYU_AOT_DUMP_BLOCKS");
 
-    suyu::recomp::g_translate_all =
-        !qEnvironmentVariableIsEmpty("SUYU_AOT_TRANSLATE_ALL");
+    suyu::recomp::g_translate_all = !qEnvironmentVariableIsEmpty("SUYU_AOT_TRANSLATE_ALL");
     const QString debug_root = cache_dir + QDir::separator() + QStringLiteral("debug");
     const QString blockmap_dir = debug_root + QDir::separator() + QStringLiteral("blockmaps");
     const QString code_dir = debug_root + QDir::separator() + QStringLiteral("code");
@@ -1531,12 +1582,12 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
         QFile manifest(manifest_path);
         if (manifest.open(QIODevice::ReadOnly | QIODevice::Text)) {
             const QString contents = QString::fromUtf8(manifest.readAll());
-            const bool same_scan = contents.contains(
-                QStringLiteral("\"full_scan\": ") + (full_scan ? QStringLiteral("true")
-                                                                  : QStringLiteral("false")));
-            const bool same_backend = contents.contains(
-                QStringLiteral("\"effective_backend\": \"") + effective_backend_name +
-                QStringLiteral("\""));
+            const bool same_scan =
+                contents.contains(QStringLiteral("\"full_scan\": ") +
+                                  (full_scan ? QStringLiteral("true") : QStringLiteral("false")));
+            const bool same_backend =
+                contents.contains(QStringLiteral("\"effective_backend\": \"") +
+                                  effective_backend_name + QStringLiteral("\""));
             const bool has_recompiled_project =
                 QDir(cache_dir + QDir::separator() + QStringLiteral("exefs")).exists();
             const bool has_required_launcher =
@@ -1560,31 +1611,36 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
         const auto t_extract_start = std::chrono::steady_clock::now();
         auto exefs_vdir = ExtractExeFsFromRom(rom_path.toStdString());
         const auto t_extract_end = std::chrono::steady_clock::now();
-        LOG_INFO(Frontend, "AOT diag: ExtractExeFsFromRom took {} ms",
-                 std::chrono::duration_cast<std::chrono::milliseconds>(t_extract_end - t_extract_start).count());
+        LOG_INFO(
+            Frontend, "AOT diag: ExtractExeFsFromRom took {} ms",
+            std::chrono::duration_cast<std::chrono::milliseconds>(t_extract_end - t_extract_start)
+                .count());
         if (exefs_vdir) {
             used_vfs = true;
             const auto t_getfiles_start = std::chrono::steady_clock::now();
             const auto nso_files = exefs_vdir->GetFiles();
             const auto t_getfiles_end = std::chrono::steady_clock::now();
             LOG_INFO(Frontend, "AOT diag: GetFiles() took {} ms, {} entries",
-                     std::chrono::duration_cast<std::chrono::milliseconds>(t_getfiles_end - t_getfiles_start).count(),
+                     std::chrono::duration_cast<std::chrono::milliseconds>(t_getfiles_end -
+                                                                           t_getfiles_start)
+                         .count(),
                      nso_files.size());
 
             // Standard NSO module names in load order
             static const std::vector<std::string> module_names = {
-                "rtld", "main", "subsdk0", "subsdk1", "subsdk2", "subsdk3",
-                "subsdk4", "subsdk5", "subsdk6", "subsdk7", "subsdk8", "subsdk9", "sdk"
-            };
+                "rtld",    "main",    "subsdk0", "subsdk1", "subsdk2", "subsdk3", "subsdk4",
+                "subsdk5", "subsdk6", "subsdk7", "subsdk8", "subsdk9", "sdk"};
 
             for (const auto& nso_file : nso_files) {
                 const auto t_file_start = std::chrono::steady_clock::now();
                 auto result = AnalyzeNsoFile(nso_file, full_scan);
                 const auto t_file_end = std::chrono::steady_clock::now();
-                LOG_INFO(Frontend, "AOT diag: AnalyzeNsoFile({}) took {} ms, size={}",
-                         nso_file->GetName(),
-                         std::chrono::duration_cast<std::chrono::milliseconds>(t_file_end - t_file_start).count(),
-                         nso_file->GetSize());
+                LOG_INFO(
+                    Frontend, "AOT diag: AnalyzeNsoFile({}) took {} ms, size={}",
+                    nso_file->GetName(),
+                    std::chrono::duration_cast<std::chrono::milliseconds>(t_file_end - t_file_start)
+                        .count(),
+                    nso_file->GetSize());
                 if (result.has_value()) {
                     module_results.push_back(std::move(*result));
                 }
@@ -1595,18 +1651,20 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
             QDir().mkpath(exefs_cache);
             for (const auto& f : nso_files) {
                 const auto t_cache_start = std::chrono::steady_clock::now();
-                const QString out_path = exefs_cache + QDir::separator() +
-                                         QString::fromStdString(f->GetName());
+                const QString out_path =
+                    exefs_cache + QDir::separator() + QString::fromStdString(f->GetName());
                 QFile out_file(out_path);
                 if (out_file.open(QIODevice::WriteOnly)) {
                     std::vector<u8> nso_bytes = f->ReadAllBytes();
                     out_file.write(reinterpret_cast<const char*>(nso_bytes.data()),
-                                static_cast<qint64>(nso_bytes.size()));
+                                   static_cast<qint64>(nso_bytes.size()));
                     out_file.close();
                 }
                 const auto t_cache_end = std::chrono::steady_clock::now();
                 LOG_INFO(Frontend, "AOT diag: cache copy of {} took {} ms", f->GetName(),
-                         std::chrono::duration_cast<std::chrono::milliseconds>(t_cache_end - t_cache_start).count());
+                         std::chrono::duration_cast<std::chrono::milliseconds>(t_cache_end -
+                                                                               t_cache_start)
+                             .count());
             }
         }
     }
@@ -1616,9 +1674,9 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
         CopyDirectoryRecursive(exefs_dir, cache_dir + QDir::separator() + QStringLiteral("exefs"));
 
         // RealVfsFile holds a raw RealVfsFilesystem& (not a shared_ptr), so a
-    // locally-scoped vfs would dangle once files it opened outlive this
-    // function - keep one filesystem instance alive for the process.
-    static const auto vfs = std::make_shared<FileSys::RealVfsFilesystem>();
+        // locally-scoped vfs would dangle once files it opened outlive this
+        // function - keep one filesystem instance alive for the process.
+        static const auto vfs = std::make_shared<FileSys::RealVfsFilesystem>();
         QDirIterator it(exefs_dir, QDir::Files | QDir::NoDotAndDotDot);
         while (it.hasNext()) {
             it.next();
@@ -1688,8 +1746,8 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
         }
     }
 
-    const bool fallback_enabled = fallback_to_interpreter_checkbox &&
-                                  fallback_to_interpreter_checkbox->isChecked();
+    const bool fallback_enabled =
+        fallback_to_interpreter_checkbox && fallback_to_interpreter_checkbox->isChecked();
 
     u64 recomp_total_blocks = 0;
     QStringList recomp_module_dirs;
@@ -1705,7 +1763,8 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
         std::vector<u64> exported_roots = CollectExportedSymbolAddresses(mod);
         {
             std::vector<u64> data_ptr_roots = ScanDataForCodePointers(mod);
-            exported_roots.insert(exported_roots.end(), data_ptr_roots.begin(), data_ptr_roots.end());
+            exported_roots.insert(exported_roots.end(), data_ptr_roots.begin(),
+                                  data_ptr_roots.end());
             std::vector<u64> reloc_roots = ScanRelocationsForCodePointers(mod);
             exported_roots.insert(exported_roots.end(), reloc_roots.begin(), reloc_roots.end());
             // Addresses a previous run reached but block discovery could not:
@@ -1738,9 +1797,8 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                 mod.name.toStdString(), mod.text_bytes.data(), mod.text_bytes.size(),
                 mod.text_vaddr, mod_dir.toStdString(), /*source_only=*/false,
                 mod.rodata_bytes.empty() ? nullptr : mod.rodata_bytes.data(),
-                mod.rodata_bytes.size(),
-                mod.data_bytes.empty() ? nullptr : mod.data_bytes.data(), mod.data_bytes.size(),
-                mod.entry_vaddr, game_name.toStdString(), &exported_roots);
+                mod.rodata_bytes.size(), mod.data_bytes.empty() ? nullptr : mod.data_bytes.data(),
+                mod.data_bytes.size(), mod.entry_vaddr, game_name.toStdString(), &exported_roots);
             emit_ok = true;
 
             // Report coverage, not just volume. Block and instruction counts say
@@ -1755,8 +1813,8 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                      mod.name.toStdString(), stats.blocks, stats.emitted, stats.unhandled,
                      unhandled_pct, stats.unhandled_by_signature.size());
             for (const auto& [group, count] : stats.unhandled_by_group) {
-                LOG_INFO(Frontend, "AOT coverage [{}]:   unhandled {}: {}",
-                         mod.name.toStdString(), suyu::recomp::EncodingGroupName(group), count);
+                LOG_INFO(Frontend, "AOT coverage [{}]:   unhandled {}: {}", mod.name.toStdString(),
+                         suyu::recomp::EncodingGroupName(group), count);
             }
             if (unhandled_pct > 50.0) {
                 LOG_WARNING(Frontend,
@@ -1790,11 +1848,13 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                     o << "# Module " << mod.name
                       << " fell back to dynarmic JIT — no static recompilation available.\n"
                          "# At runtime suyu will use the interpreter for this module.\n"
-                         "message(STATUS \"[fallback] " << mod.name << " uses dynarmic\")\n";
+                         "message(STATUS \"[fallback] "
+                      << mod.name << " uses dynarmic\")\n";
                 }
             }
             fallback_modules.append(mod.name);
-            LOG_WARNING(Frontend, "Module {} fell back to dynarmic interpreter", mod.name.toStdString());
+            LOG_WARNING(Frontend, "Module {} fell back to dynarmic interpreter",
+                        mod.name.toStdString());
             continue;
         }
 
@@ -1821,24 +1881,23 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
             QString build_log;
 
             QProcess configure;
-            const int configure_rc = RunProcessDrained(
-                configure, cmake,
-                {QStringLiteral("-S"), mod_dir, QStringLiteral("-B"), build_dir,
-                 // The package ships one self-contained exe, so only the static
-                 // library is ever consumed. Without this the generated project
-                 // also builds a standalone exe and a loadable DLL from the same
-                 // sources - three full compiles of a translation unit that can
-                 // take 40 minutes each on a large title.
-                 QStringLiteral("-DRECOMP_STATIC_ONLY=ON")},
-                &configure_log);
+            const int configure_rc =
+                RunProcessDrained(configure, cmake,
+                                  {QStringLiteral("-S"), mod_dir, QStringLiteral("-B"), build_dir,
+                                   // The package ships one self-contained exe, so only the static
+                                   // library is ever consumed. Without this the generated project
+                                   // also builds a standalone exe and a loadable DLL from the same
+                                   // sources - three full compiles of a translation unit that can
+                                   // take 40 minutes each on a large title.
+                                   QStringLiteral("-DRECOMP_STATIC_ONLY=ON")},
+                                  &configure_log);
             if (configure_rc == 0) {
                 QProcess build;
-                const int build_rc =
-                    RunProcessDrained(build, cmake,
-                                      {QStringLiteral("--build"), build_dir,
-                                       QStringLiteral("--config"), QStringLiteral("Release"),
-                                       QStringLiteral("--parallel")},
-                                      &build_log);
+                const int build_rc = RunProcessDrained(
+                    build, cmake,
+                    {QStringLiteral("--build"), build_dir, QStringLiteral("--config"),
+                     QStringLiteral("Release"), QStringLiteral("--parallel")},
+                    &build_log);
                 if (build_rc != 0) {
                     LOG_ERROR(Frontend, "Recompiled module {} failed to compile:\n{}",
                               mod.name.toStdString(), build_log.right(4000).toStdString());
@@ -1860,7 +1919,8 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                 LOG_ERROR(Frontend, "cmake could not configure recompiled module {}:\n{}",
                           mod.name.toStdString(), configure_log.right(4000).toStdString());
                 if (fallback_enabled) {
-                    LOG_WARNING(Frontend, "Module {} cmake configure failed, falling back to dynarmic",
+                    LOG_WARNING(Frontend,
+                                "Module {} cmake configure failed, falling back to dynarmic",
                                 mod.name.toStdString());
                     fallback_modules.append(mod.name);
                     continue;
@@ -1910,9 +1970,12 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
         if (top_cmake.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream o(&top_cmake);
             o << "cmake_minimum_required(VERSION 3.13)\n"
-                 "project(" << game_name << "_recompiled C)\n\n"
+                 "project("
+              << game_name
+              << "_recompiled C)\n\n"
                  "# Add each recompiled module as a subdirectory.\n"
-                 "# Each module builds its own 'recompiled' exe and 'recompiled_image' shared lib.\n";
+                 "# Each module builds its own 'recompiled' exe and 'recompiled_image' shared "
+                 "lib.\n";
             for (const auto& m : recomp_module_dirs) {
                 o << "if(EXISTS \"${CMAKE_CURRENT_SOURCE_DIR}/" << m << "/CMakeLists.txt\")\n"
                   << "  add_subdirectory(" << m << ")\n"
@@ -2081,14 +2144,13 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                     // uses the same drain-while-waiting helper rather than a bare
                     // waitForFinished()+readAllStandardOutput() after the fact.
                     RunProcessDrained(env_proc, QStringLiteral("cmd.exe"),
-                                       {QStringLiteral("/c"), QStringLiteral("call"), vcvars,
-                                        QStringLiteral("&&"), QStringLiteral("set")},
-                                       &out);
+                                      {QStringLiteral("/c"), QStringLiteral("call"), vcvars,
+                                       QStringLiteral("&&"), QStringLiteral("set")},
+                                      &out);
                     for (const auto& line : out.split(QStringLiteral("\n"))) {
                         const int eq = line.indexOf(QLatin1Char('='));
                         if (eq > 0) {
-                            vs_env.insert(line.left(eq).trimmed(),
-                                          line.mid(eq + 1).trimmed());
+                            vs_env.insert(line.left(eq).trimmed(), line.mid(eq + 1).trimmed());
                         }
                     }
                 }
@@ -2103,12 +2165,12 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                 if (!QFile::exists(candidate)) {
                     continue;
                 }
-                conf_rc = RunProcessDrained(
-                    conf, candidate,
-                    {QStringLiteral("-S"), source_tree, QStringLiteral("-B"), build_tree,
-                     QStringLiteral("-DSUYU_CMD_RECOMP_DIR=") +
-                         QDir::fromNativeSeparators(recomp_root)},
-                    &conf_log);
+                conf_rc = RunProcessDrained(conf, candidate,
+                                            {QStringLiteral("-S"), source_tree,
+                                             QStringLiteral("-B"), build_tree,
+                                             QStringLiteral("-DSUYU_CMD_RECOMP_DIR=") +
+                                                 QDir::fromNativeSeparators(recomp_root)},
+                                            &conf_log);
                 if (conf_rc == 0) {
                     cmake_exe = candidate;
                     break;
@@ -2116,20 +2178,18 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                 // Each candidate reuses `conf`, so without this only the last
                 // failure's output survives to the summary log below.
                 LOG_WARNING(Frontend, "cmake candidate {} failed to configure (rc={}):\n{}",
-                            candidate.toStdString(), conf_rc,
-                            conf_log.right(3000).toStdString());
+                            candidate.toStdString(), conf_rc, conf_log.right(3000).toStdString());
             }
             int link_rc = -1;
             if (conf_rc == 0) {
                 QProcess bld;
                 bld.setProcessEnvironment(vs_env);
-                link_rc = RunProcessDrained(bld, cmake_exe,
-                                            {QStringLiteral("--build"), build_tree,
-                                             QStringLiteral("--target"),
-                                             QStringLiteral("suyu-cmd-static"),
-                                             QStringLiteral("--config"), QStringLiteral("Release"),
-                                             QStringLiteral("--parallel")},
-                                            &link_log);
+                link_rc = RunProcessDrained(
+                    bld, cmake_exe,
+                    {QStringLiteral("--build"), build_tree, QStringLiteral("--target"),
+                     QStringLiteral("suyu-cmd-static"), QStringLiteral("--config"),
+                     QStringLiteral("Release"), QStringLiteral("--parallel")},
+                    &link_log);
                 if (link_rc != 0) {
                     LOG_ERROR(Frontend, "suyu-cmd-static failed to link:\n{}",
                               link_log.right(4000).toStdString());
@@ -2145,16 +2205,15 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                     build_tree + QStringLiteral("/bin/suyu-cmd-static.exe"),
                     build_tree + QStringLiteral("/bin/Release/suyu-cmd-static.exe"),
                     build_tree + QStringLiteral("/bin/suyu-cmd-static"),
-                    QCoreApplication::applicationDirPath() +
-                        QStringLiteral("/suyu-cmd-static.exe"),
+                    QCoreApplication::applicationDirPath() + QStringLiteral("/suyu-cmd-static.exe"),
                     QCoreApplication::applicationDirPath() + QStringLiteral("/suyu-cmd-static"),
                 };
                 for (const auto& c : candidates) {
                     if (!QFile::exists(c)) {
                         continue;
                     }
-                    const QString dst_dir = cache_dir + QDir::separator() +
-                                            QStringLiteral("launcher");
+                    const QString dst_dir =
+                        cache_dir + QDir::separator() + QStringLiteral("launcher");
                     QDir().mkpath(dst_dir);
                     const QString dst =
                         dst_dir + QDir::separator() + QStringLiteral("static_launcher.exe");
@@ -2183,9 +2242,14 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                  "set \"CMAKE=cmake\"\r\n"
                  "where cmake >nul 2>&1\r\n"
                  "if %errorlevel% equ 0 goto have_cmake\r\n"
-                 "set \"VSWHERE=%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe\"\r\n"
+                 "set \"VSWHERE=%ProgramFiles(x86)%\\Microsoft Visual "
+                 "Studio\\Installer\\vswhere.exe\"\r\n"
                  "if not exist \"%VSWHERE%\" goto no_cmake\r\n"
-                 "for /f \"usebackq tokens=*\" %%V in (`\"%VSWHERE%\" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set \"CMAKE=%%V\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe\"\r\n"
+                 "for /f \"usebackq tokens=*\" %%V in (`\"%VSWHERE%\" -latest -products * "
+                 "-requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property "
+                 "installationPath`) do set "
+                 "\"CMAKE=%%V\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake."
+                 "exe\"\r\n"
                  "if not exist \"%CMAKE%\" goto no_cmake\r\n"
                  "echo Using Visual Studio cmake: %CMAKE%\r\n"
                  "goto have_cmake\r\n"
@@ -2196,7 +2260,8 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
                  "for /d %%M in (*) do (\r\n"
                  "  if exist \"%%M\\CMakeLists.txt\" (\r\n"
                  "    echo Building %%M ...\r\n"
-                 "    \"%CMAKE%\" -S \"%%M\" -B \"%%M\\build\" && \"%CMAKE%\" --build \"%%M\\build\" --config Release\r\n"
+                 "    \"%CMAKE%\" -S \"%%M\" -B \"%%M\\build\" && \"%CMAKE%\" --build "
+                 "\"%%M\\build\" --config Release\r\n"
                  "  )\r\n"
                  ")\r\n"
                  "echo Done.\r\n"
@@ -2220,8 +2285,8 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
         if (!dump_debug_artifacts) {
             break;
         }
-        const QString map_path = blockmap_dir + QDir::separator() + mod.name +
-                                 QStringLiteral(".blockmap");
+        const QString map_path =
+            blockmap_dir + QDir::separator() + mod.name + QStringLiteral(".blockmap");
         QFile map_file(map_path);
         if (map_file.open(QIODevice::WriteOnly)) {
             // Header: magic "AOTB", version, block_count
@@ -2264,9 +2329,11 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
         out << "  \"ir_translation_failures\": " << total_ir_failures << ",\n";
         out << "  \"host_machine_code_blocks\": 0,\n";
         out << "  \"recompiled_c_blocks\": " << recomp_total_blocks << ",\n";
-        out << "  \"recompiled_project\": \"recompiled/<module>/ (buildable C, cross-platform CMake; "
+        out << "  \"recompiled_project\": \"recompiled/<module>/ (buildable C, cross-platform "
+               "CMake; "
                "generated units in <module>/src, build output in <module>/build)\",\n";
-        out << "  \"native_build_scripts\": [\"recompiled/build_native_windows.cmd\", \"recompiled/build_native_unix.sh\"],\n";
+        out << "  \"native_build_scripts\": [\"recompiled/build_native_windows.cmd\", "
+               "\"recompiled/build_native_unix.sh\"],\n";
         out << "  \"requires_runtime_codegen\": false,\n";
         out << "  \"modules\": [\n";
         for (size_t i = 0; i < module_results.size(); ++i) {
@@ -2294,13 +2361,15 @@ QString GameExportDialog::RunAotPrecompile(const QString& exefs_dir,
             out << "    }" << (i + 1 < module_results.size() ? "," : "") << "\n";
         }
         out << "  ],\n";
-             out << "  \"comment\": \"Dynarmic A64 frontend export. suyu serializes translated IR, "
-                 "raw guest code slices, and block maps as inputs for a future custom runtime/codegen "
-                 "stage instead of bundling the existing frontend executable."
-                 << (ballistic_requested
-                         ? " Ballistic was requested but currently falls back to the Dynarmic export path until a distinct Ballistic serializer is wired."
-                         : "")
-                 << "\"\n";
+        out << "  \"comment\": \"Dynarmic A64 frontend export. suyu serializes translated IR, "
+               "raw guest code slices, and block maps as inputs for a future custom "
+               "runtime/codegen "
+               "stage instead of bundling the existing frontend executable."
+            << (ballistic_requested
+                    ? " Ballistic was requested but currently falls back to the Dynarmic export "
+                      "path until a distinct Ballistic serializer is wired."
+                    : "")
+            << "\"\n";
         out << "}\n";
         manifest.close();
     }
@@ -2371,9 +2440,9 @@ bool GameExportDialog::PackageNativeExport(const QString& rom_path, const QStrin
         // binaries next to freshly generated C source.
         if (!WantsCompiledOutput()) {
             QFile::remove(pkg_dir + QDir::separator() + game_name + QStringLiteral(".exe"));
-            for (const char* dll : {"avcodec-61.dll", "avformat-61.dll", "avutil-59.dll",
-                                     "dxcompiler.dll", "dxil.dll", "libcrypto.dll", "libssl.dll",
-                                     "swresample-5.dll", "swscale-8.dll"}) {
+            for (const char* dll :
+                 {"avcodec-61.dll", "avformat-61.dll", "avutil-59.dll", "dxcompiler.dll",
+                  "dxil.dll", "libcrypto.dll", "libssl.dll", "swresample-5.dll", "swscale-8.dll"}) {
                 QFile::remove(pkg_dir + QDir::separator() + QString::fromLatin1(dll));
             }
         }
@@ -2421,8 +2490,7 @@ bool GameExportDialog::PackageNativeExport(const QString& rom_path, const QStrin
         // linked in: one file, no recompiled_*.dll beside it. The generic
         // suyu-cmd is the fallback for source-only exports and for machines
         // where the static link could not be produced.
-        const QString static_launcher =
-            cache_dir + QStringLiteral("/launcher/static_launcher.exe");
+        const QString static_launcher = cache_dir + QStringLiteral("/launcher/static_launcher.exe");
         const bool has_static_launcher = QFile::exists(static_launcher);
 
         // The generated C source and per-module build trees under aot_cache/
@@ -2435,8 +2503,8 @@ bool GameExportDialog::PackageNativeExport(const QString& rom_path, const QStrin
         // compiled binary.
         if (!has_static_launcher) {
             write_source_reference(pkg_dir);
-            if (!CopyDirectoryUnlessInPlace(
-                    cache_dir, pkg_dir + QDir::separator() + QStringLiteral("aot_cache"))) {
+            if (!CopyDirectoryUnlessInPlace(cache_dir, pkg_dir + QDir::separator() +
+                                                           QStringLiteral("aot_cache"))) {
                 return false;
             }
         }
@@ -2465,10 +2533,10 @@ bool GameExportDialog::PackageNativeExport(const QString& rom_path, const QStrin
             box.exec();
             return false;
         }
-        const QString launcher_src = has_static_launcher
-                                         ? static_launcher
-                                         : bin_dir + QStringLiteral("/suyu-cmd.exe");
-        const QString launcher_dst = pkg_dir + QDir::separator() + game_name + QStringLiteral(".exe");
+        const QString launcher_src =
+            has_static_launcher ? static_launcher : bin_dir + QStringLiteral("/suyu-cmd.exe");
+        const QString launcher_dst =
+            pkg_dir + QDir::separator() + game_name + QStringLiteral(".exe");
         if (QFile::exists(launcher_src)) {
             QFile::remove(launcher_dst);
             QFile::copy(launcher_src, launcher_dst);
@@ -2477,31 +2545,47 @@ bool GameExportDialog::PackageNativeExport(const QString& rom_path, const QStrin
             if (!game_icon_.isNull()) {
 #ifdef _WIN32
                 // Scale icon to 256x256 for best Explorer display quality
-                const QPixmap icon256 = game_icon_.scaled(256, 256,
-                    Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation)
-                    .copy(0, 0, 256, 256);
+                const QPixmap icon256 =
+                    game_icon_
+                        .scaled(256, 256, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation)
+                        .copy(0, 0, 256, 256);
                 const QByteArray icon_dib = MakeIconDib(icon256);
                 if (!icon_dib.isEmpty()) {
-#pragma pack(push,1)
-                    struct GrpEntry { BYTE w,h,cc,res; WORD pl,bpp; DWORD sz; WORD id; };
-                    struct GrpDir  { WORD reserved,type,count; GrpEntry e[1]; };
+#pragma pack(push, 1)
+                    struct GrpEntry {
+                        BYTE w, h, cc, res;
+                        WORD pl, bpp;
+                        DWORD sz;
+                        WORD id;
+                    };
+                    struct GrpDir {
+                        WORD reserved, type, count;
+                        GrpEntry e[1];
+                    };
 #pragma pack(pop)
                     GrpDir grp{};
-                    grp.type=1; grp.count=1;
+                    grp.type = 1;
+                    grp.count = 1;
                     // w=h=0 signals 256x256 in ICO/GRPICONDIR convention
-                    grp.e[0].w=0; grp.e[0].h=0;
-                    grp.e[0].pl=1; grp.e[0].bpp=32;
-                    grp.e[0].sz=(DWORD)icon_dib.size(); grp.e[0].id=1;
+                    grp.e[0].w = 0;
+                    grp.e[0].h = 0;
+                    grp.e[0].pl = 1;
+                    grp.e[0].bpp = 32;
+                    grp.e[0].sz = (DWORD)icon_dib.size();
+                    grp.e[0].id = 1;
                     const std::wstring dstW = launcher_dst.toStdWString();
                     // FALSE = keep existing resources (manifests, version info, etc.)
                     HANDLE h = BeginUpdateResourceW(dstW.c_str(), FALSE);
                     if (h) {
-                        const bool icon_ok = UpdateResourceW(h, RT_ICON, MAKEINTRESOURCEW(1),
-                            MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
-                            (LPVOID)icon_dib.data(), (DWORD)icon_dib.size()) != FALSE;
-                        const bool group_ok = UpdateResourceW(h, RT_GROUP_ICON, MAKEINTRESOURCEW(1),
-                            MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
-                            (LPVOID)&grp, (DWORD)(sizeof(WORD)*3 + sizeof(GrpEntry)));
+                        const bool icon_ok =
+                            UpdateResourceW(h, RT_ICON, MAKEINTRESOURCEW(1),
+                                            MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
+                                            (LPVOID)icon_dib.data(),
+                                            (DWORD)icon_dib.size()) != FALSE;
+                        const bool group_ok =
+                            UpdateResourceW(h, RT_GROUP_ICON, MAKEINTRESOURCEW(1),
+                                            MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL), (LPVOID)&grp,
+                                            (DWORD)(sizeof(WORD) * 3 + sizeof(GrpEntry)));
                         if (!icon_ok || !group_ok || !EndUpdateResourceW(h, FALSE)) {
                             LOG_WARNING(Frontend, "Failed to embed game icon in {}",
                                         launcher_dst.toStdString());
@@ -2513,12 +2597,18 @@ bool GameExportDialog::PackageNativeExport(const QString& rom_path, const QStrin
 
             // DLLs required by suyu-cmd (FFmpeg, DXC, OpenSSL — SDL3 is statically linked)
             static constexpr const char* kRuntimeDlls[] = {
-                "avcodec-61.dll", "avformat-61.dll", "avutil-59.dll",
-                "swresample-5.dll", "swscale-8.dll",
-                "dxcompiler.dll", "dxil.dll",
-                "libcrypto-3-x64.dll", "libssl-3-x64.dll",
+                "avcodec-61.dll",
+                "avformat-61.dll",
+                "avutil-59.dll",
+                "swresample-5.dll",
+                "swscale-8.dll",
+                "dxcompiler.dll",
+                "dxil.dll",
+                "libcrypto-3-x64.dll",
+                "libssl-3-x64.dll",
                 // fallback names used by some builds
-                "libcrypto.dll", "libssl.dll",
+                "libcrypto.dll",
+                "libssl.dll",
             };
             for (const char* dll : kRuntimeDlls) {
                 const QString src = bin_dir + QLatin1Char('/') + QLatin1String(dll);
@@ -2582,10 +2672,12 @@ bool GameExportDialog::PackageNativeExport(const QString& rom_path, const QStrin
             out << "            demand and hands control straight back; correctness never\n";
             out << "            depends on how much of the program it covers.\n\n";
             out << "Contents:\n";
-            out << "- " << game_name << ".exe : the game (recompiled code + HLE/GPU backend, one file)\n";
+            out << "- " << game_name
+                << ".exe : the game (recompiled code + HLE/GPU backend, one file)\n";
             out << "- launch.bat      : one-click launcher\n";
             out << "- exefs/          : the game's own executables and data, extracted once at\n";
-            out << "                    export time so no ROM or decryption keys are needed to run\n";
+            out << "                    export time so no ROM or decryption keys are needed to "
+                   "run\n";
             out << "- *.dll           : runtime libraries (FFmpeg, Vulkan, OpenSSL)\n";
             out << "- mods/           : optional; drop <title_id>/<mod name>/ folders here\n";
             out << "- user/           : this game's own config, saves, and logs (not suyu's)\n\n";
@@ -2609,8 +2701,8 @@ bool GameExportDialog::PackageNativeExport(const QString& rom_path, const QStrin
         write_source_reference(bin_dir);
 
         // Copy AOT cache
-        if (!CopyDirectoryUnlessInPlace(cache_dir,
-                                    bin_dir + QDir::separator() + QStringLiteral("aot_cache"))) {
+        if (!CopyDirectoryUnlessInPlace(cache_dir, bin_dir + QDir::separator() +
+                                                       QStringLiteral("aot_cache"))) {
             return false;
         }
 
@@ -2638,8 +2730,8 @@ bool GameExportDialog::PackageNativeExport(const QString& rom_path, const QStrin
         write_source_reference(res_dir);
 
         // Copy AOT cache
-        if (!CopyDirectoryUnlessInPlace(cache_dir,
-                                    res_dir + QDir::separator() + QStringLiteral("aot_cache"))) {
+        if (!CopyDirectoryUnlessInPlace(cache_dir, res_dir + QDir::separator() +
+                                                       QStringLiteral("aot_cache"))) {
             return false;
         }
 
@@ -2742,8 +2834,8 @@ QStringList GameExportDialog::FindRecompiledExecutables(const QString& game_name
     for (const QString& root : RecompileOutputRoots()) {
         for (const QString& name : names) {
             // New layout: <root>/<GameName>/<GameName>.exe (suyu-cmd launcher)
-            const QString pkg_launcher = root + QDir::separator() + name +
-                                         QDir::separator() + name +
+            const QString pkg_launcher = root + QDir::separator() + name + QDir::separator() +
+                                         name +
 #ifdef _WIN32
                                          QStringLiteral(".exe");
 #else
@@ -2882,8 +2974,7 @@ void GameExportDialog::OnExport() {
         return;
     }
     if (output_dir.isEmpty()) {
-        QMessageBox::warning(this, tr("No Output"),
-                             tr("Please select an output directory first."));
+        QMessageBox::warning(this, tr("No Output"), tr("Please select an output directory first."));
         return;
     }
     if (!QFile::exists(rom_path)) {
@@ -2892,10 +2983,8 @@ void GameExportDialog::OnExport() {
         return;
     }
 
-    const auto platform =
-        static_cast<TargetPlatform>(platform_combo->currentData().toInt());
-    const auto backend =
-        static_cast<RecompileBackend>(backend_combo->currentData().toInt());
+    const auto platform = static_cast<TargetPlatform>(platform_combo->currentData().toInt());
+    const auto backend = static_cast<RecompileBackend>(backend_combo->currentData().toInt());
     const bool include_save_data = include_save_data_checkbox->isChecked();
     const bool include_shader_cache = include_shader_cache_checkbox->isChecked();
     const bool include_custom_config = include_custom_config_checkbox->isChecked();
@@ -2955,161 +3044,167 @@ void GameExportDialog::OnExport() {
     QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
     if (backend == RecompileBackend::Ballistic) {
-        status_label->setText(tr("Ballistic export is not wired yet; using Dynarmic export artifacts for this run."));
+        status_label->setText(
+            tr("Ballistic export is not wired yet; using Dynarmic export artifacts for this run."));
         QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
     }
 
     try {
-    // Step 1: Create temporary working directories
-    const QString work_dir = output_dir + QDir::separator() +
-                             QStringLiteral(".aot_work_") + game_name;
-    const QString exefs_work = work_dir + QDir::separator() + QStringLiteral("exefs");
-    // The AOT cache is generated straight into the package it belongs in
-    // rather than into the work area. It is by far the largest thing an export
-    // produces - about 6 GB of C for Smash Ultimate - and staging it only to
-    // copy it across meant writing 12 GB and holding both at once, which is
-    // where large exports were failing during packaging.
-    const QString cache_work = AotCacheDirFor(output_dir, game_name, platform);
-    QDir().mkpath(exefs_work);
-    QDir().mkpath(cache_work);
-    progress_bar->setValue(5);
+        // Step 1: Create temporary working directories
+        const QString work_dir =
+            output_dir + QDir::separator() + QStringLiteral(".aot_work_") + game_name;
+        const QString exefs_work = work_dir + QDir::separator() + QStringLiteral("exefs");
+        // The AOT cache is generated straight into the package it belongs in
+        // rather than into the work area. It is by far the largest thing an export
+        // produces - about 6 GB of C for Smash Ultimate - and staging it only to
+        // copy it across meant writing 12 GB and holding both at once, which is
+        // where large exports were failing during packaging.
+        const QString cache_work = AotCacheDirFor(output_dir, game_name, platform);
+        QDir().mkpath(exefs_work);
+        QDir().mkpath(cache_work);
+        progress_bar->setValue(5);
 
-    // Step 2: ExeFS extraction is handled inside RunAotPrecompile via VFS.
-    // For extracted directories, we copy them to the work area here.
-    status_label->setText(tr("Scanning for ExeFS content..."));
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    QFileInfo rom_fi(rom_path);
-    if (rom_fi.isDir()) {
-        const QString exefs_sub = rom_path + QDir::separator() + QStringLiteral("exefs");
-        if (QDir(exefs_sub).exists()) {
-            if (!CopyDirectoryRecursive(exefs_sub, exefs_work)) {
-                throw std::runtime_error("Failed to copy ExeFS staging directory");
-            }
-        } else {
-            if (!CopyDirectoryRecursive(rom_path, exefs_work)) {
-                throw std::runtime_error("Failed to copy ROM directory into export staging area");
-            }
-        }
-    }
-    // For packaged ROM files (NSP/XCI/NCA), the AOT step uses VFS to extract ExeFS directly.
-    progress_bar->setValue(15);
-
-    // Step 3: AOT pre-compilation
-    status_label->setText(tr("Running AOT pre-compilation (%1)...")
-                              .arg(backend == RecompileBackend::Ballistic
-                                       ? QStringLiteral("Ballistic")
-                                       : QStringLiteral("Dynarmic")));
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    const QString cache_result = RunAotPrecompile(exefs_work, cache_work, backend, game_name);
-    if (cache_result.isEmpty()) {
-        status_label->setText(tr("AOT pre-compilation failed."));
-        progress_bar->setValue(0);
-        export_button->setEnabled(true);
-        emit ExportFinished(false, {});
-        return;
-    }
-    progress_bar->setValue(40);
-
-    // Step 4: Package native export artifacts
-    status_label->setText(tr("Packaging native export artifacts..."));
-    QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
-    const bool pkg_ok = PackageNativeExport(rom_path, cache_work, output_dir, game_name, platform);
-    if (!pkg_ok) {
-        status_label->setText(tr("Packaging failed."));
-        progress_bar->setValue(0);
-        export_button->setEnabled(true);
-        emit ExportFinished(false, {});
-        return;
-    }
-    progress_bar->setValue(75);
-
-    // Step 5: Bundle portable data (save, shader, config)
-    if ((include_save_data || include_shader_cache || include_custom_config) &&
-        rom_program_id != 0) {
-        status_label->setText(tr("Bundling portable data..."));
+        // Step 2: ExeFS extraction is handled inside RunAotPrecompile via VFS.
+        // For extracted directories, we copy them to the work area here.
+        status_label->setText(tr("Scanning for ExeFS content..."));
         QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
-        // Determine the package root (platform-specific)
-        QString pkg_root;
+        QFileInfo rom_fi(rom_path);
+        if (rom_fi.isDir()) {
+            const QString exefs_sub = rom_path + QDir::separator() + QStringLiteral("exefs");
+            if (QDir(exefs_sub).exists()) {
+                if (!CopyDirectoryRecursive(exefs_sub, exefs_work)) {
+                    throw std::runtime_error("Failed to copy ExeFS staging directory");
+                }
+            } else {
+                if (!CopyDirectoryRecursive(rom_path, exefs_work)) {
+                    throw std::runtime_error(
+                        "Failed to copy ROM directory into export staging area");
+                }
+            }
+        }
+        // For packaged ROM files (NSP/XCI/NCA), the AOT step uses VFS to extract ExeFS directly.
+        progress_bar->setValue(15);
+
+        // Step 3: AOT pre-compilation
+        status_label->setText(tr("Running AOT pre-compilation (%1)...")
+                                  .arg(backend == RecompileBackend::Ballistic
+                                           ? QStringLiteral("Ballistic")
+                                           : QStringLiteral("Dynarmic")));
+        QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+        const QString cache_result = RunAotPrecompile(exefs_work, cache_work, backend, game_name);
+        if (cache_result.isEmpty()) {
+            status_label->setText(tr("AOT pre-compilation failed."));
+            progress_bar->setValue(0);
+            export_button->setEnabled(true);
+            emit ExportFinished(false, {});
+            return;
+        }
+        progress_bar->setValue(40);
+
+        // Step 4: Package native export artifacts
+        status_label->setText(tr("Packaging native export artifacts..."));
+        QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+        const bool pkg_ok =
+            PackageNativeExport(rom_path, cache_work, output_dir, game_name, platform);
+        if (!pkg_ok) {
+            status_label->setText(tr("Packaging failed."));
+            progress_bar->setValue(0);
+            export_button->setEnabled(true);
+            emit ExportFinished(false, {});
+            return;
+        }
+        progress_bar->setValue(75);
+
+        // Step 5: Bundle portable data (save, shader, config)
+        if ((include_save_data || include_shader_cache || include_custom_config) &&
+            rom_program_id != 0) {
+            status_label->setText(tr("Bundling portable data..."));
+            QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+            // Determine the package root (platform-specific)
+            QString pkg_root;
+            switch (platform) {
+            case TargetPlatform::Windows:
+                pkg_root = output_dir + QDir::separator() + game_name;
+                break;
+            case TargetPlatform::Linux:
+                pkg_root = output_dir + QDir::separator() + game_name + QStringLiteral(".AppDir");
+                break;
+            case TargetPlatform::MacOS:
+                pkg_root = output_dir + QDir::separator() + game_name + QStringLiteral(".app");
+                break;
+            }
+
+            if (!CopyPortableSupportData(rom_program_id, pkg_root, include_save_data,
+                                         include_shader_cache, include_custom_config)) {
+                throw std::runtime_error("Failed to bundle portable support data");
+            }
+        }
+        progress_bar->setValue(90);
+
+        // Step 6: Clean up working directory
+        QDir(work_dir).removeRecursively();
+        progress_bar->setValue(100);
+
+        // Determine final output path for display
+        QString final_path;
         switch (platform) {
         case TargetPlatform::Windows:
-            pkg_root = output_dir + QDir::separator() + game_name;
+            final_path = output_dir + QDir::separator() + game_name;
             break;
         case TargetPlatform::Linux:
-            pkg_root = output_dir + QDir::separator() + game_name + QStringLiteral(".AppDir");
+            final_path = output_dir + QDir::separator() + game_name + QStringLiteral(".AppDir");
             break;
         case TargetPlatform::MacOS:
-            pkg_root = output_dir + QDir::separator() + game_name + QStringLiteral(".app");
+            final_path = output_dir + QDir::separator() + game_name + QStringLiteral(".app");
             break;
         }
 
-        if (!CopyPortableSupportData(rom_program_id, pkg_root, include_save_data,
-                                     include_shader_cache, include_custom_config)) {
-            throw std::runtime_error("Failed to bundle portable support data");
+        export_button->setEnabled(true);
+        status_label->setText(tr("Export completed: %1").arg(final_path));
+        emit ExportFinished(true, final_path);
+
+        if (WantsCompiledOutput()) {
+            QMessageBox::information(
+                this, tr("AOT Export Complete"),
+                tr("Game exported and compiled to a standalone executable at:\n%1\n\n"
+                   "The package contains:\n"
+                   "- %2.exe — the recompiled game, statically linked with suyu's HLE/GPU backend "
+                   "(no separate DLLs, no emulator installation required)\n"
+                   "- mods/ — drop patch/mod folders here\n"
+                   "- user/ — this export's own config, save data, and logs (independent of "
+                   "suyu's)\n"
+                   "- Runtime DLLs (FFmpeg, Vulkan, OpenSSL) alongside the exe\n\n"
+                   "Just run %2.exe.")
+                    .arg(final_path, game_name));
+        } else {
+            QMessageBox::information(
+                this, tr("AOT Export Complete"),
+                tr("Game exported as C source to:\n%1\n\n"
+                   "The package contains:\n"
+                   "- Recompiled C source (buildable standalone PC executable)\n"
+                   "- Runtime with save/load support (save_data/ directory next to exe)\n"
+                   "- Bundled data segments (text, rodata, data)\n"
+                   "- Build scripts for Windows (.cmd) and Unix (.sh)\n\n"
+                   "Run build_native_windows.cmd (or build_native_unix.sh) in "
+                   "aot_cache/recompiled/ to compile.\n"
+                   "The resulting executable runs independently — no emulator required.\n\n"
+                   "(Choose \"Build\" instead of \"Source\" as the Export Format to have suyu "
+                   "compile "
+                   "this for you automatically.)")
+                    .arg(final_path));
         }
-    }
-    progress_bar->setValue(90);
-
-    // Step 6: Clean up working directory
-    QDir(work_dir).removeRecursively();
-    progress_bar->setValue(100);
-
-    // Determine final output path for display
-    QString final_path;
-    switch (platform) {
-    case TargetPlatform::Windows:
-        final_path = output_dir + QDir::separator() + game_name;
-        break;
-    case TargetPlatform::Linux:
-        final_path = output_dir + QDir::separator() + game_name + QStringLiteral(".AppDir");
-        break;
-    case TargetPlatform::MacOS:
-        final_path = output_dir + QDir::separator() + game_name + QStringLiteral(".app");
-        break;
-    }
-
-    export_button->setEnabled(true);
-    status_label->setText(tr("Export completed: %1").arg(final_path));
-    emit ExportFinished(true, final_path);
-
-    if (WantsCompiledOutput()) {
-        QMessageBox::information(
-            this, tr("AOT Export Complete"),
-            tr("Game exported and compiled to a standalone executable at:\n%1\n\n"
-               "The package contains:\n"
-               "- %2.exe — the recompiled game, statically linked with suyu's HLE/GPU backend "
-               "(no separate DLLs, no emulator installation required)\n"
-               "- mods/ — drop patch/mod folders here\n"
-               "- user/ — this export's own config, save data, and logs (independent of suyu's)\n"
-               "- Runtime DLLs (FFmpeg, Vulkan, OpenSSL) alongside the exe\n\n"
-               "Just run %2.exe.")
-                .arg(final_path, game_name));
-    } else {
-        QMessageBox::information(
-            this, tr("AOT Export Complete"),
-            tr("Game exported as C source to:\n%1\n\n"
-               "The package contains:\n"
-               "- Recompiled C source (buildable standalone PC executable)\n"
-               "- Runtime with save/load support (save_data/ directory next to exe)\n"
-               "- Bundled data segments (text, rodata, data)\n"
-               "- Build scripts for Windows (.cmd) and Unix (.sh)\n\n"
-               "Run build_native_windows.cmd (or build_native_unix.sh) in aot_cache/recompiled/ to compile.\n"
-               "The resulting executable runs independently — no emulator required.\n\n"
-               "(Choose \"Build\" instead of \"Source\" as the Export Format to have suyu compile "
-               "this for you automatically.)")
-                .arg(final_path));
-    }
     } catch (const std::exception& e) {
         LOG_ERROR(Frontend, "Exception during game export: {}", e.what());
         export_button->setEnabled(true);
         progress_bar->setValue(0);
         status_label->setText(tr("Export failed."));
-        QMessageBox::critical(this, tr("Export Failed"),
-                              tr("An error occurred during game export:\n%1")
-                                  .arg(QString::fromUtf8(e.what())));
+        QMessageBox::critical(
+            this, tr("Export Failed"),
+            tr("An error occurred during game export:\n%1").arg(QString::fromUtf8(e.what())));
         emit ExportFinished(false, {});
     } catch (...) {
         LOG_ERROR(Frontend, "Unknown exception during game export");

@@ -14,8 +14,8 @@
 #include <QtCore/qglobal.h>
 #include "common/settings_enums.h"
 
-#include "qt_common/config/uisettings.h"
 #include "qt_common/abstract/frontend.h"
+#include "qt_common/config/uisettings.h"
 
 #if YUZU_USE_QT_MULTIMEDIA
 #include <QCamera>
@@ -896,7 +896,7 @@ bool GRenderWindow::LoadOpenGL() {
         QtCommon::Frontend::Warning(
             tr("Error while initializing OpenGL 4.6!"),
             tr("Your GPU may not support OpenGL 4.6, or you do not have the "
-            "latest graphics driver.<br><br>GL Renderer:<br>%1")
+               "latest graphics driver.<br><br>GL Renderer:<br>%1")
                 .arg(renderer));
         return false;
     }
@@ -911,9 +911,8 @@ bool GRenderWindow::LoadOpenGL() {
     }
     return true;
 #else
-    QtCommon::Frontend::Warning(
-        tr("Error while initializing OpenGL!"),
-        tr("This build doesn't have OpenGL support."));
+    QtCommon::Frontend::Warning(tr("Error while initializing OpenGL!"),
+                                tr("This build doesn't have OpenGL support."));
     return false;
 #endif
 }

@@ -16,9 +16,9 @@
 
 #include <boost/container/static_vector.hpp>
 
+#include <ranges>
 #include "common/alignment.h"
 #include "common/common_types.h"
-#include <ranges>
 #include "video_core/textures/astc.h"
 #include "video_core/textures/workers.h"
 
@@ -1294,7 +1294,7 @@ struct HDREndpointRGB {
 };
 
 static void DecodeHDREndpointMode7(u32 v0, u32 v1, u32 v2, u32 v3, s32& r0, s32& g0, s32& b0,
-                                    s32& r1, s32& g1, s32& b1) {
+                                   s32& r1, s32& g1, s32& b1) {
     const u32 modeval = ((v0 & 0xC0) >> 6) | ((v1 & 0x80) >> 5) | ((v2 & 0x80) >> 4);
 
     u32 majcomp;

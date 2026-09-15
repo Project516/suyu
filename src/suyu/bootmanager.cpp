@@ -23,12 +23,12 @@
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
-#include <QString>
 #include <QLayout>
 #include <QList>
 #include <QMessageBox>
 #include <QScreen>
 #include <QSize>
+#include <QString>
 #include <QStringLiteral>
 #include <QSurfaceFormat>
 #include <QWindow>
@@ -129,15 +129,13 @@ void EmuThread::run() {
                 m_system.Run();
                 m_stopped.Reset();
 
-                Common::CondvarWait(m_should_run_cv, lk, stop_token,
-                                    [&] { return !m_should_run; });
+                Common::CondvarWait(m_should_run_cv, lk, stop_token, [&] { return !m_should_run; });
             } else {
                 m_system.Pause();
                 m_stopped.Set();
 
                 EmulationPaused(lk);
-                Common::CondvarWait(m_should_run_cv, lk, stop_token,
-                                    [&] { return m_should_run; });
+                Common::CondvarWait(m_should_run_cv, lk, stop_token, [&] { return m_should_run; });
                 EmulationResumed(lk);
             }
         }
@@ -151,7 +149,8 @@ void EmuThread::run() {
             m_system.SetShuttingDown(true);
             m_system.DetachDebugger();
             m_system.ShutdownMainProcess();
-        } catch (...) {}
+        } catch (...) {
+        }
         emit FatalError(QString::fromUtf8(e.what()));
         return;
     } catch (...) {
@@ -160,7 +159,8 @@ void EmuThread::run() {
             m_system.SetShuttingDown(true);
             m_system.DetachDebugger();
             m_system.ShutdownMainProcess();
-        } catch (...) {}
+        } catch (...) {
+        }
         emit FatalError(QStringLiteral("An unknown error occurred in the emulation thread."));
         return;
     }
@@ -335,11 +335,11 @@ GRenderWindow::GRenderWindow(GMainWindow* parent, EmuThread* emu_thread_,
     : QWidget(parent),
       emu_thread(emu_thread_), input_subsystem{std::move(input_subsystem_)}, system{system_} {
     const QString build_title = QString::fromUtf8(Common::g_build_fullname).isEmpty()
-        ? QStringLiteral("suyu %1 | %2-%3")
-              .arg(QString::fromUtf8(Common::g_build_name),
-                   QString::fromUtf8(Common::g_scm_branch),
-                   QString::fromUtf8(Common::g_scm_desc))
-        : QString::fromUtf8(Common::g_build_fullname);
+                                    ? QStringLiteral("suyu %1 | %2-%3")
+                                          .arg(QString::fromUtf8(Common::g_build_name),
+                                               QString::fromUtf8(Common::g_scm_branch),
+                                               QString::fromUtf8(Common::g_scm_desc))
+                                    : QString::fromUtf8(Common::g_build_fullname);
     setWindowTitle(build_title);
     setAttribute(Qt::WA_AcceptTouchEvents);
     auto* layout = new QHBoxLayout(this);

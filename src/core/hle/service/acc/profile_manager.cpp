@@ -99,8 +99,7 @@ bool ProfileManager::RemoveProfileAtIndex(std::size_t index) {
     return true;
 }
 
-void ProfileManager::RemoveAllProfiles()
-{
+void ProfileManager::RemoveAllProfiles() {
     user_count = 0;
     profiles = {};
 }
@@ -274,9 +273,8 @@ void ProfileManager::CloseUser(UUID uuid) {
 /// Gets all valid user ids on the system
 UserIDArray ProfileManager::GetAllUsers() const {
     UserIDArray output{};
-    std::ranges::transform(profiles, output.begin(), [](const ProfileInfo& p) {
-        return p.user_uuid;
-    });
+    std::ranges::transform(profiles, output.begin(),
+                           [](const ProfileInfo& p) { return p.user_uuid; });
     return output;
 }
 
@@ -481,14 +479,12 @@ void ProfileManager::WriteUserSaveFile() {
     is_save_needed = false;
 }
 
-void ProfileManager::ResetUserSaveFile()
-{
+void ProfileManager::ResetUserSaveFile() {
     RemoveAllProfiles();
     ParseUserSaveFile();
 }
 
-std::vector<UUID> ProfileManager::FindExistingProfileUUIDs()
-{
+std::vector<UUID> ProfileManager::FindExistingProfileUUIDs() {
     std::vector<UUID> uuids;
     for (const ProfileInfo& p : profiles) {
         auto uuid = p.user_uuid;
@@ -500,12 +496,11 @@ std::vector<UUID> ProfileManager::FindExistingProfileUUIDs()
     return uuids;
 }
 
-std::vector<std::string> ProfileManager::FindExistingProfileStrings()
-{
+std::vector<std::string> ProfileManager::FindExistingProfileStrings() {
     std::vector<UUID> uuids = FindExistingProfileUUIDs();
     std::vector<std::string> uuid_strings;
 
-    for (const UUID &uuid : uuids) {
+    for (const UUID& uuid : uuids) {
         auto user_id = uuid.AsU128();
         uuid_strings.emplace_back(fmt::format("{:016X}{:016X}", user_id[1], user_id[0]));
     }
@@ -513,20 +508,19 @@ std::vector<std::string> ProfileManager::FindExistingProfileStrings()
     return uuid_strings;
 }
 
-std::vector<std::string> ProfileManager::FindGoodProfiles()
-{
+std::vector<std::string> ProfileManager::FindGoodProfiles() {
     namespace fs = std::filesystem;
 
     std::vector<std::string> good_uuids;
 
-    const auto path = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir)
-                      / "user/save/0000000000000000";
+    const auto path =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "user/save/0000000000000000";
 
     // some exceptions, e.g. the "system" profile
-    static constexpr const std::array<const char* const, 1> EXCEPTION_UUIDS
-        = {"00000000000000000000000000000000"};
+    static constexpr const std::array<const char* const, 1> EXCEPTION_UUIDS = {
+        "00000000000000000000000000000000"};
 
-    for (const char *const uuid : EXCEPTION_UUIDS) {
+    for (const char* const uuid : EXCEPTION_UUIDS) {
         if (fs::exists(path / uuid))
             good_uuids.emplace_back(uuid);
     }
@@ -537,15 +531,14 @@ std::vector<std::string> ProfileManager::FindGoodProfiles()
     return good_uuids;
 }
 
-std::vector<std::string> ProfileManager::FindOrphanedProfiles()
-{
+std::vector<std::string> ProfileManager::FindOrphanedProfiles() {
     std::vector<std::string> good_uuids = FindGoodProfiles();
 
     namespace fs = std::filesystem;
 
     // TODO: fetch save_id programmatically
-    const auto path = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir)
-                      / "user/save/0000000000000000";
+    const auto path =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "user/save/0000000000000000";
 
     std::vector<std::string> orphaned_profiles;
 
@@ -562,14 +555,14 @@ std::vector<std::string> ProfileManager::FindOrphanedProfiles()
                 try {
                     for (const auto& file : fs::recursive_directory_iterator(entry.path())) {
                         // TODO: .yuzu_save_size is a weird file that gets created by certain games
-                        // I have no idea what its purpose is, but TEMPORARY SOLUTION: just mark the profile as valid if
-                        // this file exists (???) e.g. for SSBU
-                        // In short: if .yuzu_save_size is the ONLY file in a profile it's probably fine to keep
+                        // I have no idea what its purpose is, but TEMPORARY SOLUTION: just mark the
+                        // profile as valid if this file exists (???) e.g. for SSBU In short: if
+                        // .yuzu_save_size is the ONLY file in a profile it's probably fine to keep
                         if (file.path().filename().string() == FileSys::GetSaveDataSizeFileName())
                             override = true;
 
-                        // if there are any regular files (NOT directories) there, do NOT delete it :p
-                        // Also: check for symlinks
+                        // if there are any regular files (NOT directories) there, do NOT delete it
+                        // :p Also: check for symlinks
                         if (file.is_regular_file() || Common::FS::IsSymlink(file.path()))
                             return false;
                     }
@@ -594,8 +587,8 @@ std::vector<std::string> ProfileManager::FindOrphanedProfiles()
 
             // if profiles.dat contains the UUID--all good
             // if not--it's an orphaned profile and should be resolved by the user
-            if (!override
-                && std::find(good_uuids.begin(), good_uuids.end(), upper_uuid) == good_uuids.end()) {
+            if (!override &&
+                std::find(good_uuids.begin(), good_uuids.end(), upper_uuid) == good_uuids.end()) {
                 orphaned_profiles.emplace_back(uuid);
             }
             return true;
@@ -629,6 +622,5 @@ void ProfileManager::SetUserPosition(u64 position, Common::UUID uuid) {
     is_save_needed = true;
     WriteUserSaveFile();
 }
-
 
 }; // namespace Service::Account

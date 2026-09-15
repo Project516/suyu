@@ -9,11 +9,10 @@
 #include "dynarmic/ir/value.h"
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
-
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
 #include "dynarmic/ir/type.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::IR {
 

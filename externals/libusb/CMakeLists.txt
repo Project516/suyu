@@ -18,13 +18,15 @@ if (MINGW OR PLATFORM_LINUX OR APPLE)
     # GNU toolchains for some reason doesn't work with the later half of this CMakeLists after
     # updating to 1.0.24, so we do it the old-fashioned way for now.
 
-    # Require autoconf and libtoolize here, rather than crash during compilation
+    # Require autoconf and libtoolize here, rather than crash during compilation.
+    # Homebrew's GNU libtool installs these as glibtool/glibtoolize to avoid
+    # clashing with Apple's libtool, so accept both names.
     find_program(AUTOCONF autoconf)
     if ("${AUTOCONF}" STREQUAL "AUTOCONF-NOTFOUND")
         message(FATAL_ERROR "Required program `autoconf` not found.")
     endif()
 
-    find_program(LIBTOOLIZE libtoolize)
+    find_program(LIBTOOLIZE NAMES libtoolize glibtoolize)
     if ("${LIBTOOLIZE}" STREQUAL "LIBTOOLIZE-NOTFOUND")
         message(FATAL_ERROR "Required program `libtoolize` not found.")
     endif()

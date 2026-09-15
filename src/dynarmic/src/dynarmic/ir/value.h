@@ -13,7 +13,6 @@
 
 #include "common/assert.h"
 #include "common/common_types.h"
-
 #include "dynarmic/ir/type.h"
 
 namespace Dynarmic::A32 {
@@ -38,7 +37,8 @@ class Value {
 public:
     using CoprocessorInfo = std::array<u8, 8>;
 
-    inline Value() noexcept : type(Type::Void) {}
+    inline Value() noexcept
+            : type(Type::Void) {}
     explicit Value(Inst* value);
     explicit Value(A32::Reg value);
     explicit Value(A32::ExtReg value);

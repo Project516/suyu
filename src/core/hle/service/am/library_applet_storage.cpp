@@ -59,13 +59,12 @@ private:
 
 class TransferMemoryLibraryAppletStorage : public LibraryAppletStorage {
 public:
-    explicit TransferMemoryLibraryAppletStorage(Kernel::KernelCore& kernel, Core::Memory::Memory& memory, Kernel::KTransferMemory* trmem, bool is_writable, s64 size)
-        : m_kernel{kernel}
-        , m_memory(memory)
-        , m_trmem(trmem)
-        , m_is_writable(is_writable)
-        , m_size(size)
-    {
+    explicit TransferMemoryLibraryAppletStorage(Kernel::KernelCore& kernel,
+                                                Core::Memory::Memory& memory,
+                                                Kernel::KTransferMemory* trmem, bool is_writable,
+                                                s64 size)
+        : m_kernel{kernel}, m_memory(memory), m_trmem(trmem), m_is_writable(is_writable),
+          m_size(size) {
         m_trmem->Open(m_kernel);
     }
 
@@ -109,9 +108,9 @@ protected:
 
 class HandleLibraryAppletStorage : public TransferMemoryLibraryAppletStorage {
 public:
-    explicit HandleLibraryAppletStorage(Kernel::KernelCore& kernel, Core::Memory::Memory& memory, Kernel::KTransferMemory* trmem, s64 size)
-        : TransferMemoryLibraryAppletStorage(kernel, memory, trmem, true, size)
-    {}
+    explicit HandleLibraryAppletStorage(Kernel::KernelCore& kernel, Core::Memory::Memory& memory,
+                                        Kernel::KTransferMemory* trmem, s64 size)
+        : TransferMemoryLibraryAppletStorage(kernel, memory, trmem, true, size) {}
     ~HandleLibraryAppletStorage() = default;
 
     Kernel::KTransferMemory* GetHandle() override {
@@ -133,11 +132,18 @@ std::shared_ptr<LibraryAppletStorage> CreateStorage(std::vector<u8>&& data) {
     return std::make_shared<BufferLibraryAppletStorage>(std::move(data));
 }
 
-std::shared_ptr<LibraryAppletStorage> CreateTransferMemoryStorage(Kernel::KernelCore& kernel, Core::Memory::Memory& memory, Kernel::KTransferMemory* trmem, bool is_writable, s64 size) {
-    return std::make_shared<TransferMemoryLibraryAppletStorage>(kernel, memory, trmem, is_writable, size);
+std::shared_ptr<LibraryAppletStorage> CreateTransferMemoryStorage(Kernel::KernelCore& kernel,
+                                                                  Core::Memory::Memory& memory,
+                                                                  Kernel::KTransferMemory* trmem,
+                                                                  bool is_writable, s64 size) {
+    return std::make_shared<TransferMemoryLibraryAppletStorage>(kernel, memory, trmem, is_writable,
+                                                                size);
 }
 
-std::shared_ptr<LibraryAppletStorage> CreateHandleStorage(Kernel::KernelCore& kernel, Core::Memory::Memory& memory, Kernel::KTransferMemory* trmem, s64 size) {
+std::shared_ptr<LibraryAppletStorage> CreateHandleStorage(Kernel::KernelCore& kernel,
+                                                          Core::Memory::Memory& memory,
+                                                          Kernel::KTransferMemory* trmem,
+                                                          s64 size) {
     return std::make_shared<HandleLibraryAppletStorage>(kernel, memory, trmem, size);
 }
 

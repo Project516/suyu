@@ -16,8 +16,7 @@
 namespace Service::HID {
 
 NpadAbstractSixAxisHandler::NpadAbstractSixAxisHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+    : kernel{kernel_} {}
 
 NpadAbstractSixAxisHandler::~NpadAbstractSixAxisHandler() = default;
 
@@ -66,8 +65,7 @@ Result NpadAbstractSixAxisHandler::UpdateSixAxisState() {
             continue;
         }
         auto& npad_entry = data->shared_memory_format->npad.npad_entry[NpadIdTypeToIndex(npad_id)];
-        UpdateSixaxisInternalState(npad_entry, data->aruid,
-                                   data->flag.enable_six_axis_sensor != 0);
+        UpdateSixaxisInternalState(npad_entry, data->aruid, data->flag.enable_six_axis_sensor != 0);
     }
     return ResultSuccess;
 }
@@ -79,8 +77,7 @@ Result NpadAbstractSixAxisHandler::UpdateSixAxisState(u64 aruid) {
         return ResultSuccess;
     }
     auto& npad_entry = data->shared_memory_format->npad.npad_entry[NpadIdTypeToIndex(npad_id)];
-    UpdateSixaxisInternalState(npad_entry, data->aruid,
-                               data->flag.enable_six_axis_sensor != 0);
+    UpdateSixaxisInternalState(npad_entry, data->aruid, data->flag.enable_six_axis_sensor != 0);
     return ResultSuccess;
 }
 

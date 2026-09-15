@@ -46,7 +46,8 @@ Result CreateTransferMemory(Core::System& system, Handle* out, u64 address, u64 
     auto& handle_table = process.GetHandleTable();
 
     // Reserve a new transfer memory from the process resource limit.
-    KScopedResourceReservation trmem_reservation(system.Kernel(), std::addressof(process), LimitableResource::TransferMemoryCountMax);
+    KScopedResourceReservation trmem_reservation(system.Kernel(), std::addressof(process),
+                                                 LimitableResource::TransferMemoryCountMax);
     R_UNLESS(trmem_reservation.Succeeded(), ResultLimitReached);
 
     // Create the transfer memory.

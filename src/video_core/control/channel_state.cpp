@@ -17,19 +17,13 @@
 
 namespace Tegra::Control {
 
-ChannelState::Payload::Payload(Core::System& system, MemoryManager& memory_manager, ChannelState& channel_state)
-    : maxwell_3d(memory_manager)
-    , fermi_2d(memory_manager)
-    , kepler_compute(memory_manager)
-    , maxwell_dma(memory_manager)
-    , kepler_memory(memory_manager)
-    , nv01_timer(memory_manager)
-    , dma_pusher(system, memory_manager, channel_state)
-{}
+ChannelState::Payload::Payload(Core::System& system, MemoryManager& memory_manager,
+                               ChannelState& channel_state)
+    : maxwell_3d(memory_manager), fermi_2d(memory_manager), kepler_compute(memory_manager),
+      maxwell_dma(memory_manager), kepler_memory(memory_manager), nv01_timer(memory_manager),
+      dma_pusher(system, memory_manager, channel_state) {}
 
-ChannelState::ChannelState(s32 bind_id_)
-    : bind_id{bind_id_}
-{}
+ChannelState::ChannelState(s32 bind_id_) : bind_id{bind_id_} {}
 
 void ChannelState::Init(Core::System& system, u64 program_id_) {
     ASSERT(memory_manager);
@@ -46,7 +40,7 @@ void ChannelState::BindRasterizer(VideoCore::RasterizerInterface* rasterizer) {
     payload->kepler_memory.BindRasterizer(rasterizer);
     payload->kepler_compute.BindRasterizer(rasterizer);
     payload->maxwell_dma.BindRasterizer(rasterizer);
-    //payload->nv01_timer.BindRasterizer(rasterizer);
+    // payload->nv01_timer.BindRasterizer(rasterizer);
 }
 
 } // namespace Tegra::Control

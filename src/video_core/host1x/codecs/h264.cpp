@@ -16,8 +16,7 @@
 namespace Tegra::Decoders {
 
 H264::H264(Host1x::Host1x& host1x_, const Host1x::NvdecCommon::NvdecRegisters& regs_, s32 id_)
-    : Decoder{host1x_, id_, regs_}
-{
+    : Decoder{host1x_, id_, regs_} {
     initialized = decode_api.Initialize(Host1x::NvdecCommon::VideoCodec::H264);
 }
 
@@ -51,7 +50,8 @@ bool H264::IsInterlaced() {
 }
 
 std::span<const u8> H264::ComposeFrame() {
-    host1x.gmmu_manager.ReadBlock(regs.picture_info_offset.Address(), &current_context, sizeof(H264DecoderContext));
+    host1x.gmmu_manager.ReadBlock(regs.picture_info_offset.Address(), &current_context,
+                                  sizeof(H264DecoderContext));
     const auto& params = current_context.h264_parameter_set;
     SetFrameDimensions(static_cast<s32>(params.pic_width_in_mbs) * 16,
                        static_cast<s32>(params.frame_height_in_mbs) * 16);
@@ -59,7 +59,8 @@ std::span<const u8> H264::ComposeFrame() {
     const s64 frame_number = current_context.h264_parameter_set.frame_number.Value();
     if (!is_first_frame && frame_number != 0) {
         frame_scratch.resize_destructive(current_context.stream_len);
-        host1x.gmmu_manager.ReadBlock(regs.frame_bitstream_offset.Address(), frame_scratch.data(), frame_scratch.size());
+        host1x.gmmu_manager.ReadBlock(regs.frame_bitstream_offset.Address(), frame_scratch.data(),
+                                      frame_scratch.size());
         return frame_scratch;
     }
 
@@ -108,9 +109,9 @@ std::span<const u8> H264::ComposeFrame() {
 
     u32 max_num_ref_frames =
         (std::max)((std::max)(current_context.h264_parameter_set.num_refidx_l0_default_active,
-                          current_context.h264_parameter_set.num_refidx_l1_default_active) +
-                     1,
-                 4);
+                              current_context.h264_parameter_set.num_refidx_l1_default_active) +
+                       1,
+                   4);
     writer.WriteUe(max_num_ref_frames);
     writer.WriteBit(false);
     writer.WriteUe(current_context.h264_parameter_set.pic_width_in_mbs - 1);
@@ -181,7 +182,9 @@ std::span<const u8> H264::ComposeFrame() {
     const auto& encoded_header = writer.GetByteArray();
     frame_scratch.resize(encoded_header.size() + current_context.stream_len);
     std::memcpy(frame_scratch.data(), encoded_header.data(), encoded_header.size());
-    host1x.gmmu_manager.ReadBlock(regs.frame_bitstream_offset.Address(), frame_scratch.data() + encoded_header.size(), current_context.stream_len);
+    host1x.gmmu_manager.ReadBlock(regs.frame_bitstream_offset.Address(),
+                                  frame_scratch.data() + encoded_header.size(),
+                                  current_context.stream_len);
     return frame_scratch;
 }
 
@@ -222,17 +225,12 @@ void H264BitWriter::WriteScalingList(std::span<const u8> list, s32 start, s32 co
             last_scale = value;
         }
     } else {
-        // ZigZag LUTs from libavcodec: this is the famous zigzag pattern found in the ffmpeg logo itself!
+        // ZigZag LUTs from libavcodec: this is the famous zigzag pattern found in the ffmpeg logo
+        // itself!
         static constexpr std::array<u8, 64> scan{
-            0,  1,  8,  16, 9,  2,  3,  10,
-            17, 24, 32, 25, 18, 11, 4,
-            5,  12, 19, 26, 33, 40, 48,
-            41, 34, 27, 20, 13, 6,  7,
-            14, 21, 28, 35, 42, 49, 56,
-            57, 50, 43, 36, 29, 22, 15,
-            23, 30, 37, 44, 51, 58, 59,
-            52, 45, 38, 31, 39, 46, 53,
-            60, 61, 54, 47, 55, 62, 63,
+            0,  1,  8,  16, 9,  2,  3,  10, 17, 24, 32, 25, 18, 11, 4,  5,  12, 19, 26, 33, 40, 48,
+            41, 34, 27, 20, 13, 6,  7,  14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23,
+            30, 37, 44, 51, 58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63,
         };
         u8 last_scale = 8;
         for (s32 index = 0; index < count; index++) {
@@ -281,7 +279,8 @@ void H264BitWriter::WriteBits(s32 value, s32 bit_count) {
 
 void H264BitWriter::WriteExpGolombCodedInt(s32 value) {
     const s32 sign = value <= 0 ? 0 : 1;
-    if (!sign) value = -value;
+    if (!sign)
+        value = -value;
     WriteExpGolombCodedUInt((value << 1) - sign);
 }
 

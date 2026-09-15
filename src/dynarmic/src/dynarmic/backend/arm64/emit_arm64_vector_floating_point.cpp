@@ -7,8 +7,7 @@
  */
 
 #include <bit>
-#include "dynarmic/mcl/function_info.hpp"
-#include "dynarmic/mcl/integer_of_size.hpp"
+
 #include <oaknut/oaknut.hpp>
 
 #include "dynarmic/backend/arm64/a32_jitstate.h"
@@ -28,6 +27,8 @@
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/mcl/function_info.hpp"
+#include "dynarmic/mcl/integer_of_size.hpp"
 
 namespace Dynarmic::Backend::Arm64 {
 
@@ -571,7 +572,7 @@ void EmitIR<IR::Opcode::FPVectorRoundInt16>(oaknut::CodeGenerator& code, EmitCon
     const auto rounding = FP::RoundingMode(inst->GetArg(1).GetU8());
     const bool exact = inst->GetArg(2).GetU1();
     // Don't even think about making this a LUT -- it's bad
-    using FPT = u16; // Yes it's u16, no fsize madness
+    using FPT = u16;  // Yes it's u16, no fsize madness
     switch (rounding) {
     case FP::RoundingMode::ToNearest_TieEven:
         exact

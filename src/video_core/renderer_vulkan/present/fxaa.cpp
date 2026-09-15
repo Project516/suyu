@@ -17,9 +17,7 @@
 namespace Vulkan {
 
 FXAA::FXAA(const Device& device, MemoryAllocator& allocator, size_t image_count, VkExtent2D extent)
-    : m_extent(extent)
-    , m_image_count(u32(image_count))
-{
+    : m_extent(extent), m_image_count(u32(image_count)) {
     CreateImages(device, allocator);
     CreateRenderPasses(device);
     CreateSampler(device);
@@ -37,7 +35,8 @@ void FXAA::CreateImages(const Device& device, MemoryAllocator& allocator) {
     for (u32 i = 0; i < m_image_count; i++) {
         Image& image = m_dynamic_images.emplace_back();
         image.image = CreateWrappedImage(allocator, m_extent, VK_FORMAT_R16G16B16A16_SFLOAT);
-        image.image_view = CreateWrappedImageView(device, image.image, VK_FORMAT_R16G16B16A16_SFLOAT);
+        image.image_view =
+            CreateWrappedImageView(device, image.image, VK_FORMAT_R16G16B16A16_SFLOAT);
     }
 }
 
@@ -67,7 +66,7 @@ void FXAA::CreateDescriptorPool(const Device& device) {
 void FXAA::CreateDescriptorSetLayouts(const Device& device) {
     m_descriptor_set_layout =
         CreateWrappedDescriptorSetLayout(device, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER});
+                                                  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER});
 }
 
 void FXAA::CreateDescriptorSets(const Device& device) {
@@ -93,8 +92,10 @@ void FXAA::UpdateDescriptorSets(const Device& device, VkImageView image_view, si
     std::vector<VkWriteDescriptorSet> updates;
     image_infos.reserve(2);
 
-    updates.push_back(CreateWriteDescriptorSet(image_infos, *m_sampler, image_view, image.descriptor_sets[0], 0));
-    updates.push_back(CreateWriteDescriptorSet(image_infos, *m_sampler, image_view, image.descriptor_sets[0], 1));
+    updates.push_back(
+        CreateWriteDescriptorSet(image_infos, *m_sampler, image_view, image.descriptor_sets[0], 0));
+    updates.push_back(
+        CreateWriteDescriptorSet(image_infos, *m_sampler, image_view, image.descriptor_sets[0], 1));
 
     device.GetLogical().UpdateDescriptorSets(updates, {});
 }
@@ -114,7 +115,8 @@ void FXAA::UploadImages(const Device& device, Scheduler& scheduler) {
     m_images_ready = true;
 }
 
-void FXAA::Draw(const Device& device, Scheduler& scheduler, size_t image_index, VkImage* inout_image, VkImageView* inout_image_view) {
+void FXAA::Draw(const Device& device, Scheduler& scheduler, size_t image_index,
+                VkImage* inout_image, VkImageView* inout_image_view) {
     const Image& image{m_dynamic_images[image_index]};
     const VkImage input_image{*inout_image};
     const VkImage output_image{*image.image};

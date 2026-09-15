@@ -10,8 +10,8 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 
 #include "common/common_types.h"
 #include "common/input.h"

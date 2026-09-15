@@ -16,13 +16,12 @@ namespace {
 
 class ThreadQueueImplForKLightConditionVariable final : public KThreadQueue {
 public:
-    ThreadQueueImplForKLightConditionVariable(KernelCore& kernel, KThread::WaiterList* wl, bool term)
-        : KThreadQueue(kernel)
-        , m_wait_list(wl)
-        , m_allow_terminating_thread(term)
-    {}
+    ThreadQueueImplForKLightConditionVariable(KernelCore& kernel, KThread::WaiterList* wl,
+                                              bool term)
+        : KThreadQueue(kernel), m_wait_list(wl), m_allow_terminating_thread(term) {}
 
-    virtual void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
+    virtual void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result,
+                            bool cancel_timer_task) override {
         // Only process waits if we're allowed to.
         if (ResultTerminationRequested == wait_result && m_allow_terminating_thread) {
             return;

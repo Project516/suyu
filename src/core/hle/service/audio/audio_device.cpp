@@ -32,13 +32,15 @@ IAudioDevice::IAudioDevice(Core::System& system_, u64 applet_resource_user_id, u
         {12, D<&IAudioDevice::QueryAudioDeviceOutputEvent>, "QueryAudioDeviceOutputEvent"},
         {13, D<&IAudioDevice::GetActiveAudioDeviceName>, "GetActiveAudioOutputDeviceName"},
         {14, D<&IAudioDevice::ListAudioOutputDeviceName>, "ListAudioOutputDeviceName"},
-        {15, nullptr, "AcquireAudioInputDeviceNotification"}, //17.0.0+
-        {16, nullptr, "ReleaseAudioInputDeviceNotification"}, //17.0.0+
-        {17, nullptr, "AcquireAudioOutputDeviceNotification"}, //17.0.0+
-        {18, nullptr, "ReleaseAudioOutputDeviceNotification"}, //17.0.0+
-        {19, D<&IAudioDevice::SetAudioDeviceOutputVolumeAutoTuneEnabled>, "SetAudioDeviceOutputVolumeAutoTuneEnabled"}, //18.0.0+
-        {20, D<&IAudioDevice::IsAudioDeviceOutputVolumeAutoTuneEnabled>, "IsAudioDeviceOutputVolumeAutoTuneEnabled"}, //18.0.0+
-        {21, nullptr, "IsActiveOutputDeviceEstimatedLowLatency"} //21.0.0+
+        {15, nullptr, "AcquireAudioInputDeviceNotification"},  // 17.0.0+
+        {16, nullptr, "ReleaseAudioInputDeviceNotification"},  // 17.0.0+
+        {17, nullptr, "AcquireAudioOutputDeviceNotification"}, // 17.0.0+
+        {18, nullptr, "ReleaseAudioOutputDeviceNotification"}, // 17.0.0+
+        {19, D<&IAudioDevice::SetAudioDeviceOutputVolumeAutoTuneEnabled>,
+         "SetAudioDeviceOutputVolumeAutoTuneEnabled"}, // 18.0.0+
+        {20, D<&IAudioDevice::IsAudioDeviceOutputVolumeAutoTuneEnabled>,
+         "IsAudioDeviceOutputVolumeAutoTuneEnabled"},            // 18.0.0+
+        {21, nullptr, "IsActiveOutputDeviceEstimatedLowLatency"} // 21.0.0+
     };
     RegisterHandlers(functions);
 

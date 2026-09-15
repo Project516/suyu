@@ -24,6 +24,7 @@ class GPU;
 namespace VideoCore {
 
 class RendererBase;
-void CreateGPU(std::optional<Tegra::GPU>& gpu, Core::Frontend::EmuWindow& emu_window, Core::System& system);
+void CreateGPU(std::optional<Tegra::GPU>& gpu, Core::Frontend::EmuWindow& emu_window,
+               Core::System& system);
 
 } // namespace VideoCore

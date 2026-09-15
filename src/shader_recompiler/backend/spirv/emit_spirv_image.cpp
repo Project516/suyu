@@ -57,7 +57,9 @@ public:
         if (opcode != values[1]->GetOpcode() || opcode != IR::Opcode::CompositeConstructU32x4) {
             throw LogicError("Invalid PTP arguments");
         }
-        auto read{[&](unsigned int a, unsigned int b) { return static_cast<s32>(values[a]->Arg(b).U32()); }};
+        auto read{[&](unsigned int a, unsigned int b) {
+            return static_cast<s32>(values[a]->Arg(b).U32());
+        }};
 
         const Id offsets{ctx.ConstantComposite(
             ctx.TypeArray(ctx.S32[2], ctx.Const(4U)), ctx.SConst(read(0, 0), read(0, 1)),
@@ -494,8 +496,8 @@ Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value&
         const ImageOperands operands(ctx, info.has_bias != 0, false, info.has_lod_clamp != 0,
                                      bias_lc, offset);
         color = Emit(&EmitContext::OpImageSparseSampleImplicitLod,
-                    &EmitContext::OpImageSampleImplicitLod, ctx, inst, result_type,
-                    Texture(ctx, info, index), coords, operands.MaskOptional(), operands.Span());
+                     &EmitContext::OpImageSampleImplicitLod, ctx, inst, result_type,
+                     Texture(ctx, info, index), coords, operands.MaskOptional(), operands.Span());
     } else {
         // We can't use implicit lods on non-fragment stages on SPIR-V. Maxwell hardware behaves as
         // if the lod was explicitly zero.  This may change on Turing with implicit compute
@@ -503,8 +505,8 @@ Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value&
         const Id lod{ctx.Const(0.0f)};
         const ImageOperands operands(ctx, false, true, info.has_lod_clamp != 0, lod, offset);
         color = Emit(&EmitContext::OpImageSparseSampleExplicitLod,
-                    &EmitContext::OpImageSampleExplicitLod, ctx, inst, result_type,
-                    Texture(ctx, info, index), coords, operands.Mask(), operands.Span());
+                     &EmitContext::OpImageSampleExplicitLod, ctx, inst, result_type,
+                     Texture(ctx, info, index), coords, operands.Mask(), operands.Span());
     }
     return is_integer ? ctx.OpBitcast(ctx.F32[4], color) : color;
 }
@@ -582,8 +584,8 @@ Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& index,
     if (ctx.profile.need_gather_subpixel_offset) {
         coords = ImageGatherSubpixelOffset(ctx, info, TextureImage(ctx, info, index), coords);
     }
-    const Id color{Emit(&EmitContext::OpImageSparseDrefGather, &EmitContext::OpImageDrefGather,
-                        ctx, inst, result_type, Texture(ctx, info, index), coords, dref,
+    const Id color{Emit(&EmitContext::OpImageSparseDrefGather, &EmitContext::OpImageDrefGather, ctx,
+                        inst, result_type, Texture(ctx, info, index), coords, dref,
                         operands.MaskOptional(), operands.Span())};
     return is_integer ? ctx.OpBitcast(ctx.F32[4], color) : color;
 }

@@ -41,12 +41,8 @@ namespace Tegra {
 
 struct GPU::Impl {
     explicit Impl(Core::System& system_, bool is_async_, bool use_nvdec_)
-        : system{system_}
-        , use_nvdec{use_nvdec_}
-        , shader_notify()
-        , is_async{is_async_}
-        , gpu_thread{system_}
-    {}
+        : system{system_}, use_nvdec{use_nvdec_},
+          shader_notify(), is_async{is_async_}, gpu_thread{system_} {}
 
     ~Impl() = default;
 
@@ -203,7 +199,8 @@ struct GPU::Impl {
         }
         raster_area.preemtive = true;
         const u64 fence = RequestSyncOperation([this, &raster_area]() {
-            renderer->ReadRasterizer()->FlushRegion(raster_area.start_address, raster_area.end_address - raster_area.start_address);
+            renderer->ReadRasterizer()->FlushRegion(
+                raster_area.start_address, raster_area.end_address - raster_area.start_address);
         });
         gpu_thread.TickGPU(is_async);
         WaitForSyncOperation(fence);
@@ -224,7 +221,8 @@ struct GPU::Impl {
         gpu_thread.FlushAndInvalidateRegion(addr, size, is_async);
     }
 
-    void RequestComposite(std::vector<Tegra::FramebufferConfig>&& layers, std::vector<Service::Nvidia::NvFence>&& fences) {
+    void RequestComposite(std::vector<Tegra::FramebufferConfig>&& layers,
+                          std::vector<Service::Nvidia::NvFence>&& fences) {
         size_t num_fences{fences.size()};
         size_t current_request_counter{};
         {
@@ -238,25 +236,26 @@ struct GPU::Impl {
                 free_swap_counters.pop_front();
             }
         }
-        const auto wait_fence = RequestSyncOperation([this, current_request_counter, &layers, &fences, num_fences] {
-            auto& syncpoint_manager = system.Host1x().GetSyncpointManager();
-            if (num_fences == 0) {
-                renderer->Composite(layers);
-            }
-            const auto executer = [this, current_request_counter, layers_copy = layers]() {
-                {
-                    std::unique_lock<std::mutex> lk(request_swap_mutex);
-                    if (--request_swap_counters[current_request_counter] != 0) {
-                        return;
-                    }
-                    free_swap_counters.push_back(current_request_counter);
+        const auto wait_fence =
+            RequestSyncOperation([this, current_request_counter, &layers, &fences, num_fences] {
+                auto& syncpoint_manager = system.Host1x().GetSyncpointManager();
+                if (num_fences == 0) {
+                    renderer->Composite(layers);
                 }
-                renderer->Composite(layers_copy);
-            };
-            for (size_t i = 0; i < num_fences; i++) {
-                syncpoint_manager.RegisterGuestAction(fences[i].id, fences[i].value, executer);
-            }
-        });
+                const auto executer = [this, current_request_counter, layers_copy = layers]() {
+                    {
+                        std::unique_lock<std::mutex> lk(request_swap_mutex);
+                        if (--request_swap_counters[current_request_counter] != 0) {
+                            return;
+                        }
+                        free_swap_counters.push_back(current_request_counter);
+                    }
+                    renderer->Composite(layers_copy);
+                };
+                for (size_t i = 0; i < num_fences; i++) {
+                    syncpoint_manager.RegisterGuestAction(fences[i].id, fences[i].value, executer);
+                }
+            });
         gpu_thread.TickGPU(is_async);
         WaitForSyncOperation(wait_fence);
     }
@@ -314,8 +313,7 @@ struct GPU::Impl {
 };
 
 GPU::GPU(Core::System& system, bool is_async, bool use_nvdec)
-    : impl{std::make_unique<Impl>(system, is_async, use_nvdec)}
-{}
+    : impl{std::make_unique<Impl>(system, is_async, use_nvdec)} {}
 
 GPU::~GPU() = default;
 
@@ -356,9 +354,8 @@ void GPU::OnCommandListEnd() {
 }
 
 u64 GPU::RequestFlush(DAddr addr, std::size_t size) {
-    return impl->RequestSyncOperation([this, addr, size]() {
-        impl->renderer->ReadRasterizer()->FlushRegion(addr, size);
-    });
+    return impl->RequestSyncOperation(
+        [this, addr, size]() { impl->renderer->ReadRasterizer()->FlushRegion(addr, size); });
 }
 
 u64 GPU::CurrentSyncRequestFence() const {

@@ -12,13 +12,8 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
-#include "common/common_types.h"
 
-#include "dynarmic/tests/fuzz_util.h"
-#include "dynarmic/tests/rand_int.h"
-#include "dynarmic/tests/unicorn_emu/a64_unicorn.h"
-#include "dynarmic/tests/A64/testenv.h"
-#include "dynarmic/tests/native/testenv.h"
+#include "common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/llvm_disassemble.h"
@@ -29,6 +24,11 @@
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/opcodes.h"
 #include "dynarmic/ir/opt_passes.h"
+#include "dynarmic/tests/A64/testenv.h"
+#include "dynarmic/tests/fuzz_util.h"
+#include "dynarmic/tests/native/testenv.h"
+#include "dynarmic/tests/rand_int.h"
+#include "dynarmic/tests/unicorn_emu/a64_unicorn.h"
 
 // Must be declared last for all necessary operator<< to be declared prior to this.
 #include <fmt/format.h>
@@ -91,8 +91,7 @@ static u32 GenRandomInst(u64 pc, bool is_last_inst) {
             "MRS",
             // Does not need test
             "SVC",
-            "BRK"
-        };
+            "BRK"};
 
         for (const auto& [fn, bitstring] : list) {
             if (fn == "UnallocatedEncoding") {

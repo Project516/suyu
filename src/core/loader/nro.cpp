@@ -16,8 +16,8 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 #include "common/logging.h"
-#include "common/settings.h"
 #include "common/random.h"
+#include "common/settings.h"
 #include "common/swap.h"
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
@@ -275,12 +275,16 @@ static bool LoadNroImpl(Core::System& system, Kernel::KProcess& process,
     }();
 
     // TODO: this is bad form of ASLR, it sucks
-    std::uintptr_t aslr_offset = ((::Settings::values.rng_seed_enabled.GetValue()
-        ? ::Settings::values.rng_seed.GetValue() : Common::Random::Random64(0)) << 12) & 0xfff000;
+    std::uintptr_t aslr_offset =
+        ((::Settings::values.rng_seed_enabled.GetValue() ? ::Settings::values.rng_seed.GetValue()
+                                                         : Common::Random::Random64(0))
+         << 12) &
+        0xfff000;
 
     // Setup the process code layout
     if (process
-            .LoadFromMetadata(system.Kernel(), FileSys::ProgramMetadata::GetDefault(), image_size, fastmem_base, aslr_offset)
+            .LoadFromMetadata(system.Kernel(), FileSys::ProgramMetadata::GetDefault(), image_size,
+                              fastmem_base, aslr_offset)
             .IsError()) {
         return false;
     }
@@ -310,18 +314,22 @@ static bool LoadNroImpl(Core::System& system, Kernel::KProcess& process,
 
         const ConfigEntry entries[kNumEntries] = {
             {kEntryMainThreadHandle, 0, {0, 0}}, // Value[0] patched in Run()
-            {kEntryAppletType,       0, {kAppletTypeApplication, 0}},
-            {kEntryArgv,             0, {0, argv_addr}},
-            {kEntryEndOfList,        0, {0, 0}},
+            {kEntryAppletType, 0, {kAppletTypeApplication, 0}},
+            {kEntryArgv, 0, {0, argv_addr}},
+            {kEntryEndOfList, 0, {0, 0}},
         };
-        process.GetMemory().WriteBlock(Common::ProcessAddress{config_addr}, entries, sizeof(entries));
-        process.GetMemory().WriteBlock(Common::ProcessAddress{argv_addr}, argv_string.data(), argv_string.size());
+        process.GetMemory().WriteBlock(Common::ProcessAddress{config_addr}, entries,
+                                       sizeof(entries));
+        process.GetMemory().WriteBlock(Common::ProcessAddress{argv_addr}, argv_string.data(),
+                                       argv_string.size());
         constexpr size_t kMainThreadHandleValueOffset = offsetof(ConfigEntry, value);
         process.SetArgPointer(Kernel::KProcessAddress{config_addr});
         if (exit_process_offset_in_image) {
-            process.SetArgReturnAddress(Kernel::KProcessAddress{base + *exit_process_offset_in_image});
+            process.SetArgReturnAddress(
+                Kernel::KProcessAddress{base + *exit_process_offset_in_image});
         }
-        process.SetMainThreadHandleAddr(Kernel::KProcessAddress{config_addr + kMainThreadHandleValueOffset});
+        process.SetMainThreadHandleAddr(
+            Kernel::KProcessAddress{config_addr + kMainThreadHandleValueOffset});
     }
 
     return true;

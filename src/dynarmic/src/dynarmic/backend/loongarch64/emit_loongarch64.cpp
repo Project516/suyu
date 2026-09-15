@@ -67,17 +67,17 @@ EmittedBlockInfo EmitLoongArch64(lagoon_assembler_t& as, IR::Block block, const 
         IR::Inst* inst = &*iter;
 
         switch (inst->GetOpcode()) {
-#define OPCODE(name, type, ...)                            \
-    case IR::Opcode::name:                                 \
-        EmitIR<IR::Opcode::name>(as, ctx, inst);           \
+#define OPCODE(name, type, ...)                  \
+    case IR::Opcode::name:                       \
+        EmitIR<IR::Opcode::name>(as, ctx, inst); \
         break;
-#define A32OPC(name, type, ...)                                 \
-    case IR::Opcode::A32##name:                                 \
-        EmitIR<IR::Opcode::A32##name>(as, ctx, inst);           \
+#define A32OPC(name, type, ...)                       \
+    case IR::Opcode::A32##name:                       \
+        EmitIR<IR::Opcode::A32##name>(as, ctx, inst); \
         break;
-#define A64OPC(name, type, ...)                                 \
-    case IR::Opcode::A64##name:                                 \
-        EmitIR<IR::Opcode::A64##name>(as, ctx, inst);           \
+#define A64OPC(name, type, ...)                       \
+    case IR::Opcode::A64##name:                       \
+        EmitIR<IR::Opcode::A64##name>(as, ctx, inst); \
         break;
 #include "dynarmic/ir/opcodes.inc"
 #undef OPCODE
@@ -102,8 +102,7 @@ EmittedBlockInfo EmitLoongArch64(lagoon_assembler_t& as, IR::Block block, const 
 
     ebi.relocations.push_back(Relocation{
         reinterpret_cast<CodePtr>(as.cursor) - ebi.entry_point,
-        LinkTarget::ReturnFromRunCode
-    });
+        LinkTarget::ReturnFromRunCode});
     la_nop(&as);
 
     ebi.size = reinterpret_cast<CodePtr>(as.cursor) - ebi.entry_point;

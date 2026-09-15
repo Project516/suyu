@@ -6,13 +6,17 @@
  * SPDX-License-Identifier: 0BSD
  */
 
+#include "dynarmic/ir/opt_passes.h"
+
 #include <algorithm>
+#include <bit>
 #include <cstdio>
 #include <map>
-#include <bit>
 
 #include <ankerl/unordered_dense.h>
+
 #include "boost/container/small_vector.hpp"
+#include "dynarmic/common/safe_ops.h"
 #include "dynarmic/frontend/A32/a32_ir_emitter.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/a32_types.h"
@@ -22,11 +26,9 @@
 #include "dynarmic/interface/A32/config.h"
 #include "dynarmic/interface/A64/config.h"
 #include "dynarmic/interface/optimization_flags.h"
-#include "dynarmic/common/safe_ops.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
-#include "dynarmic/ir/opt_passes.h"
 #include "dynarmic/ir/type.h"
 #include "dynarmic/mcl/bit.hpp"
 
@@ -533,8 +535,8 @@ static void A64GetSetElimination(IR::Block& block) {
         if (!info.register_value.IsEmpty() && info.tracking_type == tracking_type) {
             get_inst->ReplaceUsesWith(info.register_value);
         } else if (!info.register_value.IsEmpty()
-            && tracking_type == TrackingType::W
-            && info.tracking_type == TrackingType::X) {
+                   && tracking_type == TrackingType::W
+                   && info.tracking_type == TrackingType::X) {
             // A sequence like
             // SetX r1 -> GetW r1, is just reading off the lowest 32-bits of the register
             if (info.register_value.IsImmediate()) {
@@ -797,8 +799,8 @@ static void FoldDivide(IR::Inst& inst, bool is_32_bit, bool is_signed) {
     const auto lhs = inst.GetArg(0);
     if (lhs.IsZero() || rhs.IsZero()) {
         ReplaceUsesWith(inst, is_32_bit, u64(0));
-   } else if (!is_32_bit && lhs.IsUnsignedImmediate(u64(1ULL << 63)) && rhs.IsUnsignedImmediate(u64(-1))) {
-       ReplaceUsesWith(inst, is_32_bit, u64(1ULL << 63));
+    } else if (!is_32_bit && lhs.IsUnsignedImmediate(u64(1ULL << 63)) && rhs.IsUnsignedImmediate(u64(-1))) {
+        ReplaceUsesWith(inst, is_32_bit, u64(1ULL << 63));
     } else if (is_32_bit && lhs.IsUnsignedImmediate(u32(1ULL << 31)) && rhs.IsUnsignedImmediate(u32(-1))) {
         ReplaceUsesWith(inst, is_32_bit, u64(1ULL << 31));
     } else if (lhs.IsImmediate() && rhs.IsImmediate()) {
@@ -1205,7 +1207,9 @@ static void IdentityRemovalPass(IR::Block& block) {
         auto const num_args = it->NumArgs();
         for (size_t i = 0; i < num_args; ++i)
             if (IR::Value arg = it->GetArg(i); arg.IsIdentity()) {
-                do arg = arg.GetInst()->GetArg(0); while (arg.IsIdentity());
+                do
+                    arg = arg.GetInst()->GetArg(0);
+                while (arg.IsIdentity());
                 it->SetArg(i, arg);
             }
         if (it->GetOpcode() == IR::Opcode::Identity || it->GetOpcode() == IR::Opcode::Void) {

@@ -73,11 +73,14 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QWidget* parent) {
               "faster or not.\n200% for a 30 FPS game is 60 FPS, and for a "
               "60 FPS game it will be 120 FPS.\nDisabling it means unlocking the framerate to the "
               "maximum your PC can reach."));
-    INSERT(Settings, sync_core_speed, tr("Synchronize core speed"),
-           tr("Synchronizes CPU core speed to game's maximum rendering speed, which can be useful to "
-              "increase FPS without increasing the actual speed of the game (animations, physics, etc.)\n"
-              "It's up to each game if it plays well with this or not. Most games (specially original ones) "
-              "simply ignore this.\nThis can help play the game stutter-free at a lower framerate."));
+    INSERT(
+        Settings, sync_core_speed, tr("Synchronize core speed"),
+        tr("Synchronizes CPU core speed to game's maximum rendering speed, which can be useful to "
+           "increase FPS without increasing the actual speed of the game (animations, physics, "
+           "etc.)\n"
+           "It's up to each game if it plays well with this or not. Most games (specially original "
+           "ones) "
+           "simply ignore this.\nThis can help play the game stutter-free at a lower framerate."));
 
     // Cpu
     INSERT(Settings, cpu_accuracy, tr("Accuracy:"),
@@ -212,9 +215,10 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QWidget* parent) {
     INSERT(Settings, use_fast_gpu_time, tr("Use Fast GPU Time (Hack)"),
            tr("Enables Fast GPU Time. This option will force most games to run at their highest "
               "native resolution."));
-    INSERT(Settings, fast_gpu_time, tr("Fast GPU Time divisor (Hack)"),
-           tr("Overclocks the emulated GPU to increase dynamic resolution and render distance.\n"
-              "Use 128 for maximal performance and 512 for maximal graphics fidelity (default 256)."));
+    INSERT(
+        Settings, fast_gpu_time, tr("Fast GPU Time divisor (Hack)"),
+        tr("Overclocks the emulated GPU to increase dynamic resolution and render distance.\n"
+           "Use 128 for maximal performance and 512 for maximal graphics fidelity (default 256)."));
     INSERT(Settings, use_vulkan_driver_pipeline_cache, tr("Use Vulkan pipeline cache"),
            tr("Enables GPU vendor-specific pipeline cache.\nThis option can improve shader loading "
               "time significantly in cases where the Vulkan driver does not store pipeline cache "

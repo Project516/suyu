@@ -20,7 +20,6 @@
 #endif
 
 #include "common/common_types.h"
-
 #include "dynarmic/tests/A64/testenv.h"
 
 class A64Unicorn final {

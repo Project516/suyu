@@ -17,8 +17,8 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QProcess>
-#include <QScrollBar>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QSplitter>
 #include <QTabWidget>
 #include <QTextEdit>
@@ -373,8 +373,7 @@ static QString BuildStyleSheet() {
         "QLineEdit:focus {"
         "  background: rgba(12,14,28,222);"
         "  border-top: 1px solid rgba(137,180,250,0.52);"
-        "}"
-    );
+        "}");
 }
 
 // ---------------------------------------------------------------------------
@@ -535,8 +534,7 @@ void ProgrammerEnvironment::SetupUi() {
     code_editor_->setObjectName(QStringLiteral("code_editor"));
     code_editor_->setReadOnly(false);
     code_editor_->setTabStopDistance(28.0);
-    code_editor_->setPlaceholderText(
-        tr("Click a file in the explorer to open it."));
+    code_editor_->setPlaceholderText(tr("Click a file in the explorer to open it."));
 
     center_layout->addWidget(center_titlebar);
     center_layout->addWidget(code_editor_, 1);
@@ -575,8 +573,7 @@ void ProgrammerEnvironment::SetupUi() {
     gv_content->setAttribute(Qt::WA_StyledBackground, true);
     auto* gvc_layout = new QVBoxLayout(gv_content);
     gvc_layout->setContentsMargins(8, 8, 8, 8);
-    auto* gv_placeholder = new QLabel(
-        tr("No game loaded\nRun a ROM to preview"), gv_content);
+    auto* gv_placeholder = new QLabel(tr("No game loaded\nRun a ROM to preview"), gv_content);
     gv_placeholder->setObjectName(QStringLiteral("status_label"));
     gv_placeholder->setAlignment(Qt::AlignCenter);
     gvc_layout->addWidget(gv_placeholder, 1, Qt::AlignCenter);
@@ -665,52 +662,43 @@ void ProgrammerEnvironment::SetupUi() {
     run_process_ = new QProcess(this);
 
     // ── Signal connections ─────────────────────────────────────────────────
-    connect(btn_build_,            &QPushButton::clicked,
-            this, &ProgrammerEnvironment::OnBuildClicked);
-    connect(btn_debug_,            &QPushButton::clicked,
-            this, &ProgrammerEnvironment::OnDebugClicked);
-    connect(btn_run_,              &QPushButton::clicked,
-            this, &ProgrammerEnvironment::OnRunClicked);
-    connect(btn_stop_,             &QPushButton::clicked,
-            this, &ProgrammerEnvironment::OnStopClicked);
-    connect(btn_open_project_,     &QPushButton::clicked,
-            this, &ProgrammerEnvironment::OnOpenProjectClicked);
-    connect(btn_save_all_,         &QPushButton::clicked,
-            this, &ProgrammerEnvironment::OnSaveAllClicked);
-    connect(btn_compiler_options_, &QPushButton::clicked,
-            this, &ProgrammerEnvironment::OnCompilerOptionsClicked);
-    connect(terminal_input_,       &QLineEdit::returnPressed,
-            this, &ProgrammerEnvironment::OnTerminalInputSubmitted);
-    connect(project_tree_,         &QTreeWidget::itemClicked,
-            this, &ProgrammerEnvironment::OnFileSelected);
+    connect(btn_build_, &QPushButton::clicked, this, &ProgrammerEnvironment::OnBuildClicked);
+    connect(btn_debug_, &QPushButton::clicked, this, &ProgrammerEnvironment::OnDebugClicked);
+    connect(btn_run_, &QPushButton::clicked, this, &ProgrammerEnvironment::OnRunClicked);
+    connect(btn_stop_, &QPushButton::clicked, this, &ProgrammerEnvironment::OnStopClicked);
+    connect(btn_open_project_, &QPushButton::clicked, this,
+            &ProgrammerEnvironment::OnOpenProjectClicked);
+    connect(btn_save_all_, &QPushButton::clicked, this, &ProgrammerEnvironment::OnSaveAllClicked);
+    connect(btn_compiler_options_, &QPushButton::clicked, this,
+            &ProgrammerEnvironment::OnCompilerOptionsClicked);
+    connect(terminal_input_, &QLineEdit::returnPressed, this,
+            &ProgrammerEnvironment::OnTerminalInputSubmitted);
+    connect(project_tree_, &QTreeWidget::itemClicked, this, &ProgrammerEnvironment::OnFileSelected);
 
     connect(build_process_, &QProcess::readyReadStandardOutput, this, [this]() {
-        AppendOutput(build_output_,
-                     QString::fromUtf8(build_process_->readAllStandardOutput()),
+        AppendOutput(build_output_, QString::fromUtf8(build_process_->readAllStandardOutput()),
                      QColor(0xa6, 0xad, 0xc8));
         bottom_tabs_->setCurrentWidget(build_output_);
     });
 
-    connect(build_process_,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
+    connect(build_process_, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
             [this](int exit_code, QProcess::ExitStatus) {
                 if (exit_code == 0) {
-                    AppendOutput(build_output_,
-                                 QStringLiteral("\n=== Build succeeded ===\n"),
+                    AppendOutput(build_output_, QStringLiteral("\n=== Build succeeded ===\n"),
                                  QColor(0xa6, 0xe3, 0xa1));
                     AppendOutput(problems_view_,
                                  QStringLiteral("[SUCCESS] Build completed without errors.\n"),
                                  QColor(0xa6, 0xe3, 0xa1));
                     status_label_->setText(tr("Build succeeded"));
                 } else {
-                    AppendOutput(build_output_,
-                                 QStringLiteral("\n=== Build failed (exit %1) ===\n")
-                                     .arg(exit_code),
-                                 QColor(0xf3, 0x8b, 0xa8));
-                    AppendOutput(problems_view_,
-                                 QStringLiteral("[ERROR] Build failed with exit code %1.\n")
-                                     .arg(exit_code),
-                                 QColor(0xf3, 0x8b, 0xa8));
+                    AppendOutput(
+                        build_output_,
+                        QStringLiteral("\n=== Build failed (exit %1) ===\n").arg(exit_code),
+                        QColor(0xf3, 0x8b, 0xa8));
+                    AppendOutput(
+                        problems_view_,
+                        QStringLiteral("[ERROR] Build failed with exit code %1.\n").arg(exit_code),
+                        QColor(0xf3, 0x8b, 0xa8));
                     status_label_->setText(tr("Build failed"));
                 }
                 btn_build_->setEnabled(true);
@@ -724,14 +712,12 @@ void ProgrammerEnvironment::SetupUi() {
         btn_run_->setEnabled(false);
     });
 
-    connect(run_process_,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
+    connect(run_process_, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
             [this](int exit_code, QProcess::ExitStatus) {
                 btn_run_->setEnabled(true);
                 btn_stop_->setEnabled(false);
                 status_label_->setText(
-                    exit_code == 0 ? tr("Done")
-                                   : QStringLiteral("Exited (%1)").arg(exit_code));
+                    exit_code == 0 ? tr("Done") : QStringLiteral("Exited (%1)").arg(exit_code));
             });
 
     // ── Apply stylesheet ───────────────────────────────────────────────────
@@ -754,13 +740,11 @@ void ProgrammerEnvironment::SetProjectRoot(const QString& path) {
     PopulateTree(root, path, 0);
     root->setExpanded(true);
 
-    status_label_->setText(
-        QStringLiteral("Project: %1").arg(fi.fileName()));
+    status_label_->setText(QStringLiteral("Project: %1").arg(fi.fileName()));
 
     // Sync hierarchy panel
     hierarchy_view_->clear();
-    AppendOutput(hierarchy_view_,
-                 QStringLiteral("Project root: %1\n").arg(path),
+    AppendOutput(hierarchy_view_, QStringLiteral("Project root: %1\n").arg(path),
                  QColor(0x89, 0xb4, 0xfa));
 }
 
@@ -775,8 +759,7 @@ void ProgrammerEnvironment::SetRomPath(const QString& path) {
 // ---------------------------------------------------------------------------
 // PopulateTree
 // ---------------------------------------------------------------------------
-void ProgrammerEnvironment::PopulateTree(QTreeWidgetItem* parent,
-                                         const QString& path, int depth) {
+void ProgrammerEnvironment::PopulateTree(QTreeWidgetItem* parent, const QString& path, int depth) {
     if (depth >= kMaxTreeDepth)
         return;
 
@@ -785,8 +768,8 @@ void ProgrammerEnvironment::PopulateTree(QTreeWidgetItem* parent,
     dir.setSorting(QDir::DirsFirst | QDir::Name);
 
     const QStringList skip{QStringLiteral("build"), QStringLiteral(".git"),
-                            QStringLiteral("node_modules"),
-                            QStringLiteral(".vs"),   QStringLiteral("__pycache__")};
+                           QStringLiteral("node_modules"), QStringLiteral(".vs"),
+                           QStringLiteral("__pycache__")};
 
     for (const QFileInfo& fi : dir.entryInfoList()) {
         if (fi.isHidden())
@@ -835,15 +818,12 @@ void ProgrammerEnvironment::OnFileSelected() {
     code_editor_->setPlainText(ts.readAll());
     current_file_path_ = path;
     editor_title_->setText(fi.fileName());
-    status_label_->setText(
-        QStringLiteral("%1  (%2 KB)")
-            .arg(fi.fileName())
-            .arg(fi.size() / 1024));
+    status_label_->setText(QStringLiteral("%1  (%2 KB)").arg(fi.fileName()).arg(fi.size() / 1024));
 
     // Update inspector with file info
     const QString info =
         QStringLiteral("Name:     %1\nPath:     %2\nSize:     %3 bytes\n"
-                        "Modified: %4\n")
+                       "Modified: %4\n")
             .arg(fi.fileName())
             .arg(fi.absoluteFilePath())
             .arg(fi.size())
@@ -867,8 +847,7 @@ void ProgrammerEnvironment::OnDebugClicked() {
 
 void ProgrammerEnvironment::StartBuildProcess() {
     if (project_root_.isEmpty()) {
-        QMessageBox::warning(this, tr("No Project"),
-                             tr("Open a project folder first."));
+        QMessageBox::warning(this, tr("No Project"), tr("Open a project folder first."));
         return;
     }
 
@@ -880,18 +859,16 @@ void ProgrammerEnvironment::StartBuildProcess() {
     status_label_->setText(tr("Building..."));
     bottom_tabs_->setCurrentWidget(build_output_);
 
-    const QString build_type = debug_mode_
-        ? QStringLiteral("Debug")
-        : (build_config_ ? build_config_->currentText()
-                         : QStringLiteral("Release"));
+    const QString build_type =
+        debug_mode_ ? QStringLiteral("Debug")
+                    : (build_config_ ? build_config_->currentText() : QStringLiteral("Release"));
 
     const QDir project_dir(project_root_);
     const QString build_subdir = project_root_ + QStringLiteral("/build");
 
     QDir().mkpath(build_subdir);
 
-    AppendOutput(build_output_,
-                 QStringLiteral("=== CMake Configure (%1) ===\n").arg(build_type),
+    AppendOutput(build_output_, QStringLiteral("=== CMake Configure (%1) ===\n").arg(build_type),
                  QColor(0x89, 0xb4, 0xfa));
 
     if (QFile::exists(project_root_ + QStringLiteral("/CMakeLists.txt"))) {
@@ -899,23 +876,19 @@ void ProgrammerEnvironment::StartBuildProcess() {
         configure->setWorkingDirectory(build_subdir);
         configure->setProcessChannelMode(QProcess::MergedChannels);
 
-        connect(configure, &QProcess::readyReadStandardOutput, this,
-                [this, configure]() {
-                    AppendOutput(build_output_,
-                                 QString::fromUtf8(configure->readAllStandardOutput()),
-                                 QColor(0xa6, 0xad, 0xc8));
-                });
+        connect(configure, &QProcess::readyReadStandardOutput, this, [this, configure]() {
+            AppendOutput(build_output_, QString::fromUtf8(configure->readAllStandardOutput()),
+                         QColor(0xa6, 0xad, 0xc8));
+        });
 
-        connect(configure,
-                QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
-                [this, configure, build_subdir, build_type](int exit_code,
-                                                             QProcess::ExitStatus) {
+        connect(configure, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
+                [this, configure, build_subdir, build_type](int exit_code, QProcess::ExitStatus) {
                     configure->deleteLater();
                     if (exit_code != 0) {
-                        AppendOutput(build_output_,
-                                     QStringLiteral("\n=== Configure failed (exit %1) ===\n")
-                                         .arg(exit_code),
-                                     QColor(0xf3, 0x8b, 0xa8));
+                        AppendOutput(
+                            build_output_,
+                            QStringLiteral("\n=== Configure failed (exit %1) ===\n").arg(exit_code),
+                            QColor(0xf3, 0x8b, 0xa8));
                         btn_build_->setEnabled(true);
                         btn_debug_->setEnabled(true);
                         btn_stop_->setEnabled(false);
@@ -927,19 +900,16 @@ void ProgrammerEnvironment::StartBuildProcess() {
                                  QStringLiteral("\n=== CMake Build (%1) ===\n").arg(build_type),
                                  QColor(0x89, 0xb4, 0xfa));
                     build_process_->setWorkingDirectory(build_subdir);
-                    build_process_->start(
-                        QStringLiteral("cmake"),
-                        {QStringLiteral("--build"), QStringLiteral("."),
-                         QStringLiteral("--parallel")});
+                    build_process_->start(QStringLiteral("cmake"),
+                                          {QStringLiteral("--build"), QStringLiteral("."),
+                                           QStringLiteral("--parallel")});
                 });
 
-        configure->start(
-            QStringLiteral("cmake"),
-            {QStringLiteral(".."), QStringLiteral("-G"), QStringLiteral("Ninja"),
-             QStringLiteral("-DCMAKE_BUILD_TYPE=") + build_type});
+        configure->start(QStringLiteral("cmake"),
+                         {QStringLiteral(".."), QStringLiteral("-G"), QStringLiteral("Ninja"),
+                          QStringLiteral("-DCMAKE_BUILD_TYPE=") + build_type});
     } else {
-        AppendOutput(build_output_,
-                     QStringLiteral("=== Make Build ===\n"),
+        AppendOutput(build_output_, QStringLiteral("=== Make Build ===\n"),
                      QColor(0x89, 0xb4, 0xfa));
         build_process_->setWorkingDirectory(project_root_);
         build_process_->start(QStringLiteral("make"), {QStringLiteral("-j")});
@@ -950,13 +920,11 @@ void ProgrammerEnvironment::StartBuildProcess() {
 // OnRunClicked
 // ---------------------------------------------------------------------------
 void ProgrammerEnvironment::OnRunClicked() {
-    const QString exe = emulator_path_.isEmpty()
-                            ? QCoreApplication::applicationFilePath()
-                            : emulator_path_;
+    const QString exe =
+        emulator_path_.isEmpty() ? QCoreApplication::applicationFilePath() : emulator_path_;
 
     if (rom_path_.isEmpty()) {
-        AppendOutput(build_output_,
-                     QStringLiteral("No ROM path set. Use SetRomPath() first.\n"),
+        AppendOutput(build_output_, QStringLiteral("No ROM path set. Use SetRomPath() first.\n"),
                      QColor(0xfa, 0xb3, 0x87));
         bottom_tabs_->setCurrentWidget(build_output_);
         return;
@@ -971,8 +939,7 @@ void ProgrammerEnvironment::OnRunClicked() {
 void ProgrammerEnvironment::OnStopClicked() {
     if (build_process_ && build_process_->state() != QProcess::NotRunning) {
         build_process_->kill();
-        AppendOutput(build_output_,
-                     QStringLiteral("\n=== Build killed by user ===\n"),
+        AppendOutput(build_output_, QStringLiteral("\n=== Build killed by user ===\n"),
                      QColor(0xfa, 0xb3, 0x87));
         btn_build_->setEnabled(true);
         btn_debug_->setEnabled(true);
@@ -990,9 +957,7 @@ void ProgrammerEnvironment::OnStopClicked() {
 // ---------------------------------------------------------------------------
 void ProgrammerEnvironment::OnOpenProjectClicked() {
     const QString dir = QFileDialog::getExistingDirectory(
-        this,
-        tr("Open Project Folder"),
-        project_root_.isEmpty() ? QDir::homePath() : project_root_,
+        this, tr("Open Project Folder"), project_root_.isEmpty() ? QDir::homePath() : project_root_,
         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
     if (!dir.isEmpty())
@@ -1019,8 +984,7 @@ void ProgrammerEnvironment::OnSaveAllClicked() {
     ts << code_editor_->toPlainText();
     status_label_->setText(
         QStringLiteral("Saved: %1").arg(QFileInfo(current_file_path_).fileName()));
-    AppendOutput(build_output_,
-                 QStringLiteral("[INFO] Saved %1\n").arg(current_file_path_),
+    AppendOutput(build_output_, QStringLiteral("[INFO] Saved %1\n").arg(current_file_path_),
                  QColor(0xa6, 0xe3, 0xa1));
 }
 
@@ -1051,8 +1015,7 @@ void ProgrammerEnvironment::OnCompilerOptionsClicked() {
     };
 
     addRow(tr("Build Type:"),
-           build_config_ ? build_config_->currentText()
-                         : QStringLiteral("Release"));
+           build_config_ ? build_config_->currentText() : QStringLiteral("Release"));
     addRow(tr("Generator:"), QStringLiteral("Ninja"));
     addRow(tr("CMake Args:"), QStringLiteral("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"));
     addRow(tr("CMake Path:"), QStringLiteral("cmake"));
@@ -1076,13 +1039,10 @@ void ProgrammerEnvironment::OnTerminalInputSubmitted() {
     if (cmd.isEmpty())
         return;
 
-    AppendOutput(terminal_view_,
-                 QStringLiteral("$ %1\n").arg(cmd),
-                 QColor(0x89, 0xdc, 0xeb));
+    AppendOutput(terminal_view_, QStringLiteral("$ %1\n").arg(cmd), QColor(0x89, 0xdc, 0xeb));
 
     terminal_input_->clear();
-    bottom_tabs_->setCurrentWidget(
-        bottom_tabs_->widget(2)); // Terminal tab index
+    bottom_tabs_->setCurrentWidget(bottom_tabs_->widget(2)); // Terminal tab index
 
     auto* proc = new QProcess(this);
     proc->setProcessChannelMode(QProcess::MergedChannels);
@@ -1090,39 +1050,32 @@ void ProgrammerEnvironment::OnTerminalInputSubmitted() {
     if (!project_root_.isEmpty())
         proc->setWorkingDirectory(project_root_);
 
-    connect(proc, &QProcess::readyReadStandardOutput, this,
-            [this, proc]() {
-                AppendOutput(terminal_view_,
-                             QString::fromUtf8(proc->readAllStandardOutput()),
-                             QColor(0xca, 0xd3, 0xf5));
-            });
+    connect(proc, &QProcess::readyReadStandardOutput, this, [this, proc]() {
+        AppendOutput(terminal_view_, QString::fromUtf8(proc->readAllStandardOutput()),
+                     QColor(0xca, 0xd3, 0xf5));
+    });
 
-    connect(proc,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
+    connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
             [this, proc](int exit_code, QProcess::ExitStatus) {
                 if (exit_code != 0) {
-                    AppendOutput(terminal_view_,
-                                 QStringLiteral("[exit %1]\n").arg(exit_code),
+                    AppendOutput(terminal_view_, QStringLiteral("[exit %1]\n").arg(exit_code),
                                  QColor(0xf3, 0x8b, 0xa8));
                 }
                 proc->deleteLater();
             });
 
 #ifdef Q_OS_WIN
-    proc->start(QStringLiteral("cmd.exe"),
-                {QStringLiteral("/C"), cmd});
+    proc->start(QStringLiteral("cmd.exe"), {QStringLiteral("/C"), cmd});
 #else
-    proc->start(QStringLiteral("/bin/sh"),
-                {QStringLiteral("-c"), cmd});
+    proc->start(QStringLiteral("/bin/sh"), {QStringLiteral("-c"), cmd});
 #endif
 }
 
 // ---------------------------------------------------------------------------
 // AppendOutput — shared helper
 // ---------------------------------------------------------------------------
-void ProgrammerEnvironment::AppendOutput(QTextEdit* target,
-                                          const QString& text,
-                                          const QColor& color) {
+void ProgrammerEnvironment::AppendOutput(QTextEdit* target, const QString& text,
+                                         const QColor& color) {
     if (!target)
         return;
     target->setTextColor(color);

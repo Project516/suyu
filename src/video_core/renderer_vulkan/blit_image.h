@@ -84,6 +84,7 @@ public:
     void ClearDepthStencil(const Framebuffer* dst_framebuffer, bool depth_clear, f32 clear_depth,
                            u8 stencil_mask, u32 stencil_ref, u32 stencil_compare_mask,
                            const Region2D& dst_region);
+
 private:
     void Convert(VkPipeline pipeline, const Framebuffer* dst_framebuffer,
                  const ImageView& src_image_view);

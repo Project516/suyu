@@ -5,36 +5,38 @@
 // SPDX-FileCopyrightText: Copyright 2013 Dolphin Emulator Project / 2015 Citra Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <fstream>
 #include <iterator>
 #include <optional>
-#include <algorithm>
 #include <string_view>
 #include <thread>
 #include <vector>
 #ifdef _WIN32
 #include <windows.h>
 #elif defined(__DragonFly__) || defined(__FreeBSD__)
-#include <sys/types.h>
 #include <machine/cpufunc.h>
+#include <sys/types.h>
 #elif defined(__ANDROID__)
 #include <sys/system_properties.h>
 #endif
 
-#include "common/steady_clock.h"
-#include "common/uint128.h"
 #include "common/bit_util.h"
 #include "common/common_types.h"
 #include "common/cpu_features.h"
 #include "common/logging.h"
+#include "common/steady_clock.h"
+#include "common/uint128.h"
 
 #ifdef ARCHITECTURE_x86_64
 #include "common/x64/rdtsc.h"
 #ifdef _MSC_VER
 #include <intrin.h>
-static inline u64 xgetbv(u32 index) { return _xgetbv(index); }
+static inline u64 xgetbv(u32 index) {
+    return _xgetbv(index);
+}
 #else
 static inline void __cpuidex(int info[4], u32 function_id, u32 subfunction_id) {
 #if defined(__DragonFly__) || defined(__FreeBSD__)
@@ -48,7 +50,9 @@ static inline void __cpuidex(int info[4], u32 function_id, u32 subfunction_id) {
             : "a"(function_id), "c"(subfunction_id));
 #endif
 }
-static inline void __cpuid(int info[4], u32 function_id) { return __cpuidex(info, function_id, 0); }
+static inline void __cpuid(int info[4], u32 function_id) {
+    return __cpuidex(info, function_id, 0);
+}
 #define _XCR_XFEATURE_ENABLED_MASK 0
 static inline u64 xgetbv(u32 index) {
     u32 eax, edx;
@@ -218,8 +222,8 @@ const CPUCaps g_cpu_caps = [] {
         // https://github.com/torvalds/linux/blob/master/tools/power/x86/turbostat/turbostat.c#L5569
         // but it's easier to just estimate the TSC tick rate for these cases.
         if (caps.tsc_crystal_ratio_denominator) {
-            caps.tsc_frequency = u64(caps.crystal_frequency)
-                * caps.tsc_crystal_ratio_numerator / caps.tsc_crystal_ratio_denominator;
+            caps.tsc_frequency = u64(caps.crystal_frequency) * caps.tsc_crystal_ratio_numerator /
+                                 caps.tsc_crystal_ratio_denominator;
         } else {
             caps.tsc_frequency = X64::EstimateRDTSCFrequency();
         }
@@ -240,32 +244,35 @@ const CPUCaps g_cpu_caps = [] {
 
 #if defined(ARCHITECTURE_x86_64)
 WallClock::WallClock(bool invariant_, u64 rdtsc_frequency_) noexcept
-    : rdtsc_frequency{rdtsc_frequency_}
-    , ns_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(NsRatio::den, rdtsc_frequency_) : 0}
-    , us_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(UsRatio::den, rdtsc_frequency_) : 0}
-    , ms_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(MsRatio::den, rdtsc_frequency_) : 0}
-    , rdtsc_ns_factor{invariant_ ? GetFixedPoint64Factor(rdtsc_frequency_ % NsRatio::den, NsRatio::den) : 0}
-    , rdtsc_ns_ticks_per_ns{invariant_ ? rdtsc_frequency_ / NsRatio::den : 1}
-    , cntpct_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(CNTFRQ, rdtsc_frequency_) : 0}
-    , gputick_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(GPUTickFreq, rdtsc_frequency_) : 0}
-    , invariant{invariant_}
-{}
+    : rdtsc_frequency{rdtsc_frequency_},
+      ns_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(NsRatio::den, rdtsc_frequency_) : 0},
+      us_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(UsRatio::den, rdtsc_frequency_) : 0},
+      ms_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(MsRatio::den, rdtsc_frequency_) : 0},
+      rdtsc_ns_factor{
+          invariant_ ? GetFixedPoint64Factor(rdtsc_frequency_ % NsRatio::den, NsRatio::den) : 0},
+      rdtsc_ns_ticks_per_ns{invariant_ ? rdtsc_frequency_ / NsRatio::den : 1},
+      cntpct_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(CNTFRQ, rdtsc_frequency_) : 0},
+      gputick_rdtsc_factor{invariant_ ? GetFixedPoint64Factor(GPUTickFreq, rdtsc_frequency_) : 0},
+      invariant{invariant_} {}
 
 std::chrono::nanoseconds WallClock::GetTimeNS() const {
     if (!invariant)
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch());
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now().time_since_epoch());
     return std::chrono::nanoseconds{MultiplyHigh(GetUptime(), ns_rdtsc_factor)};
 }
 
 std::chrono::microseconds WallClock::GetTimeUS() const {
     if (!invariant)
-        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch());
+        return std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now().time_since_epoch());
     return std::chrono::microseconds{MultiplyHigh(GetUptime(), us_rdtsc_factor)};
 }
 
 std::chrono::milliseconds WallClock::GetTimeMS() const {
     if (!invariant)
-        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch());
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now().time_since_epoch());
     return std::chrono::milliseconds{MultiplyHigh(GetUptime(), ms_rdtsc_factor)};
 }
 
@@ -283,7 +290,9 @@ s64 WallClock::GetGPUTick() const {
 
 s64 WallClock::GetUptime() const {
     if (!invariant)
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(
+                   std::chrono::steady_clock::now().time_since_epoch())
+            .count();
     return s64(Common::X64::FencedRDTSC());
 }
 
@@ -366,12 +375,10 @@ s64 WallClock::GetGPUTick() const {
 
 s64 WallClock::GetUptime() const {
     s64 cntvct_el0 = 0;
-    asm volatile(
-        "dsb ish\n\t"
-        "mrs %[cntvct_el0], cntvct_el0\n\t"
-        "dsb ish\n\t"
-        : [cntvct_el0] "=r"(cntvct_el0)
-    );
+    asm volatile("dsb ish\n\t"
+                 "mrs %[cntvct_el0], cntvct_el0\n\t"
+                 "dsb ish\n\t"
+                 : [cntvct_el0] "=r"(cntvct_el0));
     return cntvct_el0;
 }
 
@@ -386,15 +393,18 @@ u64 WallClock::NsToTicks(std::chrono::nanoseconds ns) const {
 WallClock::WallClock(bool invariant_, u64 rdtsc_frequency_) noexcept {}
 
 std::chrono::nanoseconds WallClock::GetTimeNS() const {
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch());
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch());
 }
 
 std::chrono::microseconds WallClock::GetTimeUS() const {
-    return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch());
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+        std::chrono::steady_clock::now().time_since_epoch());
 }
 
 std::chrono::milliseconds WallClock::GetTimeMS() const {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch());
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch());
 }
 
 s64 WallClock::GetCNTPCT() const {
@@ -406,7 +416,9 @@ s64 WallClock::GetGPUTick() const {
 }
 
 s64 WallClock::GetUptime() const {
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+               std::chrono::steady_clock::now().time_since_epoch())
+        .count();
 }
 
 bool WallClock::IsNative() const {
@@ -423,7 +435,8 @@ u64 WallClock::NsToTicks(std::chrono::nanoseconds ns) const {
 const WallClock g_wall_clock = [] {
 #if defined(ARCHITECTURE_x86_64)
     auto const& caps = Common::g_cpu_caps;
-    return WallClock(caps.invariant_tsc && caps.tsc_frequency >= std::nano::den, caps.tsc_frequency);
+    return WallClock(caps.invariant_tsc && caps.tsc_frequency >= std::nano::den,
+                     caps.tsc_frequency);
 #elif defined(HAS_NCE)
     return WallClock(false, 1);
 #else

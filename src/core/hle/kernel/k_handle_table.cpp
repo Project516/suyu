@@ -83,7 +83,8 @@ Result KHandleTable::Add(KernelCore& kernel, Handle* out_handle, KAutoObject* ob
     R_SUCCEED();
 }
 
-KScopedAutoObject<KAutoObject> KHandleTable::GetObjectForIpc(KernelCore& kernel, Handle handle, KThread* cur_thread) const {
+KScopedAutoObject<KAutoObject> KHandleTable::GetObjectForIpc(KernelCore& kernel, Handle handle,
+                                                             KThread* cur_thread) const {
     // Handle pseudo-handles.
     ASSERT(cur_thread != nullptr);
     if (handle == Svc::PseudoHandle::CurrentProcess) {

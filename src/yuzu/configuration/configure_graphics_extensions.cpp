@@ -20,8 +20,8 @@
 ConfigureGraphicsExtensions::ConfigureGraphicsExtensions(
     const Core::System& system_, std::shared_ptr<std::vector<ConfigurationShared::Tab*>> group_,
     const ConfigurationShared::Builder& builder, QWidget* parent)
-    : Tab(group_, parent), ui{std::make_unique<Ui::ConfigureGraphicsExtensions>()},
-      system{system_} {
+    : Tab(group_, parent), ui{std::make_unique<Ui::ConfigureGraphicsExtensions>()}, system{
+                                                                                        system_} {
 
     ui->setupUi(this);
 

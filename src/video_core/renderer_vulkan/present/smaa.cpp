@@ -6,8 +6,8 @@
 
 #include <list>
 
-#include "common/assert.h"
 #include <ranges>
+#include "common/assert.h"
 
 #include "video_core/renderer_vulkan/present/smaa.h"
 #include "video_core/renderer_vulkan/present/util.h"
@@ -27,10 +27,7 @@
 namespace Vulkan {
 
 SMAA::SMAA(const Device& device, MemoryAllocator& allocator, size_t image_count, VkExtent2D extent)
-    : m_allocator(allocator)
-    , m_extent(extent)
-    , m_image_count(u32(image_count))
-{
+    : m_allocator(allocator), m_extent(extent), m_image_count(u32(image_count)) {
     CreateImages(device);
     CreateRenderPasses(device);
     CreateSampler(device);
@@ -85,9 +82,8 @@ void SMAA::CreateRenderPasses(const Device& device) {
         images.framebuffers[EdgeDetection] = CreateWrappedFramebuffer(
             device, m_renderpasses[EdgeDetection], images.image_views[Edges], m_extent);
 
-        images.framebuffers[BlendingWeightCalculation] =
-            CreateWrappedFramebuffer(device, m_renderpasses[BlendingWeightCalculation],
-                                     images.image_views[Blend], m_extent);
+        images.framebuffers[BlendingWeightCalculation] = CreateWrappedFramebuffer(
+            device, m_renderpasses[BlendingWeightCalculation], images.image_views[Blend], m_extent);
 
         images.framebuffers[NeighborhoodBlending] = CreateWrappedFramebuffer(
             device, m_renderpasses[NeighborhoodBlending], images.image_views[Output], m_extent);
@@ -131,11 +127,11 @@ void SMAA::CreateDescriptorSetLayouts(const Device& device) {
         CreateWrappedDescriptorSetLayout(device, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER});
     m_descriptor_set_layouts[BlendingWeightCalculation] =
         CreateWrappedDescriptorSetLayout(device, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER});
+                                                  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER});
     m_descriptor_set_layouts[NeighborhoodBlending] =
         CreateWrappedDescriptorSetLayout(device, {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER});
+                                                  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER});
 }
 
 void SMAA::CreateDescriptorSets(const Device& device) {
@@ -214,7 +210,8 @@ void SMAA::UploadImages(const Device& device, Scheduler& scheduler) {
     m_images_ready = true;
 }
 
-void SMAA::Draw(const Device& device, Scheduler& scheduler, size_t image_index, VkImage* inout_image, VkImageView* inout_image_view) {
+void SMAA::Draw(const Device& device, Scheduler& scheduler, size_t image_index,
+                VkImage* inout_image, VkImageView* inout_image_view) {
     Images& images = m_dynamic_images[image_index];
 
     VkImage input_image = *inout_image;

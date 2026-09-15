@@ -8,9 +8,13 @@
 
 namespace Service::JIT {
 
-Result CodeMemory::Initialize(Kernel::KernelCore& kernel, Kernel::KProcess& process, Kernel::KCodeMemory& code_memory, size_t size, Kernel::Svc::MemoryPermission perm, std::mt19937_64& generate_random) {
+Result CodeMemory::Initialize(Kernel::KernelCore& kernel, Kernel::KProcess& process,
+                              Kernel::KCodeMemory& code_memory, size_t size,
+                              Kernel::Svc::MemoryPermission perm,
+                              std::mt19937_64& generate_random) {
     auto& page_table = process.GetPageTable();
-    const u64 alias_code_start = GetInteger(page_table.GetAliasCodeRegionStart()) / Kernel::PageSize;
+    const u64 alias_code_start =
+        GetInteger(page_table.GetAliasCodeRegionStart()) / Kernel::PageSize;
     const u64 alias_code_size = page_table.GetAliasCodeRegionSize() / Kernel::PageSize;
 
     // NOTE: This will retry indefinitely until mapping the code memory succeeds.

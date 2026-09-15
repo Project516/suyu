@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024 suyu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDataStream>
 #include <QDir>
@@ -9,14 +10,13 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QCoreApplication>
 #include <QNetworkAccessManager>
-#include <QUrl>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QRegularExpression>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QUrl>
 
 #include "suyu/steam_integration.h"
 
@@ -53,7 +53,8 @@ QString SteamIntegration::FindSteamPath() const {
     const QString home = QDir::homePath();
     const QString steam_root = home + QStringLiteral("/.steam/steam");
     const QString legacy_root = home + QStringLiteral("/.local/share/Steam");
-    const QString flatpak_root = home + QStringLiteral("/.var/app/com.valvesoftware.Steam/data/Steam");
+    const QString flatpak_root =
+        home + QStringLiteral("/.var/app/com.valvesoftware.Steam/data/Steam");
     if (QDir(steam_root).exists()) {
         return steam_root;
     }
@@ -129,15 +130,16 @@ quint32 SteamIntegration::GenerateAppId(const QString& exe, const QString& app_n
 //     \x08                   (end of shortcuts section)
 //   \x08                     (end of root)
 
-std::vector<SteamIntegration::SteamShortcut>
-SteamIntegration::ParseShortcutsVdf(const QByteArray& data) const {
+std::vector<SteamIntegration::SteamShortcut> SteamIntegration::ParseShortcutsVdf(
+    const QByteArray& data) const {
     std::vector<SteamShortcut> shortcuts;
 
     int pos = 0;
     const int size = data.size();
 
     auto readByte = [&]() -> quint8 {
-        if (pos >= size) return VdfType::EndSection;
+        if (pos >= size)
+            return VdfType::EndSection;
         return static_cast<quint8>(data[pos++]);
     };
 
@@ -146,12 +148,14 @@ SteamIntegration::ParseShortcutsVdf(const QByteArray& data) const {
         while (pos < size && data[pos] != '\0') {
             result.append(data[pos++]);
         }
-        if (pos < size) pos++; // skip null terminator
+        if (pos < size)
+            pos++; // skip null terminator
         return result;
     };
 
     auto readUint32 = [&]() -> quint32 {
-        if (pos + 4 > size) return 0;
+        if (pos + 4 > size)
+            return 0;
         quint32 val = 0;
         val |= static_cast<quint32>(static_cast<quint8>(data[pos]));
         val |= static_cast<quint32>(static_cast<quint8>(data[pos + 1])) << 8;
@@ -162,15 +166,19 @@ SteamIntegration::ParseShortcutsVdf(const QByteArray& data) const {
     };
 
     // Top-level: expect \x00 "shortcuts" \x00
-    if (readByte() != VdfType::SubSection) return shortcuts;
+    if (readByte() != VdfType::SubSection)
+        return shortcuts;
     const QByteArray root_key = readString();
-    if (root_key != "shortcuts") return shortcuts;
+    if (root_key != "shortcuts")
+        return shortcuts;
 
     // Parse each shortcut entry
     while (pos < size) {
         const quint8 entry_type = readByte();
-        if (entry_type == VdfType::EndSection) break;
-        if (entry_type != VdfType::SubSection) break;
+        if (entry_type == VdfType::EndSection)
+            break;
+        if (entry_type != VdfType::SubSection)
+            break;
 
         readString(); // index string like "0", "1", etc.
 
@@ -179,7 +187,8 @@ SteamIntegration::ParseShortcutsVdf(const QByteArray& data) const {
         // Parse fields within this shortcut
         while (pos < size) {
             const quint8 field_type = readByte();
-            if (field_type == VdfType::EndSection) break;
+            if (field_type == VdfType::EndSection)
+                break;
 
             const QByteArray key = readString();
 
@@ -216,7 +225,8 @@ SteamIntegration::ParseShortcutsVdf(const QByteArray& data) const {
                 const bool is_tags = (key == "tags");
                 while (pos < size) {
                     const quint8 sub_type = readByte();
-                    if (sub_type == VdfType::EndSection) break;
+                    if (sub_type == VdfType::EndSection)
+                        break;
                     readString(); // sub-key (index)
                     if (sub_type == VdfType::String) {
                         const QByteArray tag_val = readString();
@@ -242,7 +252,7 @@ SteamIntegration::ParseShortcutsVdf(const QByteArray& data) const {
 }
 
 void SteamIntegration::VdfWriteString(QByteArray& buf, quint8 type, const QByteArray& key,
-                                       const QByteArray& value) const {
+                                      const QByteArray& value) const {
     buf.append(static_cast<char>(type));
     buf.append(key);
     buf.append('\0');
@@ -250,8 +260,7 @@ void SteamIntegration::VdfWriteString(QByteArray& buf, quint8 type, const QByteA
     buf.append('\0');
 }
 
-void SteamIntegration::VdfWriteUint32(QByteArray& buf, const QByteArray& key,
-                                       quint32 value) const {
+void SteamIntegration::VdfWriteUint32(QByteArray& buf, const QByteArray& key, quint32 value) const {
     buf.append(static_cast<char>(VdfType::Uint32));
     buf.append(key);
     buf.append('\0');
@@ -300,8 +309,7 @@ QByteArray SteamIntegration::SerializeShortcutsVdf(
         buf.append("tags");
         buf.append('\0');
         for (int t = 0; t < sc.tags.size(); ++t) {
-            VdfWriteString(buf, VdfType::String, QByteArray::number(t),
-                           sc.tags[t].toUtf8());
+            VdfWriteString(buf, VdfType::String, QByteArray::number(t), sc.tags[t].toUtf8());
         }
         buf.append(static_cast<char>(VdfType::EndSection));
 
@@ -468,15 +476,22 @@ QString SteamStoreSearchUrl(const QString& game_title) {
 
 QString SteamStoreArtworkUrl(quint64 app_id, SteamIntegration::ArtworkType artwork_type) {
     switch (artwork_type) {
-        case SteamIntegration::ArtworkType::Hero:
-            return QStringLiteral("https://cdn.cloudflare.steamstatic.com/steam/apps/%1/header.jpg").arg(app_id);
-        case SteamIntegration::ArtworkType::Icon:
-            return QStringLiteral("https://cdn.cloudflare.steamstatic.com/steam/apps/%1/capsule_184x69.jpg").arg(app_id);
-        case SteamIntegration::ArtworkType::Artwork:
-            return QStringLiteral("https://cdn.cloudflare.steamstatic.com/steam/apps/%1/capsule_616x353.jpg").arg(app_id);
-        case SteamIntegration::ArtworkType::Grid:
-        default:
-            return QStringLiteral("https://cdn.cloudflare.steamstatic.com/steam/apps/%1/capsule_231x87.jpg").arg(app_id);
+    case SteamIntegration::ArtworkType::Hero:
+        return QStringLiteral("https://cdn.cloudflare.steamstatic.com/steam/apps/%1/header.jpg")
+            .arg(app_id);
+    case SteamIntegration::ArtworkType::Icon:
+        return QStringLiteral(
+                   "https://cdn.cloudflare.steamstatic.com/steam/apps/%1/capsule_184x69.jpg")
+            .arg(app_id);
+    case SteamIntegration::ArtworkType::Artwork:
+        return QStringLiteral(
+                   "https://cdn.cloudflare.steamstatic.com/steam/apps/%1/capsule_616x353.jpg")
+            .arg(app_id);
+    case SteamIntegration::ArtworkType::Grid:
+    default:
+        return QStringLiteral(
+                   "https://cdn.cloudflare.steamstatic.com/steam/apps/%1/capsule_231x87.jpg")
+            .arg(app_id);
     }
 }
 
@@ -491,8 +506,10 @@ QString NetworkReplyErrorString(QNetworkReply* reply) {
 QString NormalizeSteamSearchText(QString text) {
     text = text.toLower().trimmed();
     text.replace(QRegularExpression(QStringLiteral(R"([^a-z0-9]+)")), QStringLiteral(" "));
-    text.replace(QRegularExpression(QStringLiteral(R"(\b(deluxe|ultimate|complete|edition|demo|bundle|remaster|remastered|goty)\b)")),
-                 QStringLiteral(" "));
+    text.replace(
+        QRegularExpression(QStringLiteral(
+            R"(\b(deluxe|ultimate|complete|edition|demo|bundle|remaster|remastered|goty)\b)")),
+        QStringLiteral(" "));
     text.replace(QRegularExpression(QStringLiteral(R"(\s+)")), QStringLiteral(" "));
     return text.trimmed();
 }
@@ -550,63 +567,66 @@ qint64 SelectBestSteamStoreAppId(const QJsonArray& items, const QString& game_ti
 } // namespace
 
 void SteamIntegration::FetchArtwork(const QString& game_title, const QString& output_path,
-                                       ArtworkType artwork_type) {
+                                    ArtworkType artwork_type) {
     const QUrl search_url(SteamStoreSearchUrl(game_title));
 
     QNetworkRequest request(search_url);
     QNetworkReply* search_reply = network_manager_->get(request);
-    connect(search_reply, &QNetworkReply::finished, this,
-            [this, search_reply, game_title, output_path, artwork_type]() {
-                search_reply->deleteLater();
+    connect(
+        search_reply, &QNetworkReply::finished, this,
+        [this, search_reply, game_title, output_path, artwork_type]() {
+            search_reply->deleteLater();
 
-                if (search_reply->error() != QNetworkReply::NoError) {
-                    emit ArtworkFetchFailed(game_title, NetworkReplyErrorString(search_reply));
-                    return;
-                }
+            if (search_reply->error() != QNetworkReply::NoError) {
+                emit ArtworkFetchFailed(game_title, NetworkReplyErrorString(search_reply));
+                return;
+            }
 
-                const QJsonDocument doc = QJsonDocument::fromJson(search_reply->readAll());
-                const QJsonArray items = doc.object()[QStringLiteral("items")].toArray();
-                if (items.isEmpty()) {
-                    emit ArtworkFetchFailed(game_title,
-                                            QStringLiteral("No store match found on Steam Store"));
-                    return;
-                }
+            const QJsonDocument doc = QJsonDocument::fromJson(search_reply->readAll());
+            const QJsonArray items = doc.object()[QStringLiteral("items")].toArray();
+            if (items.isEmpty()) {
+                emit ArtworkFetchFailed(game_title,
+                                        QStringLiteral("No store match found on Steam Store"));
+                return;
+            }
 
-                const qint64 app_id = SelectBestSteamStoreAppId(items, game_title);
-                if (app_id == 0) {
-                    emit ArtworkFetchFailed(game_title,
-                                            QStringLiteral("Steam Store returned an invalid app id"));
-                    return;
-                }
+            const qint64 app_id = SelectBestSteamStoreAppId(items, game_title);
+            if (app_id == 0) {
+                emit ArtworkFetchFailed(game_title,
+                                        QStringLiteral("Steam Store returned an invalid app id"));
+                return;
+            }
 
-                const QUrl image_url = QUrl(SteamStoreArtworkUrl(static_cast<quint64>(app_id), artwork_type));
-                QNetworkReply* img_reply = network_manager_->get(QNetworkRequest(image_url));
-                connect(img_reply, &QNetworkReply::finished, this,
-                        [this, img_reply, game_title, output_path]() {
-                            img_reply->deleteLater();
+            const QUrl image_url =
+                QUrl(SteamStoreArtworkUrl(static_cast<quint64>(app_id), artwork_type));
+            QNetworkReply* img_reply = network_manager_->get(QNetworkRequest(image_url));
+            connect(img_reply, &QNetworkReply::finished, this,
+                    [this, img_reply, game_title, output_path]() {
+                        img_reply->deleteLater();
 
-                            if (img_reply->error() != QNetworkReply::NoError) {
-                                emit ArtworkFetchFailed(game_title, NetworkReplyErrorString(img_reply));
-                                return;
-                            }
+                        if (img_reply->error() != QNetworkReply::NoError) {
+                            emit ArtworkFetchFailed(game_title, NetworkReplyErrorString(img_reply));
+                            return;
+                        }
 
-                            const int status_code = img_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-                            if (status_code >= 400) {
-                                emit ArtworkFetchFailed(game_title,
-                                                        QStringLiteral("HTTP %1").arg(status_code));
-                                return;
-                            }
+                        const int status_code =
+                            img_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+                        if (status_code >= 400) {
+                            emit ArtworkFetchFailed(game_title,
+                                                    QStringLiteral("HTTP %1").arg(status_code));
+                            return;
+                        }
 
-                            QFile file(output_path);
-                            if (!file.open(QIODevice::WriteOnly)) {
-                                emit ArtworkFetchFailed(game_title,
-                                                        QStringLiteral("Cannot write to %1").arg(output_path));
-                                return;
-                            }
-                            file.write(img_reply->readAll());
-                            file.close();
+                        QFile file(output_path);
+                        if (!file.open(QIODevice::WriteOnly)) {
+                            emit ArtworkFetchFailed(
+                                game_title, QStringLiteral("Cannot write to %1").arg(output_path));
+                            return;
+                        }
+                        file.write(img_reply->readAll());
+                        file.close();
 
-                            emit ArtworkFetched(game_title, output_path);
-                        });
-            });
+                        emit ArtworkFetched(game_title, output_path);
+                    });
+        });
 }

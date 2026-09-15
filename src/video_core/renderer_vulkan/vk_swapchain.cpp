@@ -94,9 +94,9 @@ VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, u32 wi
     }
     VkExtent2D extent;
     extent.width = (std::max)(capabilities.minImageExtent.width,
-                            (std::min)(capabilities.maxImageExtent.width, width));
+                              (std::min)(capabilities.maxImageExtent.width, width));
     extent.height = (std::max)(capabilities.minImageExtent.height,
-                             (std::min)(capabilities.maxImageExtent.height, height));
+                               (std::min)(capabilities.maxImageExtent.height, height));
     return extent;
 }
 
@@ -114,16 +114,9 @@ VkCompositeAlphaFlagBitsKHR ChooseAlphaFlags(const VkSurfaceCapabilitiesKHR& cap
 
 } // Anonymous namespace
 
-Swapchain::Swapchain(
-    VkSurfaceKHR_T* surface_,
-    const Device& device_,
-    Scheduler& scheduler_,
-    u32 width_,
-    u32 height_)
-    : surface(surface_)
-    , device{device_}
-    , scheduler{scheduler_}
-{
+Swapchain::Swapchain(VkSurfaceKHR_T* surface_, const Device& device_, Scheduler& scheduler_,
+                     u32 width_, u32 height_)
+    : surface(surface_), device{device_}, scheduler{scheduler_} {
     if (surface) {
         Create(surface, width_, height_);
     } else {
@@ -137,11 +130,7 @@ Swapchain::Swapchain(
 
 Swapchain::~Swapchain() = default;
 
-void Swapchain::Create(
-    VkSurfaceKHR_T* surface_,
-    u32 width_,
-    u32 height_)
-{
+void Swapchain::Create(VkSurfaceKHR_T* surface_, u32 width_, u32 height_) {
     is_outdated = false;
     is_suboptimal = false;
     width = width_;
@@ -189,23 +178,23 @@ bool Swapchain::AcquireNextImage() {
     }
 
     const auto wait_with_frame_pacing = [this] {
-    switch (Settings::values.frame_pacing_mode.GetValue()) {
-    case Settings::FramePacingMode::Target_Auto:
-        scheduler.Wait(resource_ticks[image_index]);
-        break;
-    case Settings::FramePacingMode::Target_30:
-        scheduler.Wait(resource_ticks[image_index], 30.0);
-        break;
-    case Settings::FramePacingMode::Target_60:
-        scheduler.Wait(resource_ticks[image_index], 60.0);
-        break;
-    case Settings::FramePacingMode::Target_90:
-        scheduler.Wait(resource_ticks[image_index], 90.0);
-        break;
-    case Settings::FramePacingMode::Target_120:
-        scheduler.Wait(resource_ticks[image_index], 120.0);
-        break;
-    }
+        switch (Settings::values.frame_pacing_mode.GetValue()) {
+        case Settings::FramePacingMode::Target_Auto:
+            scheduler.Wait(resource_ticks[image_index]);
+            break;
+        case Settings::FramePacingMode::Target_30:
+            scheduler.Wait(resource_ticks[image_index], 30.0);
+            break;
+        case Settings::FramePacingMode::Target_60:
+            scheduler.Wait(resource_ticks[image_index], 60.0);
+            break;
+        case Settings::FramePacingMode::Target_90:
+            scheduler.Wait(resource_ticks[image_index], 90.0);
+            break;
+        case Settings::FramePacingMode::Target_120:
+            scheduler.Wait(resource_ticks[image_index], 120.0);
+            break;
+        }
     };
 
 #ifdef __ANDROID__
@@ -263,8 +252,8 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities) {
     const auto formats{physical_device.GetSurfaceFormatsKHR(VkSurfaceKHR(surface))};
     const auto present_modes = physical_device.GetSurfacePresentModesKHR(VkSurfaceKHR(surface));
 
-    has_mailbox = std::find(present_modes.begin(), present_modes.end(), VK_PRESENT_MODE_MAILBOX_KHR)
-                  != present_modes.end();
+    has_mailbox = std::find(present_modes.begin(), present_modes.end(),
+                            VK_PRESENT_MODE_MAILBOX_KHR) != present_modes.end();
     has_imm = std::find(present_modes.begin(), present_modes.end(),
                         VK_PRESENT_MODE_IMMEDIATE_KHR) != present_modes.end();
     has_fifo_relaxed = std::find(present_modes.begin(), present_modes.end(),
@@ -322,11 +311,10 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities) {
     // According to Vulkan spec, when using VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR,
     // the base format (imageFormat) MUST be included in pViewFormats
     const std::array view_formats{
-        swapchain_ci.imageFormat,  // Base format MUST be first
-        VK_FORMAT_B8G8R8A8_UNORM,
-        VK_FORMAT_B8G8R8A8_SRGB,
+        swapchain_ci.imageFormat, // Base format MUST be first
+        VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SRGB,
 #ifdef __ANDROID__
-        VK_FORMAT_R8G8B8A8_UNORM,  // Android may use RGBA
+        VK_FORMAT_R8G8B8A8_UNORM, // Android may use RGBA
         VK_FORMAT_R8G8B8A8_SRGB,
 #endif
     };
@@ -341,7 +329,8 @@ void Swapchain::CreateSwapchain(const VkSurfaceCapabilitiesKHR& capabilities) {
         swapchain_ci.flags |= VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR;
     }
     // Request the size again to reduce the possibility of a TOCTOU race condition.
-    const auto updated_capabilities = physical_device.GetSurfaceCapabilitiesKHR(VkSurfaceKHR(surface));
+    const auto updated_capabilities =
+        physical_device.GetSurfaceCapabilitiesKHR(VkSurfaceKHR(surface));
     swapchain_ci.imageExtent = ChooseSwapExtent(updated_capabilities, width, height);
     // Don't add code within this and the swapchain creation.
     swapchain = device.GetLogical().CreateSwapchainKHR(swapchain_ci);

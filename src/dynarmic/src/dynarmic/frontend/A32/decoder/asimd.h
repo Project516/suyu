@@ -10,16 +10,15 @@
 
 #include <algorithm>
 #include <functional>
+#include <iterator>
 #include <optional>
 #include <set>
 #include <vector>
-#include <iterator>
 
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-
 #include "dynarmic/frontend/decoder/decoder_detail.h"
 #include "dynarmic/frontend/decoder/matcher.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::A32 {
 
@@ -28,10 +27,11 @@ using ASIMDMatcher = Decoder::Matcher<Visitor, u32>;
 
 template<typename V, typename ReturnType>
 static std::optional<ReturnType> DecodeASIMD(V& visitor, u32 instruction) noexcept {
-#define INST(fn, name, bitstring) \
-    do { \
+#define INST(fn, name, bitstring)                                                                                                        \
+    do {                                                                                                                                 \
         auto const [mask, expect] = DYNARMIC_DECODER_GET_MATCHER(ASIMDMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)); \
-        if ((instruction & mask) == expect) return DYNARMIC_DECODER_GET_MATCHER_FUNCTION(ASIMDMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)); \
+        if ((instruction & mask) == expect)                                                                                              \
+            return DYNARMIC_DECODER_GET_MATCHER_FUNCTION(ASIMDMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring));         \
     } while (0);
 #include "./asimd.inc"
 #undef INST
@@ -41,7 +41,7 @@ static std::optional<ReturnType> DecodeASIMD(V& visitor, u32 instruction) noexce
 template<typename V>
 static std::optional<std::string_view> GetNameASIMD(u32 inst) noexcept {
     std::vector<std::pair<std::string_view, ASIMDMatcher<V>>> list = {
-#define INST(fn, name, bitstring) { name, DYNARMIC_DECODER_GET_MATCHER(ASIMDMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)) },
+#define INST(fn, name, bitstring) {name, DYNARMIC_DECODER_GET_MATCHER(ASIMDMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring))},
 #include "./asimd.inc"
 #undef INST
     };

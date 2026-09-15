@@ -33,8 +33,9 @@ public:
                              vk::ShaderModule&& fragment_shader);
     ~WindowAdaptPass();
 
-    void Draw(const Device& device, RasterizerVulkan& rasterizer, Scheduler& scheduler, size_t image_index,
-              std::list<Layer>& layers, std::span<const Tegra::FramebufferConfig> configs,
+    void Draw(const Device& device, RasterizerVulkan& rasterizer, Scheduler& scheduler,
+              size_t image_index, std::list<Layer>& layers,
+              std::span<const Tegra::FramebufferConfig> configs,
               const Layout::FramebufferLayout& layout, Frame* dst);
 
     VkDescriptorSetLayout GetDescriptorSetLayout();

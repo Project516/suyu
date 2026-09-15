@@ -142,8 +142,7 @@ public:
     void BindTransformFeedbackBuffers(VideoCommon::HostBindings<Buffer>& bindings);
 
     std::span<u8> BindMappedUniformBuffer([[maybe_unused]] size_t stage,
-                                          [[maybe_unused]] u32 binding_index,
-                                          u32 size) {
+                                          [[maybe_unused]] u32 binding_index, u32 size) {
         const StagingBufferRef ref = staging_pool.Request(size, MemoryUsage::Upload);
         BindBuffer(ref.buffer, static_cast<u32>(ref.offset), size);
         return ref.mapped_span;

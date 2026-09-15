@@ -281,7 +281,8 @@ void IHidSystemServer::ApplyNpadSystemCommonPolicy(HLERequestContext& ctx) {
 
     LOG_INFO(Service_HID, "called, applet_resource_user_id={}", applet_resource_user_id);
 
-    GetResourceManager()->GetNpad()->ApplyNpadSystemCommonPolicy(system.Kernel(), applet_resource_user_id);
+    GetResourceManager()->GetNpad()->ApplyNpadSystemCommonPolicy(system.Kernel(),
+                                                                 applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -328,7 +329,8 @@ void IHidSystemServer::ApplyNpadSystemCommonPolicyFull(HLERequestContext& ctx) {
 
     LOG_INFO(Service_HID, "called, applet_resource_user_id={}", applet_resource_user_id);
 
-    GetResourceManager()->GetNpad()->ApplyNpadSystemCommonPolicyFull(system.Kernel(), applet_resource_user_id);
+    GetResourceManager()->GetNpad()->ApplyNpadSystemCommonPolicyFull(system.Kernel(),
+                                                                     applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(ResultSuccess);
@@ -359,7 +361,8 @@ void IHidSystemServer::GetMaskedSupportedNpadStyleSet(HLERequestContext& ctx) {
 
     Core::HID::NpadStyleSet supported_styleset{};
     const auto npad = GetResourceManager()->GetNpad();
-    const Result result = npad->GetMaskedSupportedNpadStyleSet(system.Kernel(), applet_resource_user_id, supported_styleset);
+    const Result result = npad->GetMaskedSupportedNpadStyleSet(
+        system.Kernel(), applet_resource_user_id, supported_styleset);
 
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(result);
@@ -373,7 +376,8 @@ void IHidSystemServer::SetSupportedNpadStyleSetAll(HLERequestContext& ctx) {
     LOG_DEBUG(Service_HID, "called, applet_resource_user_id={}", applet_resource_user_id);
 
     const auto npad = GetResourceManager()->GetNpad();
-    const auto result = npad->SetSupportedNpadStyleSet(system.Kernel(), applet_resource_user_id, Core::HID::NpadStyleSet::All);
+    const auto result = npad->SetSupportedNpadStyleSet(system.Kernel(), applet_resource_user_id,
+                                                       Core::HID::NpadStyleSet::All);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(result);

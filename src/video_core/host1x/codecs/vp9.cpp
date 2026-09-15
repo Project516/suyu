@@ -201,15 +201,14 @@ static constexpr Vp9EntropyProbs default_probs{
     new_prob--;
     old_prob--;
     u8 i = old_prob * 2 <= 0xff
-        ? u8((std::max)(0, RecenterNonNeg(new_prob, old_prob) - 1))
-        : u8((std::max)(0, RecenterNonNeg(0xff - 1 - new_prob, 0xff - 1 - old_prob) - 1));
+               ? u8((std::max)(0, RecenterNonNeg(new_prob, old_prob) - 1))
+               : u8((std::max)(0, RecenterNonNeg(0xff - 1 - new_prob, 0xff - 1 - old_prob) - 1));
     return s32((i + 7) % 13 == 0 ? (i + 7) / 13 - 1 : i + 20 - (i + 7) / 13);
 }
 } // Anonymous namespace
 
 VP9::VP9(Host1x::Host1x& host1x_, const Host1x::NvdecCommon::NvdecRegisters& regs_, s32 id_)
-    : Decoder{host1x_, id_, regs_}
-{
+    : Decoder{host1x_, id_, regs_} {
     initialized = decode_api.Initialize(Host1x::NvdecCommon::VideoCodec::VP9);
 }
 
@@ -342,7 +341,8 @@ void VP9::WriteSegmentation(VpxBitStreamWriter& writer) {
 
     if (update_map) {
         EntropyProbs entropy_probs{};
-        host1x.gmmu_manager.ReadBlock(regs.vp9_prob_tab_buffer_offset.Address(), &entropy_probs, sizeof(entropy_probs));
+        host1x.gmmu_manager.ReadBlock(regs.vp9_prob_tab_buffer_offset.Address(), &entropy_probs,
+                                      sizeof(entropy_probs));
 
         auto WriteProb = [&](u8 prob) {
             bool coded = prob != 255;
@@ -406,7 +406,8 @@ void VP9::WriteSegmentation(VpxBitStreamWriter& writer) {
 }
 
 Vp9PictureInfo VP9::GetVp9PictureInfo() {
-    host1x.gmmu_manager.ReadBlock(regs.picture_info_offset.Address(), &current_picture_info, sizeof(PictureInfo));
+    host1x.gmmu_manager.ReadBlock(regs.picture_info_offset.Address(), &current_picture_info,
+                                  sizeof(PictureInfo));
     Vp9PictureInfo vp9_info = current_picture_info.Convert();
 
     InsertEntropy(regs.vp9_prob_tab_buffer_offset.Address(), vp9_info.entropy);
@@ -432,7 +433,9 @@ Vp9FrameContainer VP9::GetCurrentFrame() {
         // gpu.SyncGuestHost(); epic, why?
         current_frame.info = GetVp9PictureInfo();
         current_frame.bit_stream.resize(current_frame.info.bitstream_size);
-        host1x.gmmu_manager.ReadBlock(regs.frame_bitstream_offset.Address(), current_frame.bit_stream.data(), current_frame.info.bitstream_size);
+        host1x.gmmu_manager.ReadBlock(regs.frame_bitstream_offset.Address(),
+                                      current_frame.bit_stream.data(),
+                                      current_frame.info.bitstream_size);
     }
     if (!next_frame.bit_stream.empty()) {
         Vp9FrameContainer temp{
@@ -841,7 +844,8 @@ std::span<const u8> VP9::ComposeFrame() {
     {
         Vp9FrameContainer curr_frame = GetCurrentFrame();
         current_frame_info = curr_frame.info;
-        SetFrameDimensions(current_frame_info.frame_size.width, current_frame_info.frame_size.height);
+        SetFrameDimensions(current_frame_info.frame_size.width,
+                           current_frame_info.frame_size.height);
         bitstream = std::move(curr_frame.bit_stream);
     }
     // The uncompressed header routine sets PrevProb parameters needed for the compressed header
@@ -855,8 +859,10 @@ std::span<const u8> VP9::ComposeFrame() {
     // Write headers and frame to buffer
     frame_scratch.resize(uncompressed_header.size() + compressed_header.size() + bitstream.size());
     std::copy(uncompressed_header.begin(), uncompressed_header.end(), frame_scratch.begin());
-    std::copy(compressed_header.begin(), compressed_header.end(), frame_scratch.begin() + uncompressed_header.size());
-    std::copy(bitstream.begin(), bitstream.end(), frame_scratch.begin() + uncompressed_header.size() + compressed_header.size());
+    std::copy(compressed_header.begin(), compressed_header.end(),
+              frame_scratch.begin() + uncompressed_header.size());
+    std::copy(bitstream.begin(), bitstream.end(),
+              frame_scratch.begin() + uncompressed_header.size() + compressed_header.size());
     vp9_hidden_frame = WasFrameHidden();
     return GetFrameBytes();
 }

@@ -8,13 +8,12 @@
 
 #include "dynarmic/backend/x64/a64_emit_x64.h"
 
+#include <boost/container/static_vector.hpp>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+
 #include "common/assert.h"
 #include "common/common_types.h"
-#include "dynarmic/mcl/integer_of_size.hpp"
-#include <boost/container/static_vector.hpp>
-
 #include "dynarmic/backend/x64/a64_jitstate.h"
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
@@ -29,6 +28,7 @@
 #include "dynarmic/ir/cond.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/mcl/integer_of_size.hpp"
 
 // TODO: Have ARM flags in host flags and not have them use up GPR registers unless necessary.
 // TODO: Actually implement that proper instruction selector you've always wanted to sweetheart.
@@ -38,9 +38,8 @@ namespace Dynarmic::Backend::X64 {
 using namespace Xbyak::util;
 
 A64EmitContext::A64EmitContext(const A64::UserConfig& conf, RegAlloc& reg_alloc, IR::Block& block, boost::container::stable_vector<Xbyak::Label>& shared_labels)
-    : EmitContext(reg_alloc, block, shared_labels)
-    , conf(conf)
-{}
+        : EmitContext(reg_alloc, block, shared_labels)
+        , conf(conf) {}
 
 A64::LocationDescriptor A64EmitContext::Location() const {
     return A64::LocationDescriptor{block.Location()};
@@ -78,13 +77,14 @@ A64EmitX64::BlockDescriptor A64EmitX64::Emit(IR::Block& block) noexcept {
 
     code.EnableWriting();
     new (&this->reg_alloc) RegAlloc{[this] {
-        std::bitset<32> gprs = any_gpr;
-        if (conf.fastmem_pointer)
-            gprs.reset(size_t(HostLoc::R13));
-        if (conf.page_table)
-            gprs.reset(size_t(HostLoc::R14));
-        return gprs;
-    }(), any_xmm};
+                                        std::bitset<32> gprs = any_gpr;
+                                        if (conf.fastmem_pointer)
+                                            gprs.reset(size_t(HostLoc::R13));
+                                        if (conf.page_table)
+                                            gprs.reset(size_t(HostLoc::R14));
+                                        return gprs;
+                                    }(),
+                                    any_xmm};
 
     A64EmitContext ctx{conf, reg_alloc, block, shared_labels};
 
@@ -95,7 +95,7 @@ A64EmitX64::BlockDescriptor A64EmitX64::Emit(IR::Block& block) noexcept {
     code.lea(rbp, code.ptr[rsp + ABI_SHADOW_SPACE + offsetof(StackLayout, abi_base_pointer) - 8]);
 
     DEBUG_ASSERT(block.GetCondition() == IR::Cond::AL);
-    typedef void (EmitX64::*EmitHandlerFn)(EmitContext& context, IR::Inst* inst);
+    typedef void (EmitX64::*EmitHandlerFn)(EmitContext & context, IR::Inst * inst);
     constexpr EmitHandlerFn opcode_handlers[] = {
 #define OPCODE(name, type, ...) &EmitX64::Emit##name,
 #define A32OPC(name, type, ...)
@@ -105,7 +105,7 @@ A64EmitX64::BlockDescriptor A64EmitX64::Emit(IR::Block& block) noexcept {
 #undef A32OPC
 #undef A64OPC
     };
-    typedef void (A64EmitX64::*A64EmitHandlerFn)(A64EmitContext& context, IR::Inst* inst);
+    typedef void (A64EmitX64::*A64EmitHandlerFn)(A64EmitContext & context, IR::Inst * inst);
     constexpr A64EmitHandlerFn a64_handlers[] = {
 #define OPCODE(...)
 #define A32OPC(...)
@@ -120,9 +120,13 @@ A64EmitX64::BlockDescriptor A64EmitX64::Emit(IR::Block& block) noexcept {
         auto const opcode = inst.GetOpcode();
         // Call the relevant Emit* member function.
         switch (opcode) {
-#define OPCODE(name, type, ...) case IR::Opcode::name: goto opcode_branch;
+#define OPCODE(name, type, ...) \
+    case IR::Opcode::name:      \
+        goto opcode_branch;
 #define A32OPC(name, type, ...)
-#define A64OPC(name, type, ...) case IR::Opcode::A64##name: goto a64_branch;
+#define A64OPC(name, type, ...) \
+    case IR::Opcode::A64##name: \
+        goto a64_branch;
 #include "dynarmic/ir/opcodes.inc"
 #undef OPCODE
 #undef A32OPC
@@ -186,7 +190,7 @@ void A64EmitX64::ClearFastDispatchTable() {
 
 void A64EmitX64::GenTerminalHandlers() {
     // PC ends up in rcx, location_descriptor ends up in rbx
-    //static_assert(ABI_ALL_CALLEE_SAVE.test(size_t(HostLoc::R12)));
+    // static_assert(ABI_ALL_CALLEE_SAVE.test(size_t(HostLoc::R12)));
     const auto calculate_location_descriptor = [this] {
         // This calculation has to match up with A64::LocationDescriptor::UniqueHash
         // TODO: Optimization is available here based on known state of fpcr.
@@ -225,7 +229,7 @@ void A64EmitX64::GenTerminalHandlers() {
         calculate_location_descriptor();
         code.L(rsb_cache_miss);
         code.mov(r8, u64(fast_dispatch_table.data()));
-        //code.mov(r12, qword[code.ABI_JIT_PTR + offsetof(A64JitState, pc)]);
+        // code.mov(r12, qword[code.ABI_JIT_PTR + offsetof(A64JitState, pc)]);
         code.mov(r12, rbx);
         if (code.HasHostFeature(HostFeature::SSE42)) {
             code.crc32(r12, r8);
@@ -715,12 +719,13 @@ void EmitTerminalImpl(A64EmitX64& e, IR::Term::CheckHalt terminal, IR::LocationD
 void EmitTerminalImpl(A64EmitX64&, IR::Term::Invalid, IR::LocationDescriptor, bool) {
     UNREACHABLE();
 }
-}
+}  // namespace
 
 void A64EmitX64::EmitTerminal(IR::Terminal terminal, IR::LocationDescriptor initial_location, bool is_single_step) noexcept {
     boost::apply_visitor([this, initial_location, is_single_step](auto x) {
         EmitTerminalImpl(*this, x, initial_location, is_single_step);
-    }, terminal);
+    },
+                         terminal);
 }
 
 void A64EmitX64::EmitPatchJg(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr) {

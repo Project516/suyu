@@ -4,10 +4,10 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <ranges>
 #include "common/algorithm.h"
 #include "common/assert.h"
 #include "common/logging.h"
-#include <ranges>
 #include "common/settings.h"
 #include "core/core.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -21,9 +21,7 @@ namespace Tegra::Engines {
 
 using namespace Texture;
 
-MaxwellDMA::MaxwellDMA(MemoryManager& memory_manager_)
-    : memory_manager{memory_manager_}
-{
+MaxwellDMA::MaxwellDMA(MemoryManager& memory_manager_) : memory_manager{memory_manager_} {
     execution_mask.reset();
     execution_mask[offsetof(Regs, launch_dma) / sizeof(u32)] = true;
 }
@@ -41,7 +39,8 @@ void MaxwellDMA::ConsumeSinkImpl(Core::System& system) {
     method_sink.clear();
 }
 
-void MaxwellDMA::CallMethod(Core::System& system, u32 method, u32 method_argument, bool is_last_call) {
+void MaxwellDMA::CallMethod(Core::System& system, u32 method, u32 method_argument,
+                            bool is_last_call) {
     ASSERT_MSG(method < NUM_REGS, "Invalid MaxwellDMA register");
 
     regs.reg_array[method] = method_argument;
@@ -51,14 +50,16 @@ void MaxwellDMA::CallMethod(Core::System& system, u32 method, u32 method_argumen
     }
 }
 
-void MaxwellDMA::CallMultiMethod(Core::System& system, u32 method, const u32* base_start, u32 amount, u32 methods_pending) {
+void MaxwellDMA::CallMultiMethod(Core::System& system, u32 method, const u32* base_start,
+                                 u32 amount, u32 methods_pending) {
     for (u32 i = 0; i < amount; ++i) {
         CallMethod(system, method, base_start[i], methods_pending - i <= 1);
     }
 }
 
 void MaxwellDMA::Launch() {
-    LOG_TRACE(Render_OpenGL, "DMA copy 0x{:x} -> 0x{:x}", static_cast<GPUVAddr>(regs.offset_in), GPUVAddr(regs.offset_out));
+    LOG_TRACE(Render_OpenGL, "DMA copy 0x{:x} -> 0x{:x}", static_cast<GPUVAddr>(regs.offset_in),
+              GPUVAddr(regs.offset_out));
 
     // TODO(Subv): Perform more research and implement all features of this engine.
     const LaunchDMA& launch = regs.launch_dma;
@@ -98,11 +99,16 @@ void MaxwellDMA::Launch() {
             const u32 component_size = regs.remap_const.component_size_minus_one + 1;
             ASSERT(component_size == 1 || component_size == 2 || component_size == 4);
             if (component_size == 4) {
-                accelerate.BufferClear(regs.offset_out, regs.line_length_in, regs.remap_const.remap_consta_value);
+                accelerate.BufferClear(regs.offset_out, regs.line_length_in,
+                                       regs.remap_const.remap_consta_value);
             }
             read_buffer.resize_destructive(regs.line_length_in * sizeof(u32));
-            std::ranges::fill(std::span<u32>(reinterpret_cast<u32*>(read_buffer.data()), regs.line_length_in), regs.remap_const.remap_consta_value);
-            memory_manager.WriteBlockUnsafe(regs.offset_out, reinterpret_cast<u8*>(read_buffer.data()), static_cast<size_t>(regs.line_length_in) * component_size);
+            std::ranges::fill(
+                std::span<u32>(reinterpret_cast<u32*>(read_buffer.data()), regs.line_length_in),
+                regs.remap_const.remap_consta_value);
+            memory_manager.WriteBlockUnsafe(
+                regs.offset_out, reinterpret_cast<u8*>(read_buffer.data()),
+                static_cast<size_t>(regs.line_length_in) * component_size);
         } else {
             memory_manager.FlushCaching();
             const auto convert_linear_2_blocklinear_addr = [](u64 address) {
@@ -154,7 +160,6 @@ void MaxwellDMA::Launch() {
 }
 
 void MaxwellDMA::CopyBlockLinearToPitch() {
-   
 
     u32 bytes_per_pixel = 1;
     DMA::ImageOperand src_operand;

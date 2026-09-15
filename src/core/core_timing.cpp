@@ -9,7 +9,6 @@
 #include <string>
 #include <tuple>
 #include "common/cpu_features.h"
-#include "common/cpu_features.h"
 
 #ifdef _WIN32
 #include "common/windows/timer_resolution.h"
@@ -208,8 +207,10 @@ void CoreTiming::ResetTicks() {
 }
 
 u64 CoreTiming::GetClockTicks() const {
-    u64 fres = is_multicore ? Common::g_wall_clock.GetCNTPCT() : Common::WallClock::CPUTickToCNTPCT(cpu_ticks);
-    if (auto const overclock = Settings::values.fast_cpu_time.GetValue(); overclock != Settings::CpuClock::Off) {
+    u64 fres = is_multicore ? Common::g_wall_clock.GetCNTPCT()
+                            : Common::WallClock::CPUTickToCNTPCT(cpu_ticks);
+    if (auto const overclock = Settings::values.fast_cpu_time.GetValue();
+        overclock != Settings::CpuClock::Off) {
         fres = u64(f64(fres) * (1.7 + 0.3 * u32(overclock)));
     }
     if (::Settings::values.sync_core_speed.GetValue()) {
@@ -221,9 +222,8 @@ u64 CoreTiming::GetClockTicks() const {
 }
 
 u64 CoreTiming::GetGPUTicks() const {
-    return is_multicore
-        ? Common::g_wall_clock.GetGPUTick()
-        : Common::WallClock::CPUTickToGPUTick(cpu_ticks);
+    return is_multicore ? Common::g_wall_clock.GetGPUTick()
+                        : Common::WallClock::CPUTickToGPUTick(cpu_ticks);
 }
 
 std::optional<s64> CoreTiming::Advance() {
@@ -298,16 +298,14 @@ void CoreTiming::Reset() {
 
 /// @brief Returns current time in nanoseconds.
 std::chrono::nanoseconds CoreTiming::GetGlobalTimeNs() const noexcept {
-    return is_multicore
-        ? Common::g_wall_clock.GetTimeNS()
-        : std::chrono::nanoseconds{Common::WallClock::CPUTickToNS(cpu_ticks)};
+    return is_multicore ? Common::g_wall_clock.GetTimeNS()
+                        : std::chrono::nanoseconds{Common::WallClock::CPUTickToNS(cpu_ticks)};
 }
 
 /// @brief Returns current time in microseconds.
 std::chrono::microseconds CoreTiming::GetGlobalTimeUs() const noexcept {
-    return is_multicore
-        ? Common::g_wall_clock.GetTimeUS()
-        : std::chrono::microseconds{Common::WallClock::CPUTickToUS(cpu_ticks)};
+    return is_multicore ? Common::g_wall_clock.GetTimeUS()
+                        : std::chrono::microseconds{Common::WallClock::CPUTickToUS(cpu_ticks)};
 }
 
 #ifdef _WIN32

@@ -12,7 +12,8 @@
 namespace FileSys::SystemArchive {
 
 VirtualDir SystemVersion() {
-    LOG_WARNING(Common_Filesystem, "called, using hardcoded firmware version: {}, {}", HLE::ApiVersion::VERSION_HASH, HLE::ApiVersion::DISPLAY_TITLE);
+    LOG_WARNING(Common_Filesystem, "called, using hardcoded firmware version: {}, {}",
+                HLE::ApiVersion::VERSION_HASH, HLE::ApiVersion::DISPLAY_TITLE);
 
     // the "/file"
     struct VersionFileHeader {
@@ -30,10 +31,14 @@ VirtualDir SystemVersion() {
     };
     static_assert(sizeof(VersionFileHeader) == 0x100);
     VersionFileHeader version_file_header = {};
-    std::memcpy(&version_file_header.platform_string, HLE::ApiVersion::PLATFORM_STRING, sizeof(HLE::ApiVersion::PLATFORM_STRING));
-    std::memcpy(&version_file_header.version_hash, HLE::ApiVersion::VERSION_HASH, sizeof(HLE::ApiVersion::VERSION_HASH));
-    std::memcpy(&version_file_header.display_version, HLE::ApiVersion::DISPLAY_VERSION, sizeof(HLE::ApiVersion::DISPLAY_VERSION));
-    std::memcpy(&version_file_header.display_title, HLE::ApiVersion::DISPLAY_TITLE, sizeof(HLE::ApiVersion::DISPLAY_TITLE));
+    std::memcpy(&version_file_header.platform_string, HLE::ApiVersion::PLATFORM_STRING,
+                sizeof(HLE::ApiVersion::PLATFORM_STRING));
+    std::memcpy(&version_file_header.version_hash, HLE::ApiVersion::VERSION_HASH,
+                sizeof(HLE::ApiVersion::VERSION_HASH));
+    std::memcpy(&version_file_header.display_version, HLE::ApiVersion::DISPLAY_VERSION,
+                sizeof(HLE::ApiVersion::DISPLAY_VERSION));
+    std::memcpy(&version_file_header.display_title, HLE::ApiVersion::DISPLAY_TITLE,
+                sizeof(HLE::ApiVersion::DISPLAY_TITLE));
 
     std::vector<u8> file_data(sizeof(VersionFileHeader));
     std::memcpy(file_data.data(), &version_file_header, sizeof(version_file_header));
@@ -41,9 +46,11 @@ VirtualDir SystemVersion() {
 
     // the "/digest"
     std::vector<u8> digest_data(sizeof(HLE::ApiVersion::VERSION_DIGEST));
-    std::memcpy(digest_data.data(), HLE::ApiVersion::VERSION_DIGEST, sizeof(HLE::ApiVersion::VERSION_DIGEST));
+    std::memcpy(digest_data.data(), HLE::ApiVersion::VERSION_DIGEST,
+                sizeof(HLE::ApiVersion::VERSION_DIGEST));
     VirtualFile digest_file = std::make_shared<VectorVfsFile>(digest_data, "digest");
-    return std::make_shared<VectorVfsDirectory>(std::vector<VirtualFile>{file, digest_file}, std::vector<VirtualDir>{}, "data");
+    return std::make_shared<VectorVfsDirectory>(std::vector<VirtualFile>{file, digest_file},
+                                                std::vector<VirtualDir>{}, "data");
 }
 
 } // namespace FileSys::SystemArchive

@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 suyu Emulator Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "video_core/gpu_logging/qualcomm_debug.h"
 #include "common/logging.h"
+#include "video_core/gpu_logging/qualcomm_debug.h"
 
 namespace GPU::Logging::Qualcomm {
 

@@ -18,7 +18,8 @@ class System;
 
 namespace AudioCore {
 
-/// @brief Main audio class, stored inside the core, and holding the audio manager, all sinks, and the ADSP.
+/// @brief Main audio class, stored inside the core, and holding the audio manager, all sinks, and
+/// the ADSP.
 class AudioCore {
 public:
     explicit AudioCore(Core::System& system);

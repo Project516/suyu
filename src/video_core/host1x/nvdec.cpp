@@ -21,10 +21,7 @@ namespace Tegra::Host1x {
     (offsetof(NvdecCommon::NvdecRegisters, field_name) / sizeof(u64))
 
 Nvdec::Nvdec(Host1x& host1x_, s32 id_, u32 syncpt)
-    : CDmaPusher{host1x_, id_}
-    , id{id_}
-    , syncpoint{syncpt}
-{
+    : CDmaPusher{host1x_, id_}, id{id_}, syncpoint{syncpt} {
     LOG_INFO(HW_GPU, "Created nvdec {}", id);
     host1x.frame_queue.Open(id);
 }

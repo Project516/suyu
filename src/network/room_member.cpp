@@ -59,7 +59,7 @@ public:
     std::mutex network_mutex; ///< Mutex that controls access to the `client` variable.
     /// Thread that receives and dispatches network packets
     std::optional<std::jthread> loop_thread;
-    std::mutex send_list_mutex;  ///< Mutex that controls access to the `send_list` variable.
+    std::mutex send_list_mutex;    ///< Mutex that controls access to the `send_list` variable.
     std::vector<Packet> send_list; ///< A list that stores all packets to send the async
 
     template <typename T>
@@ -187,9 +187,10 @@ void RoomMember::RoomMemberImpl::StartLoop() {
                     case IdJoinSuccess:
                     case IdJoinSuccessAsMod:
                         // The join request was successful, we are now in the room.
-                        // If we joined successfully, there must be at least one client in the room: us.
+                        // If we joined successfully, there must be at least one client in the room:
+                        // us.
                         ASSERT_MSG(member_information.size() > 0,
-                                "We have not yet received member information.");
+                                   "We have not yet received member information.");
                         HandleJoinPacket(&event); // Get the MAC Address for the client
                         if (event.packet->data[0] == IdJoinSuccessAsMod) {
                             SetState(State::Moderator);

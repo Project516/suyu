@@ -12,8 +12,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <boost/container/static_vector.hpp>
 
+#include <boost/container/static_vector.hpp>
 #include <dynarmic/common/spin_lock.h>
 
 namespace Dynarmic {
@@ -50,8 +50,8 @@ public:
     /// the exclusive state for processors if their exclusive region(s)
     /// contain [address, address+size).
     template<typename T, typename Function>
-        requires std::is_trivially_copyable_v<T>
-    bool DoExclusiveOperation(size_t processor_id, VAddr address, Function op) {
+    requires std::is_trivially_copyable_v<T> bool
+    DoExclusiveOperation(size_t processor_id, VAddr address, Function op) {
         if (!CheckAndClear(processor_id, address)) {
             return false;
         }
@@ -82,7 +82,7 @@ private:
 
     static constexpr VAddr RESERVATION_GRANULE_MASK = 0xFFFF'FFFF'FFFF'FFFFull;
     static constexpr VAddr INVALID_EXCLUSIVE_ADDRESS = 0xDEAD'DEAD'DEAD'DEADull;
-    static constexpr size_t MAX_NUM_CPU_CORES = 4; // Sync with src/core/hardware_properties
+    static constexpr size_t MAX_NUM_CPU_CORES = 4;  // Sync with src/core/hardware_properties
     boost::container::static_vector<VAddr, MAX_NUM_CPU_CORES> exclusive_addresses;
     boost::container::static_vector<Vector, MAX_NUM_CPU_CORES> exclusive_values;
     SpinLock lock;

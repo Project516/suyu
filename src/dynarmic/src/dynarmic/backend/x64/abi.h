@@ -160,7 +160,7 @@ constexpr size_t ABI_SHADOW_SPACE = 0;  // bytes
 
 #endif
 
-//static_assert(ABI_ALL_CALLER_SAVE.count() + ABI_ALL_CALLEE_SAVE.count() == 31, "Invalid total number of registers");
+// static_assert(ABI_ALL_CALLER_SAVE.count() + ABI_ALL_CALLEE_SAVE.count() == 31, "Invalid total number of registers");
 
 void ABI_PushCalleeSaveRegistersAndAdjustStack(BlockOfCode& code, size_t frame_size = 0);
 void ABI_PopCalleeSaveRegistersAndAdjustStack(BlockOfCode& code, size_t frame_size = 0);

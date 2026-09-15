@@ -43,8 +43,7 @@ Q_DECLARE_METATYPE(Emulator)
 std::array<Emulator, 4> BuildLegacyEmulators();
 extern const std::array<Emulator, 4> legacy_emus;
 
-class MigrationWorker : public QObject
-{
+class MigrationWorker : public QObject {
     Q_OBJECT
 public:
     enum class MigrationStrategy {
@@ -53,16 +52,15 @@ public:
         Link,
     };
 
-    MigrationWorker(const Emulator selected_legacy_emu,
-                    const bool clear_shader_cache,
+    MigrationWorker(const Emulator selected_legacy_emu, const bool clear_shader_cache,
                     const MigrationStrategy strategy);
 
 public slots:
     void process();
 
 signals:
-    void finished(const QString &success_text, const std::string &user_dir);
-    void error(const QString &error_message);
+    void finished(const QString& success_text, const std::string& user_dir);
+    void error(const QString& error_message);
 
 private:
     Emulator selected_legacy_emu;

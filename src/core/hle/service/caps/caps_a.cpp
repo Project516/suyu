@@ -201,7 +201,6 @@ Result IAlbumAccessorService::TranslateResult(Result in_result) {
     return in_result;
 }
 
-
 Result IAlbumAccessorService::GetAlbumAccessResultForDebug(Out<Result> out_result) {
     LOG_WARNING(Service_Capture, "(STUBBED) called");
     *out_result = ResultSuccess;

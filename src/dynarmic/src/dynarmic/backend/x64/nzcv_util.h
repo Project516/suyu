@@ -8,8 +8,9 @@
 
 #pragma once
 
-#include "common/common_types.h"
 #include <cstddef>
+
+#include "common/common_types.h"
 
 namespace Dynarmic::Backend::X64::NZCV {
 

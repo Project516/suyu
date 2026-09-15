@@ -13,20 +13,19 @@
 #include <type_traits>
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-#include "dynarmic/mcl/function_info.hpp"
-#include "dynarmic/backend/x64/xbyak.h"
-
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/constants.h"
 #include "dynarmic/backend/x64/emit_x64.h"
+#include "dynarmic/backend/x64/xbyak.h"
 #include "dynarmic/common/math_util.h"
 #include "dynarmic/interface/optimization_flags.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/mcl/bit.hpp"
+#include "dynarmic/mcl/function_info.hpp"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -529,7 +528,8 @@ void EmitX64::EmitVectorArithmeticShiftRight64(EmitContext& ctx, IR::Inst* inst)
     ctx.reg_alloc.DefineValue(code, inst, result);
 }
 
-template<typename T> constexpr T VShift(T x, T y) {
+template<typename T>
+constexpr T VShift(T x, T y) {
     s8 const shift_amount = s8(u8(y));
     s64 const bit_size = s64(mcl::bitsizeof<T>);
     if (std::is_signed_v<T>) {
@@ -1935,7 +1935,7 @@ enum class MinMaxOperation {
 // Compute the minimum/maximum of two vectors of unsigned 16-bit integers, using only SSE2 instructons.
 // The result of the operation is placed in operand a, while b is unmodified.
 void FallbackMinMaxU16(BlockOfCode& code, EmitContext& ctx, auto const& a, auto const& b, MinMaxOperation op) {
-    if(op == MinMaxOperation::Min) {
+    if (op == MinMaxOperation::Min) {
         auto const c = ctx.reg_alloc.ScratchXmm(code);
         code.movdqa(c, a);
         code.psubusw(c, b);
@@ -1950,7 +1950,7 @@ void FallbackMinMaxU16(BlockOfCode& code, EmitContext& ctx, auto const& a, auto 
 // The result of the operation is placed in operand a, while b is unmodified.
 void FallbackMinMaxS32(BlockOfCode& code, EmitContext& ctx, auto const& a, auto const& b, MinMaxOperation op) {
     auto const c = ctx.reg_alloc.ScratchXmm(code);
-    if(op == MinMaxOperation::Min) {
+    if (op == MinMaxOperation::Min) {
         code.movdqa(c, b);
         code.pcmpgtd(c, a);
     } else {
@@ -1971,7 +1971,7 @@ void FallbackMinMaxU32(BlockOfCode& code, EmitContext& ctx, auto const& a, auto 
 
     // bias a and b by XORing their sign bits, then use the signed comparison function
     auto const d = ctx.reg_alloc.ScratchXmm(code);
-    if(op == MinMaxOperation::Min) {
+    if (op == MinMaxOperation::Min) {
         code.movdqa(d, a);
         code.pxor(d, c);
         code.pxor(c, b);
@@ -2109,7 +2109,7 @@ void EmitX64::EmitVectorMaxU64(EmitContext& ctx, IR::Inst* inst) {
         code.vpsubq(tmp0, y, tmp1);
         code.vpsubq(tmp1, x, tmp1);
         code.vpcmpgtq(tmp1, tmp0, tmp1);
-        code.pblendvb(x, y); // XMM0 is implicit
+        code.pblendvb(x, y);  // XMM0 is implicit
         ctx.reg_alloc.DefineValue(code, inst, x);
     } else if (code.HasHostFeature(HostFeature::SSE41)) {
         auto const tmp0 = ctx.reg_alloc.UseScratchXmm(code, args[0]);
@@ -2225,7 +2225,7 @@ void EmitX64::EmitVectorMinS64(EmitContext& ctx, IR::Inst* inst) {
         code.pand(tmp1, tmp2);
         code.pandn(tmp2, tmp0);
         code.por(tmp2, tmp1);
-        //code.movdqa(tmp0, tmp2);
+        // code.movdqa(tmp0, tmp2);
         ctx.reg_alloc.DefineValue(code, inst, tmp2);
     }
 }
@@ -2467,14 +2467,14 @@ void EmitX64::EmitVectorNarrow16(EmitContext& ctx, IR::Inst* inst) {
 
         ctx.reg_alloc.DefineValue(code, inst, result);
     } else {
-    auto const a = ctx.reg_alloc.UseScratchXmm(code, args[0]);
-    auto const zeros = ctx.reg_alloc.ScratchXmm(code);
+        auto const a = ctx.reg_alloc.UseScratchXmm(code, args[0]);
+        auto const zeros = ctx.reg_alloc.ScratchXmm(code);
 
-    code.pxor(zeros, zeros);
-    code.pand(a, code.Const(xword, 0x00FF00FF00FF00FF, 0x00FF00FF00FF00FF));
-    code.packuswb(a, zeros);
+        code.pxor(zeros, zeros);
+        code.pand(a, code.Const(xword, 0x00FF00FF00FF00FF, 0x00FF00FF00FF00FF));
+        code.packuswb(a, zeros);
 
-    ctx.reg_alloc.DefineValue(code, inst, a);
+        ctx.reg_alloc.DefineValue(code, inst, a);
     }
 }
 
@@ -2486,18 +2486,18 @@ void EmitX64::EmitVectorNarrow32(EmitContext& ctx, IR::Inst* inst) {
         code.vpmovdw(result, a);
         ctx.reg_alloc.DefineValue(code, inst, result);
     } else {
-    auto const a = ctx.reg_alloc.UseScratchXmm(code, args[0]);
-    auto const zeros = ctx.reg_alloc.ScratchXmm(code);
-    code.pxor(zeros, zeros);
-    if (code.HasHostFeature(HostFeature::SSE41)) {
-        code.pblendw(a, zeros, 0b10101010);
-        code.packusdw(a, zeros);
-    } else {
-        code.pslld(a, 16);
-        code.psrad(a, 16);
-        code.packssdw(a, zeros);
-    }
-    ctx.reg_alloc.DefineValue(code, inst, a);
+        auto const a = ctx.reg_alloc.UseScratchXmm(code, args[0]);
+        auto const zeros = ctx.reg_alloc.ScratchXmm(code);
+        code.pxor(zeros, zeros);
+        if (code.HasHostFeature(HostFeature::SSE41)) {
+            code.pblendw(a, zeros, 0b10101010);
+            code.packusdw(a, zeros);
+        } else {
+            code.pslld(a, 16);
+            code.psrad(a, 16);
+            code.packssdw(a, zeros);
+        }
+        ctx.reg_alloc.DefineValue(code, inst, a);
     }
 }
 
@@ -2911,7 +2911,6 @@ static void EmitVectorPairedMinMax16(BlockOfCode& code, EmitContext& ctx, IR::In
 
     ctx.reg_alloc.DefineValue(code, inst, x);
 }
-
 
 void EmitX64::EmitVectorPairedMaxS8(EmitContext& ctx, IR::Inst* inst) {
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
@@ -5076,7 +5075,7 @@ void EmitX64::EmitVectorSignedSaturatedNeg64(EmitContext& ctx, IR::Inst* inst) {
 #    pragma clang diagnostic ignored "-Wunused-lambda-capture"
 #endif
 template<typename T, typename U = std::make_unsigned_t<T>>
-    requires std::is_signed_v<T>
+requires std::is_signed_v<T>
 static bool VectorSignedSaturatedShiftLeft(VectorArray<T>& dst, const VectorArray<T>& data, const VectorArray<T>& shift_values) {
     bool qc_flag = false;
 
@@ -5133,7 +5132,7 @@ void EmitX64::EmitVectorSignedSaturatedShiftLeft64(EmitContext& ctx, IR::Inst* i
 }
 
 template<typename T>
-    requires std::is_signed_v<T>
+requires std::is_signed_v<T>
 static bool VectorSignedSaturatedShiftLeftUnsigned(VectorArray<T>& dst, const VectorArray<T>& data, u8 shift_amount) {
     using U = std::make_unsigned_t<T>;
     bool qc_flag = false;
@@ -5250,7 +5249,7 @@ void EmitX64::EmitVectorSignedSaturatedShiftLeftUnsigned32(EmitContext& ctx, IR:
         }
         code.or_(code.byte[code.ABI_JIT_PTR + code.GetJitStateInfo().offsetof_fpsr_qc], tmp_flag.cvt8());
         ctx.reg_alloc.DefineValue(code, inst, tmp0);
-//        EmitTwoArgumentFallbackWithSaturationAndImmediate(code, ctx, inst, VectorSignedSaturatedShiftLeftUnsigned<s32>);
+        //        EmitTwoArgumentFallbackWithSaturationAndImmediate(code, ctx, inst, VectorSignedSaturatedShiftLeftUnsigned<s32>);
     }
 }
 
@@ -5816,7 +5815,6 @@ void EmitX64::EmitVectorTranspose64(EmitContext& ctx, IR::Inst* inst) {
     ctx.reg_alloc.DefineValue(code, inst, lower);
 }
 
-
 void EmitX64::EmitVectorUnsignedAbsoluteDifference8(EmitContext& ctx, IR::Inst* inst) {
     auto args = ctx.reg_alloc.GetArgumentInfo(inst);
     if (code.HasHostFeature(HostFeature::AVX)) {
@@ -5894,7 +5892,7 @@ void EmitX64::EmitVectorUnsignedAbsoluteDifference32(EmitContext& ctx, IR::Inst*
         code.psubd(tmp0, tmp1);
         code.pxor(tmp0, tmp2);
         code.psubd(tmp2, tmp0);
-        //code.movdqa(tmp0, tmp2);
+        // code.movdqa(tmp0, tmp2);
         ctx.reg_alloc.DefineValue(code, inst, tmp2);
     }
 }
@@ -5979,18 +5977,30 @@ void EmitX64::EmitVectorUnsignedMultiply32(EmitContext& ctx, IR::Inst* inst) {
         code.pmuludq(x, y);
 
         // put everything into place - only if needed
-        if (upper_inst) code.pcmpeqw(upper_result, upper_result);
-        if (lower_inst) code.pcmpeqw(lower_result, lower_result);
-        if (upper_inst) code.psllq(upper_result, 32);
-        if (lower_inst) code.psrlq(lower_result, 32);
-        if (upper_inst) code.pand(upper_result, x);
-        if (lower_inst) code.pand(lower_result, tmp);
-        if (upper_inst) code.psrlq(tmp, 32);
-        if (lower_inst) code.psllq(x, 32);
-        if (upper_inst) code.por(upper_result, tmp);
-        if (lower_inst) code.por(lower_result, x);
-        if (upper_inst) ctx.reg_alloc.DefineValue(code, upper_inst, upper_result);
-        if (lower_inst) ctx.reg_alloc.DefineValue(code, lower_inst, lower_result);
+        if (upper_inst)
+            code.pcmpeqw(upper_result, upper_result);
+        if (lower_inst)
+            code.pcmpeqw(lower_result, lower_result);
+        if (upper_inst)
+            code.psllq(upper_result, 32);
+        if (lower_inst)
+            code.psrlq(lower_result, 32);
+        if (upper_inst)
+            code.pand(upper_result, x);
+        if (lower_inst)
+            code.pand(lower_result, tmp);
+        if (upper_inst)
+            code.psrlq(tmp, 32);
+        if (lower_inst)
+            code.psllq(x, 32);
+        if (upper_inst)
+            code.por(upper_result, tmp);
+        if (lower_inst)
+            code.por(lower_result, x);
+        if (upper_inst)
+            ctx.reg_alloc.DefineValue(code, upper_inst, upper_result);
+        if (lower_inst)
+            ctx.reg_alloc.DefineValue(code, lower_inst, lower_result);
     }
 }
 
@@ -6029,7 +6039,7 @@ void EmitX64::EmitVectorUnsignedRecipSqrtEstimate(EmitContext& ctx, IR::Inst* in
 // Simple generic case for 8, 16, and 32-bit values. 64-bit values
 // will need to be special-cased as we can't simply use a larger integral size.
 template<typename T, typename U = std::make_unsigned_t<T>>
-    requires std::is_signed_v<T>
+requires std::is_signed_v<T>
 static bool EmitVectorUnsignedSaturatedAccumulateSigned(VectorArray<U>& result, const VectorArray<T>& lhs, const VectorArray<T>& rhs) {
     static_assert(mcl::bitsizeof<T> < 64, "T must be less than 64 bits in size.");
     bool qc_flag = false;
@@ -6130,7 +6140,7 @@ void EmitX64::EmitVectorUnsignedSaturatedNarrow64(EmitContext& ctx, IR::Inst* in
 }
 
 template<typename T, typename S = std::make_signed_t<T>>
-    requires std::is_unsigned_v<T>
+requires std::is_unsigned_v<T>
 static bool VectorUnsignedSaturatedShiftLeft(VectorArray<T>& dst, const VectorArray<T>& data, const VectorArray<T>& shift_values) {
     bool qc_flag = false;
     constexpr size_t bit_size = mcl::bitsizeof<T>;

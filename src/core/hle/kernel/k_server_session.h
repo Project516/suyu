@@ -55,8 +55,8 @@ public:
     Result OnRequest(KernelCore& kernel, KSessionRequest* request);
     Result SendReply(KernelCore& kernel, uintptr_t server_message, uintptr_t server_buffer_size,
                      KPhysicalAddress server_message_paddr, bool is_hle = false);
-    Result ReceiveRequest(KernelCore& kernel, uintptr_t server_message, uintptr_t server_buffer_size,
-                          KPhysicalAddress server_message_paddr,
+    Result ReceiveRequest(KernelCore& kernel, uintptr_t server_message,
+                          uintptr_t server_buffer_size, KPhysicalAddress server_message_paddr,
                           std::shared_ptr<Service::HLERequestContext>* out_context = nullptr,
                           std::weak_ptr<Service::SessionRequestManager> manager = {});
 
@@ -64,7 +64,8 @@ public:
         R_RETURN(this->SendReply(kernel, 0, 0, 0, true));
     }
 
-    Result ReceiveRequestHLE(KernelCore& kernel, std::shared_ptr<Service::HLERequestContext>* out_context,
+    Result ReceiveRequestHLE(KernelCore& kernel,
+                             std::shared_ptr<Service::HLERequestContext>* out_context,
                              std::weak_ptr<Service::SessionRequestManager> manager) {
         R_RETURN(this->ReceiveRequest(kernel, 0, 0, 0, out_context, manager));
     }

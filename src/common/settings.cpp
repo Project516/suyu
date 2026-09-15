@@ -12,22 +12,22 @@
 #endif
 #include <compare>
 #include <cstddef>
+#include <deque>
 #include <filesystem>
 #include <functional>
 #include <string_view>
 #include <type_traits>
-#include <deque>
 #include <fmt/core.h>
 
-#include "common/settings_enums.h"
 #include "common/assert.h"
 #include "common/fs/fs_util.h"
 #include "common/fs/path_util.h"
 #include "common/logging.h"
 #include "common/settings.h"
+#include "common/settings_enums.h"
 #include "common/time_zone.h"
 
-#if defined(__linux__ ) && defined(ARCHITECTURE_arm64)
+#if defined(__linux__) && defined(ARCHITECTURE_arm64)
 #include <unistd.h>
 #endif
 
@@ -120,15 +120,14 @@ void LogSettings() {
             // Hide the token secret, for security reasons.
             if (setting->Id() != values.suyu_token.Id()) {
                 auto const is_default = setting->ToString() == setting->DefaultToString();
-                auto const name = fmt::format(
-                    "{:c}{:c} {}.{}",
-                    is_default ? '-' : 'M',
-                    setting->UsingGlobal() ? '-' : 'C', TranslateCategory(category),
-                    setting->GetLabel());
+                auto const name = fmt::format("{:c}{:c} {}.{}", is_default ? '-' : 'M',
+                                              setting->UsingGlobal() ? '-' : 'C',
+                                              TranslateCategory(category), setting->GetLabel());
                 if (is_default)
                     settings_list.push_back(fmt::format("{}: {}\n", name, setting->Canonicalize()));
                 else
-                    settings_list.push_front(fmt::format("{}: {}\n", name, setting->Canonicalize()));
+                    settings_list.push_front(
+                        fmt::format("{}: {}\n", name, setting->Canonicalize()));
             }
         }
     }
@@ -137,8 +136,9 @@ void LogSettings() {
     for (auto const& e : settings_list)
         settings_str += e;
     LOG_INFO(Config, "suyu Configuration:\n{}", settings_str);
-#define LOG_PATH(NAME) \
-    LOG_INFO(Config, #NAME ": {}", Common::FS::PathToUTF8String(Common::FS::GetSuyuPath(Common::FS::SuyuPath::NAME)))
+#define LOG_PATH(NAME)                                                                             \
+    LOG_INFO(Config, #NAME ": {}",                                                                 \
+             Common::FS::PathToUTF8String(Common::FS::GetSuyuPath(Common::FS::SuyuPath::NAME)))
     LOG_PATH(CacheDir);
     LOG_PATH(ConfigDir);
     LOG_PATH(LoadDir);
@@ -193,7 +193,8 @@ bool IsFastmemEnabled() {
     // Only 4kb systems support host MMU right now
     // TODO: Support this
     return getpagesize() == 4096;
-#elif !defined(__APPLE__) && !defined(__ANDROID__) && !defined(_WIN32) && !defined(__linux__) && !defined(__FreeBSD__)
+#elif !defined(__APPLE__) && !defined(__ANDROID__) && !defined(_WIN32) && !defined(__linux__) &&   \
+    !defined(__FreeBSD__)
     return false;
 #else
     return true;

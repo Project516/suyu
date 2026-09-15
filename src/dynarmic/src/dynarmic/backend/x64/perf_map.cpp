@@ -6,16 +6,19 @@
  * SPDX-License-Identifier: 0BSD
  */
 
+#include "dynarmic/backend/x64/perf_map.h"
+
 #include <cstddef>
 #include <string>
+
 #include <fmt/format.h>
 
-#include "dynarmic/backend/x64/perf_map.h"
 #include "common/common_types.h"
 #if defined(__linux__) && !defined(__ANDROID__)
 #    include <cstdio>
 #    include <cstdlib>
 #    include <mutex>
+
 #    include <sys/types.h>
 #    include <unistd.h>
 

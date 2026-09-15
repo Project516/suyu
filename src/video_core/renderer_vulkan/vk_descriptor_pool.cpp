@@ -9,8 +9,8 @@
 #include <span>
 #include <vector>
 
-#include "common/common_types.h"
 #include <ranges>
+#include "common/common_types.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
 #include "video_core/renderer_vulkan/vk_resource_pool.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
@@ -128,15 +128,21 @@ vk::DescriptorSets DescriptorAllocator::AllocateDescriptors(size_t count) {
 DescriptorPool::DescriptorPool(const Device& device_, Scheduler& scheduler) {}
 DescriptorPool::~DescriptorPool() = default;
 
-DescriptorAllocator DescriptorPool::Allocator(const Device& device, Scheduler& scheduler, VkDescriptorSetLayout layout, std::span<const Shader::Info> infos) {
+DescriptorAllocator DescriptorPool::Allocator(const Device& device, Scheduler& scheduler,
+                                              VkDescriptorSetLayout layout,
+                                              std::span<const Shader::Info> infos) {
     return Allocator(device, scheduler, layout, MakeBankInfo(infos));
 }
 
-DescriptorAllocator DescriptorPool::Allocator(const Device& device, Scheduler& scheduler, VkDescriptorSetLayout layout, const Shader::Info& info) {
+DescriptorAllocator DescriptorPool::Allocator(const Device& device, Scheduler& scheduler,
+                                              VkDescriptorSetLayout layout,
+                                              const Shader::Info& info) {
     return Allocator(device, scheduler, layout, MakeBankInfo(std::array{info}));
 }
 
-DescriptorAllocator DescriptorPool::Allocator(const Device& device, Scheduler& scheduler, VkDescriptorSetLayout layout, const DescriptorBankInfo& info) {
+DescriptorAllocator DescriptorPool::Allocator(const Device& device, Scheduler& scheduler,
+                                              VkDescriptorSetLayout layout,
+                                              const DescriptorBankInfo& info) {
     return DescriptorAllocator(device, scheduler.GetMasterSemaphore(), Bank(device, info), layout);
 }
 

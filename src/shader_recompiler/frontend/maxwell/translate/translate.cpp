@@ -20,7 +20,10 @@ void Translate(Environment& env, IR::Block* block, u32 location_begin, u32 locat
             u64 const insn = env.ReadInstruction(pc.Offset());
             Opcode const opcode = Decode(insn);
             switch (opcode) {
-#define INST(name, cute, mask) case Opcode::name: visitor.name(insn); break;
+#define INST(name, cute, mask)                                                                     \
+    case Opcode::name:                                                                             \
+        visitor.name(insn);                                                                        \
+        break;
 #include "shader_recompiler/frontend/maxwell/maxwell.inc"
 #undef OPCODE
             }

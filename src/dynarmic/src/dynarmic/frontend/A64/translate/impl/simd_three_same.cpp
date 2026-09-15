@@ -94,7 +94,7 @@ bool RoundingHalvingAdd(TranslatorVisitor& v, bool Q, Imm<2> size, Vec Vm, Vec V
     const IR::U128 operand1 = v.V(datasize, Vm);
     const IR::U128 operand2 = v.V(datasize, Vn);
     const IR::U128 result = sign == SignednessSTS::Signed ? v.ir.VectorRoundingHalvingAddSigned(esize, operand1, operand2)
-                                                       : v.ir.VectorRoundingHalvingAddUnsigned(esize, operand1, operand2);
+                                                          : v.ir.VectorRoundingHalvingAddUnsigned(esize, operand1, operand2);
 
     v.V(datasize, Vd, result);
     return true;

@@ -3,8 +3,8 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "common/logging.h"
 #include "common/assert.h"
+#include "common/logging.h"
 #include "input_common/input_engine.h"
 
 namespace InputCommon {

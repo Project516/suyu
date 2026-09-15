@@ -225,7 +225,7 @@ void SetupDirtyVertexBindings(Maxwell3D::DirtyState::Tables& tables) {
     }
 }
 
-void SetupRasterModes(Maxwell3D::DirtyState::Tables &tables) {
+void SetupRasterModes(Maxwell3D::DirtyState::Tables& tables) {
     auto& table = tables[0];
 
     table[OFF(line_stipple_params)] = LineStippleParams;

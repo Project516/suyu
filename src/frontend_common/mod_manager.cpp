@@ -18,11 +18,8 @@ std::vector<std::filesystem::path> GetModFolder(const std::string& root) {
 
     auto callback = [&paths](const std::filesystem::directory_entry& entry) -> bool {
         const auto name = entry.path().filename().string();
-        static const std::array<std::string, 5> valid_names = {"exefs",
-                                                               "romfs",
-                                                               "romfs_ext",
-                                                               "cheats",
-                                                               "romfslite"};
+        static const std::array<std::string, 5> valid_names = {"exefs", "romfs", "romfs_ext",
+                                                               "cheats", "romfslite"};
 
         if (std::ranges::find(valid_names, name) != valid_names.end()) {
             const auto parent = entry.path().parent_path();
@@ -39,7 +36,8 @@ std::vector<std::filesystem::path> GetModFolder(const std::string& root) {
     return paths;
 }
 
-ModInstallResult InstallMod(const std::filesystem::path& path, const u64 program_id, const bool copy) {
+ModInstallResult InstallMod(const std::filesystem::path& path, const u64 program_id,
+                            const bool copy) {
     const auto program_id_string = fmt::format("{:016X}", program_id);
     const auto mod_name = path.filename();
     const auto mod_dir =

@@ -184,9 +184,9 @@ MemoryPoolInfo::ResultState PoolMapper::Update(MemoryPoolInfo& pool,
         return MemoryPoolInfo::ResultState::Success;
     }
 
-    if (in_params.address == 0 || in_params.size == 0
-    || !Common::IsAligned(in_params.address, Core::Memory::YUZU_PAGESIZE)
-    || !Common::IsAligned(in_params.size, Core::Memory::YUZU_PAGESIZE)) {
+    if (in_params.address == 0 || in_params.size == 0 ||
+        !Common::IsAligned(in_params.address, Core::Memory::YUZU_PAGESIZE) ||
+        !Common::IsAligned(in_params.size, Core::Memory::YUZU_PAGESIZE)) {
         return MemoryPoolInfo::ResultState::BadParam;
     }
 

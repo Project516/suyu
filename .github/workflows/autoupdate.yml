@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,7 @@ jobs:
         run: |
           # Get commits from Eden master branch from the last month
           LAST_MONTH=$(date -d "1 month ago" +%Y-%m-%d)
-          
+
           if git rev-parse eden/master >/dev/null 2>&1; then
             COMMITS=$(git log eden/master --since="$LAST_MONTH" --pretty=format:"%H" --reverse)
             COMMIT_COUNT=$(echo "$COMMITS" | grep -c . || echo "0")
@@ -54,17 +54,17 @@ jobs:
             COMMITS=""
             COMMIT_COUNT=0
           fi
-          
+
           if [ "$COMMIT_COUNT" -eq 0 ]; then
             echo "ℹ️  No new commits from Eden in the last month"
             echo "has_commits=false" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
+
           echo "Found $COMMIT_COUNT Eden commits to process"
           echo "has_commits=true" >> $GITHUB_OUTPUT
           echo "commit_count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
-          
+
           # Save commit list for agent
           echo "$COMMITS" > /tmp/eden_commits.txt
 
@@ -79,64 +79,64 @@ jobs:
         run: |
           cat > /tmp/sync_context.md << 'EOF'
           # Eden to Suyu Agentic Sync Context
-          
+
           ## Mission
           Intelligently sync improvements and bug fixes from Eden fork to Suyu while:
           - Preserving ALL Suyu branding and naming
           - Blocking vcpkg files (Suyu uses Conan)
           - Keeping Suyu-specific features and customizations
           - Converting Eden/Yuzu names back to Suyu
-          
+
           ## Critical Rules (from issues #39, #57)
-          
+
           ### 1. Dependency Management
           - **BLOCK**: vcpkg.json, vcpkg-overlays/, externals/vcpkg/
           - **USE**: conanfile.txt for all dependencies
           - **ACTION**: Convert Eden's vcpkg dependencies to Conan equivalents
-          
+
           ### 2. Branding (Eden is "badly rebranded")
           - **REPLACE**: eden → suyu, Eden → Suyu, EDEN → SUYU
-          - **REPLACE**: yuzu → suyu, Yuzu → Suyu, YUZU → SUYU  
+          - **REPLACE**: yuzu → suyu, Yuzu → Suyu, YUZU → SUYU
           - **KEEP**: All Suyu logos, icons, branding assets
           - **PRESERVE**: Suyu-specific features and improvements
-          
+
           ### 3. Selective Merging
           - **PRIORITY**: Bug fixes and stability improvements
           - **REVIEW**: Each commit for its value
           - **PRESERVE**: Suyu changes after commit f1e4595ebfa73e3ffb7f87ab53c06432bfa7dea3
           - **SKIP**: Eden-specific features that conflict with Suyu improvements
-          
+
           ### 4. Conflict Resolution Strategy
           - For conflicting files: Use 3-way merge with intelligent resolution
           - Prefer Suyu version when Eden change is purely cosmetic/renaming
-          - Prefer Eden version when it's a clear bug fix or improvement  
+          - Prefer Eden version when it's a clear bug fix or improvement
           - Document conflicts for manual review
-          
+
           ### 5. Binary Files
           - Skip binary files that can't be text-processed
           - Handle images, fonts, compiled files separately if needed
           - Log skipped binary files for manual review
-          
+
           ## File Mappings
           - src/eden/ → src/suyu/
           - src/eden_cmd/ → src/suyu_cmd/
           - src/yuzu/ → src/suyu/
           - src/yuzu_cmd/ → src/suyu_cmd/
-          
+
           ## Identifier Replacements
           - Namespaces: Eden:: → Suyu::, Yuzu:: → Suyu::
           - Classes: class Eden → class Suyu
           - Macros: EDEN_ → SUYU_, YUZU_ → SUYU_
           - Includes: #include "eden/ → #include "suyu/
           - CMake: eden targets → suyu targets
-          
+
           ## Expected Output
           1. List of files successfully migrated
           2. List of files with conflicts (need manual review)
           3. List of files skipped (with reasons)
           4. Summary of changes made
           5. Build validation status
-          
+
           ## Success Criteria
           - All text files processed without crashes
           - Binary files gracefully skipped
@@ -144,15 +144,15 @@ jobs:
           - All branding converted to Suyu
           - Build passes after sync
           - PR created with detailed summary
-          
+
           EOF
-          
+
           cat /tmp/sync_context.md
           echo "Agentic context prepared"
 
       - name: Setup Python
         if: steps.analyze.outputs.has_commits == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -189,21 +189,21 @@ jobs:
               (r'\bnamespace\s+Eden\b', 'namespace Suyu'),
               (r'\bclass\s+Eden', 'class Suyu'),
               (r'\bstruct\s+Eden', 'struct Suyu'),
-              
+
               # Project/app names
               (r'\bedenEmu\b', 'suyuEmu'),
               (r'\bEDEN_', 'SUYU_'),
-              
+
               # Include paths
               (r'#include\s+"eden/', '#include "suyu/'),
               (r'#include\s+"yuzu/', '#include "suyu/'),
               (r'#include\s+<eden/', '#include <suyu/'),
               (r'#include\s+<yuzu/', '#include <suyu/'),
-              
+
               # CMake targets and variables
               (r'\beden\b(?=[\s\)])', 'suyu'),
               (r'\bEDEN\b(?=[\s\)])', 'SUYU'),
-              
+
               # Comments and strings - be more conservative
               (r'(?<=//).*\bEden\b', lambda m: m.group(0).replace('Eden', 'Suyu')),
               (r'(?<=/\*).*?\bEden\b.*?(?=\*/)', lambda m: m.group(0).replace('Eden', 'Suyu')),
@@ -249,14 +249,14 @@ jobs:
               """
               if not os.path.exists(suyu_file):
                   return False
-              
+
               # Read current Suyu file
               try:
                   with open(suyu_file, 'r', encoding='utf-8') as f:
                       current_content = f.read()
               except:
                   return False
-              
+
               # Look for Suyu-specific markers or patterns
               suyu_markers = [
                   r'//.*SUYU.*SPECIFIC',
@@ -264,11 +264,11 @@ jobs:
                   r'namespace\s+Suyu\b',
                   r'SUYU_VERSION',
               ]
-              
+
               for marker in suyu_markers:
                   if re.search(marker, current_content, re.IGNORECASE):
                       return True
-              
+
               return False
 
           def merge_changes_safely(current_content, new_content, file_path):
@@ -278,23 +278,23 @@ jobs:
               """
               # For files with Suyu-specific changes, we need to perform a smart merge
               # that preserves Suyu additions while incorporating Eden improvements
-              
+
               current_lines = current_content.splitlines(keepends=True)
               new_lines = new_content.splitlines(keepends=True)
-              
+
               # Use difflib to create a unified diff and intelligently merge
               differ = difflib.Differ()
               diff = list(differ.compare(current_lines, new_lines))
-              
+
               merged_lines = []
               i = 0
               while i < len(diff):
                   line = diff[i]
-                  
+
                   # Lines that are the same in both
                   if line.startswith('  '):
                       merged_lines.append(line[2:])
-                  
+
                   # Lines only in current (Suyu-specific additions)
                   elif line.startswith('- '):
                       suyu_line = line[2:]
@@ -315,17 +315,17 @@ jobs:
                           else:
                               # Line was removed in Eden, respect that unless it's Suyu-specific
                               pass
-                  
+
                   # Lines only in new (Eden additions)
                   elif line.startswith('+ '):
                       merged_lines.append(line[2:])
-                  
+
                   # Lines marked with '?' are informational, skip them
                   elif line.startswith('? '):
                       pass
-                  
+
                   i += 1
-              
+
               return ''.join(merged_lines)
 
           def get_base_version(suyu_file, eden_file):
@@ -338,10 +338,10 @@ jobs:
                   ['git', 'show', f'{FORK_POINT_COMMIT}:{suyu_file}'],
                   capture_output=True, text=True
               )
-              
+
               if result.returncode == 0:
                   return result.stdout
-              
+
               # Fallback: try with yuzu path if this was a yuzu file
               if eden_file.startswith('src/yuzu/'):
                   yuzu_file = eden_file
@@ -351,9 +351,9 @@ jobs:
                   )
                   if result.returncode == 0:
                       return result.stdout
-              
+
               return None
-          
+
           def perform_three_way_merge(base_content, current_content, eden_content, file_path):
               """
               Perform a three-way merge using git merge-file.
@@ -363,29 +363,29 @@ jobs:
                   with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.base') as base_f:
                       base_f.write(base_content if base_content else '')
                       base_path = base_f.name
-                  
+
                   with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.current') as current_f:
                       current_f.write(current_content)
                       current_path = current_f.name
-                  
+
                   with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.eden') as eden_f:
                       eden_f.write(eden_content)
                       eden_path = eden_f.name
-                  
+
                   # Run git merge-file
                   result = subprocess.run(
                       ['git', 'merge-file', '-p', '--diff3',
                        current_path, base_path, eden_path],
                       capture_output=True, text=True
                   )
-                  
+
                   # Clean up temp files
                   for path in [base_path, current_path, eden_path]:
                       try:
                           os.unlink(path)
                       except (OSError, FileNotFoundError):
                           pass
-                  
+
                   # Return code 0 = clean merge, 1 = conflicts (but still returns merged content)
                   if result.returncode in [0, 1]:
                       if result.returncode == 1:
@@ -394,38 +394,38 @@ jobs:
                   else:
                       print(f"    ❌ Merge failed: {result.stderr}")
                       return None
-                  
+
               except Exception as e:
                   print(f"    ❌ Three-way merge error: {e}")
                   return None
-          
+
           def process_commit(commit_hash):
               """Process a single Eden commit"""
               print(f"\nProcessing commit {commit_hash[:8]}...")
-              
+
               # Get commit info
               result = subprocess.run(
                   ['git', 'show', '--pretty=format:%s%n%b', '--name-status', commit_hash],
                   capture_output=True, text=True
               )
-              
+
               if result.returncode != 0:
                   print(f"  ❌ Failed to get commit info: {result.stderr}")
                   return False
-              
+
               lines = result.stdout.split('\n')
-              
+
               # Extract commit message
               message_end = 0
               for i, line in enumerate(lines):
                   if line.startswith(('A\t', 'M\t', 'D\t', 'R\t')):
                       message_end = i
                       break
-              
+
               commit_message = '\n'.join(lines[:message_end]).strip()
               if not commit_message:
                   commit_message = f"Auto-migrate from Eden {commit_hash[:8]}"
-              
+
               # Parse file changes
               file_changes = []
               for line in lines[message_end:]:
@@ -436,24 +436,24 @@ jobs:
                       status = parts[0]
                       file_path = parts[1] if len(parts) == 2 else parts[2]
                       file_changes.append((status, file_path))
-              
+
               if not file_changes:
                   print(f"  ℹ️  No file changes in this commit")
                   return True
-              
+
               # Process each changed file
               migrated_files = []
               skipped_files = []
               merged_files = []
-              
+
               for status, eden_file in file_changes:
                   # Map to Suyu path
                   suyu_file = map_file_path(eden_file)
-                  
+
                   # Skip if path didn't change (not a relevant file)
                   if suyu_file == eden_file and not eden_file.startswith('src/'):
                       continue
-                  
+
                   # Handle deletions
                   if status.startswith('D'):
                       # Only delete if file doesn't have Suyu-specific changes
@@ -463,37 +463,37 @@ jobs:
                       else:
                           skipped_files.append(f"Protected: {suyu_file}")
                       continue
-                  
+
                   # Get file content from Eden commit
                   eden_content = get_file_at_commit(commit_hash, eden_file)
                   if eden_content is None:
                       print(f"  ⚠️  Could not get content for {eden_file}")
                       continue
-                  
+
                   # Rename identifiers in source files
                   if eden_file.endswith(('.cpp', '.h', '.cc', '.hpp', '.c', '.cmake', 'CMakeLists.txt')):
                       eden_content = rename_identifiers(eden_content)
-                  
+
                   # Check if we need to merge with existing Suyu changes
                   if os.path.exists(suyu_file):
                       with open(suyu_file, 'r', encoding='utf-8') as f:
                           current_content = f.read()
-                      
+
                       # Try three-way merge if file has Suyu-specific changes
                       if is_suyu_specific_change(suyu_file):
                           print(f"    🔄 Attempting three-way merge for {suyu_file}")
-                          
+
                           # Get base version for three-way merge
                           base_content = get_base_version(suyu_file, eden_file)
-                          
+
                           if base_content:
                               # Rename identifiers in base if it's a source file
                               if eden_file.endswith(('.cpp', '.h', '.cc', '.hpp', '.c', '.cmake', 'CMakeLists.txt')):
                                   base_content = rename_identifiers(base_content)
-                              
+
                               # Perform three-way merge
                               merged_content = perform_three_way_merge(base_content, current_content, eden_content, suyu_file)
-                              
+
                               if merged_content:
                                   content = merged_content
                                   merged_files.append(f"3-way merged: {suyu_file}")
@@ -513,12 +513,12 @@ jobs:
                       # New file from Eden
                       content = eden_content
                       migrated_files.append(f"Added: {suyu_file}")
-                  
+
                   # Ensure directory exists
                   suyu_dir = os.path.dirname(suyu_file)
                   if suyu_dir:
                       os.makedirs(suyu_dir, exist_ok=True)
-                  
+
                   # Write the file
                   try:
                       with open(suyu_file, 'w', encoding='utf-8', newline='\n') as f:
@@ -527,19 +527,19 @@ jobs:
                   except Exception as e:
                       print(f"  ❌ Failed to write {suyu_file}: {e}")
                       continue
-              
+
               if not migrated_files and not skipped_files and not merged_files:
                   print(f"  ℹ️  No applicable files to migrate")
                   return True
-              
+
               # Create commit
               full_message = f"{commit_message}\n\n"
               full_message += f"Auto-migrated from Eden commit {commit_hash}\n"
-              
+
               all_changes = len(migrated_files) + len(merged_files)
               if all_changes > 0:
                   full_message += f"\nProcessed files ({all_changes}):\n"
-                  
+
                   # Group by operation type
                   if migrated_files:
                       full_message += f"\nDirect migrations ({len(migrated_files)}):\n"
@@ -547,26 +547,26 @@ jobs:
                           full_message += f"  - {f}\n"
                       if len(migrated_files) > 10:
                           full_message += f"  ... and {len(migrated_files) - 10} more\n"
-                  
+
                   if merged_files:
                       full_message += f"\nIntelligently merged with Suyu changes ({len(merged_files)}):\n"
                       for f in merged_files[:10]:
                           full_message += f"  - {f}\n"
                       if len(merged_files) > 10:
                           full_message += f"  ... and {len(merged_files) - 10} more\n"
-              
+
               if skipped_files:
                   full_message += f"\nProtected Suyu-specific files ({len(skipped_files)}):\n"
                   for f in skipped_files[:5]:
                       full_message += f"  - {f}\n"
                   if len(skipped_files) > 5:
                       full_message += f"  ... and {len(skipped_files) - 5} more\n"
-              
+
               result = subprocess.run(
                   ['git', 'commit', '-m', full_message],
                   capture_output=True, text=True
               )
-              
+
               if result.returncode != 0:
                   if 'nothing to commit' in result.stdout or 'nothing to commit' in result.stderr:
                       print(f"  ℹ️  No changes to commit")
@@ -580,17 +580,17 @@ jobs:
                       print(f"  🔀 Intelligently merged {len(merged_files)} files with Suyu changes")
                   if skipped_files:
                       print(f"  🛡️  Protected {len(skipped_files)} Suyu-specific files")
-              
+
               return True
 
           def main():
               # Read commits from file
               with open('/tmp/eden_commits.txt', 'r') as f:
                   commits = [line.strip() for line in f if line.strip()]
-              
+
               print(f"🚀 Processing {len(commits)} commits from Eden...")
               print("=" * 60)
-              
+
               success_count = 0
               for i, commit in enumerate(commits, 1):
                   print(f"\n[{i}/{len(commits)}]", end=" ")
@@ -598,7 +598,7 @@ jobs:
                       success_count += 1
                   else:
                       print(f"  ⚠️  Failed to process commit {commit[:8]}, continuing...")
-              
+
               print("\n" + "=" * 60)
               print(f"✅ Successfully processed {success_count}/{len(commits)} commits")
               return 0 if success_count > 0 else 1
@@ -631,7 +631,7 @@ jobs:
 
       - name: Create PR
         if: steps.analyze.outputs.has_commits == 'true' && steps.check_changes.outputs.has_changes == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "🔄 Auto-update: Eden changes for $(date +%Y-%m)"
@@ -690,11 +690,11 @@ jobs:
         run: |
           echo "## Eden Auto-Update Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ steps.analyze.outputs.has_commits }}" = "true" ]; then
             echo "✅ **Migration Status**: Completed" >> $GITHUB_STEP_SUMMARY
             echo "- Eden commits found: ${{ steps.analyze.outputs.commit_count }}" >> $GITHUB_STEP_SUMMARY
-            
+
             if [ "${{ steps.check_changes.outputs.has_changes }}" = "true" ]; then
               echo "- Suyu commits created: ${{ steps.check_changes.outputs.new_commit_count }}" >> $GITHUB_STEP_SUMMARY
               echo "- PR created: ✅" >> $GITHUB_STEP_SUMMARY

@@ -38,13 +38,15 @@ struct SettingsHeader {
 };
 
 void SyncGlobalLanguageFromCode(LanguageCode language_code) {
-    const auto it = std::find_if(available_language_codes.begin(), available_language_codes.end(),
-                                 [language_code](LanguageCode code) { return code == language_code; });
+    const auto it =
+        std::find_if(available_language_codes.begin(), available_language_codes.end(),
+                     [language_code](LanguageCode code) { return code == language_code; });
     if (it == available_language_codes.end()) {
         return;
     }
 
-    const std::size_t index = static_cast<std::size_t>(std::distance(available_language_codes.begin(), it));
+    const std::size_t index =
+        static_cast<std::size_t>(std::distance(available_language_codes.begin(), it));
     if (index >= static_cast<std::size_t>(Settings::values.language_index.GetValue())) {
         Settings::values.language_index.SetValue(static_cast<Settings::Language>(index));
     }
@@ -568,8 +570,8 @@ Result ISystemSettingsServer::GetEulaVersions(
     Out<s32> out_count, OutArray<EulaVersion, BufferAttr_HipcMapAlias> out_eula_versions) {
     LOG_INFO(Service_SET, "called, elements={}", m_system_settings.eula_version_count);
 
-    *out_count =
-        (std::min)(m_system_settings.eula_version_count, static_cast<s32>(out_eula_versions.size()));
+    *out_count = (std::min)(m_system_settings.eula_version_count,
+                            static_cast<s32>(out_eula_versions.size()));
     memcpy(out_eula_versions.data(), m_system_settings.eula_versions.data(),
            static_cast<std::size_t>(*out_count) * sizeof(EulaVersion));
     R_SUCCEED();
@@ -636,7 +638,7 @@ Result ISystemSettingsServer::GetAccountNotificationSettings(
              m_system_settings.account_notification_settings_count);
 
     *out_count = (std::min)(m_system_settings.account_notification_settings_count,
-                          static_cast<s32>(out_account_notification_settings.size()));
+                            static_cast<s32>(out_account_notification_settings.size()));
     memcpy(out_account_notification_settings.data(),
            m_system_settings.account_notification_settings.data(),
            static_cast<std::size_t>(*out_count) * sizeof(AccountNotificationSettings));
@@ -982,19 +984,14 @@ Result ISystemSettingsServer::SetPrimaryAlbumStorage(PrimaryAlbumStorage primary
 
 static void Fill3DS_CRC(u32 d, char* data) {
     std::array<u8, 10> digits = {
-        u8((d / 1000000000) % 100),
-        u8((d / 100000000) % 10),
-        u8((d / 10000000) % 10),
-        u8((d / 1000000) % 10),
-        u8((d / 100000) % 10),
-        u8((d / 10000) % 10),
-        u8((d / 1000) % 10),
-        u8((d / 100) % 10),
-        u8((d / 10) % 10),
-        u8(d % 10),
+        u8((d / 1000000000) % 100), u8((d / 100000000) % 10),
+        u8((d / 10000000) % 10),    u8((d / 1000000) % 10),
+        u8((d / 100000) % 10),      u8((d / 10000) % 10),
+        u8((d / 1000) % 10),        u8((d / 100) % 10),
+        u8((d / 10) % 10),          u8(d % 10),
     };
     // Normalize to retail values
-    std::array<u8, 4> retail_digits = { 1, 4, 5, 7 };
+    std::array<u8, 4> retail_digits = {1, 4, 5, 7};
     digits[0] = retail_digits[(d % 10) % 4];
     digits[1] = 0;
     //
@@ -1013,7 +1010,7 @@ static void Fill3DS_CRC(u32 d, char* data) {
 
 Result ISystemSettingsServer::GetBatteryLot(Out<BatteryLot> out_battery_lot) {
     LOG_INFO(Service_SET, "called");
-    *out_battery_lot = []{
+    *out_battery_lot = [] {
         u32 d = ::Settings::values.serial_battery.GetValue();
         BatteryLot c{};
         c.lot_number[0] = 'B';
@@ -1035,7 +1032,7 @@ Result ISystemSettingsServer::GetBatteryLot(Out<BatteryLot> out_battery_lot) {
 
 Result ISystemSettingsServer::GetSerialNumber(Out<SerialNumber> out_console_serial) {
     LOG_INFO(Service_SET, "called");
-    *out_console_serial = []{
+    *out_console_serial = [] {
         u32 d = ::Settings::values.serial_unit.GetValue();
         SerialNumber c{};
         c.serial_number[0] = 'X';
@@ -1043,14 +1040,21 @@ Result ISystemSettingsServer::GetSerialNumber(Out<SerialNumber> out_console_seri
         c.serial_number[2] = [] {
             // Adding another setting would be tedious so... let's just reuse region_index :)
             switch (::Settings::values.region_index.GetValue()) {
-            case ::Settings::Region::Japan: return 'J';
-            case ::Settings::Region::Usa: return 'W';
-            case ::Settings::Region::Europe: return 'E';
-            case ::Settings::Region::Australia: return 'M'; //pretend its Malaysia
+            case ::Settings::Region::Japan:
+                return 'J';
+            case ::Settings::Region::Usa:
+                return 'W';
+            case ::Settings::Region::Europe:
+                return 'E';
+            case ::Settings::Region::Australia:
+                return 'M'; // pretend its Malaysia
             case ::Settings::Region::China:
-            case ::Settings::Region::Taiwan: return 'C';
-            case ::Settings::Region::Korea: return 'K';
-            default: return 'W';
+            case ::Settings::Region::Taiwan:
+                return 'C';
+            case ::Settings::Region::Korea:
+                return 'K';
+            default:
+                return 'W';
             }
         }();
         Fill3DS_CRC(d, c.serial_number.data() + 3);
@@ -1196,7 +1200,8 @@ Result ISystemSettingsServer::SetDeviceNickName(
 }
 
 Result ISystemSettingsServer::GetProductModel(Out<u32> out_product_model) {
-    // Most certainly should be 1 -- definitely should not be 2, but it's worth tinkering with anyways
+    // Most certainly should be 1 -- definitely should not be 2, but it's worth tinkering with
+    // anyways
     u32 const product_model = 1;
     LOG_WARNING(Service_SET, "(STUBBED) called, product_model={}", product_model);
     *out_product_model = product_model;
@@ -1461,15 +1466,15 @@ Result ISystemSettingsServer::SetPanelCrcMode(s32 panel_crc_mode) {
     R_SUCCEED();
 }
 
-Result ISystemSettingsServer::GetHttpAuthConfigs(Out<s32> out_count, OutBuffer<BufferAttr_HipcMapAlias> out_configs) {
+Result ISystemSettingsServer::GetHttpAuthConfigs(Out<s32> out_count,
+                                                 OutBuffer<BufferAttr_HipcMapAlias> out_configs) {
     LOG_WARNING(Service_SET, "(STUBBED) called, buffer_size={}", out_configs.size());
     *out_count = 0;
     R_SUCCEED();
 }
 
 Result ISystemSettingsServer::GetAccountUserSettings(
-    Out<u32> out_count,
-    OutLargeData<AccountUserSettings, BufferAttr_HipcMapAlias> out_settings) {
+    Out<u32> out_count, OutLargeData<AccountUserSettings, BufferAttr_HipcMapAlias> out_settings) {
     LOG_WARNING(Service_SET, "(STUBBED) called");
 
     *out_count = 0;
@@ -1485,44 +1490,52 @@ Result ISystemSettingsServer::GetDefaultAccountUserSettings(Out<AccountUserSetti
 }
 
 void ISystemSettingsServer::SetupSettings() {
-    auto system_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000050";
+    auto system_dir =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000050";
     if (!LoadSettingsFile(system_dir, []() { return DefaultSystemSettings(); })) {
         ASSERT(false);
     }
 
-    auto private_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000052";
+    auto private_dir =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000052";
     if (!LoadSettingsFile(private_dir, []() { return DefaultPrivateSettings(); })) {
         ASSERT(false);
     }
 
-    auto device_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000053";
+    auto device_dir =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000053";
     if (!LoadSettingsFile(device_dir, []() { return DefaultDeviceSettings(); })) {
         ASSERT(false);
     }
 
-    auto appln_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000054";
+    auto appln_dir =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000054";
     if (!LoadSettingsFile(appln_dir, []() { return DefaultApplnSettings(); })) {
         ASSERT(false);
     }
 }
 
 void ISystemSettingsServer::StoreSettings() {
-    auto system_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000050";
+    auto system_dir =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000050";
     if (!StoreSettingsFile(system_dir, m_system_settings)) {
         LOG_ERROR(Service_SET, "Failed to store System settings");
     }
 
-    auto private_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000052";
+    auto private_dir =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000052";
     if (!StoreSettingsFile(private_dir, m_private_settings)) {
         LOG_ERROR(Service_SET, "Failed to store Private settings");
     }
 
-    auto device_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000053";
+    auto device_dir =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000053";
     if (!StoreSettingsFile(device_dir, m_device_settings)) {
         LOG_ERROR(Service_SET, "Failed to store Device settings");
     }
 
-    auto appln_dir = Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000054";
+    auto appln_dir =
+        Common::FS::GetSuyuPath(Common::FS::SuyuPath::NANDDir) / "system/save/8000000000000054";
     if (!StoreSettingsFile(appln_dir, m_appln_settings)) {
         LOG_ERROR(Service_SET, "Failed to store ApplLn settings");
     }

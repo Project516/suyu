@@ -27,8 +27,8 @@ SDL_AudioDeviceID FindAudioDeviceByName(const std::string& device_name, bool cap
         return capture ? SDL_AUDIO_DEVICE_DEFAULT_RECORDING : SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
     }
 
-    SDL_AudioDeviceID selected = capture ? SDL_AUDIO_DEVICE_DEFAULT_RECORDING
-                                         : SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
+    SDL_AudioDeviceID selected =
+        capture ? SDL_AUDIO_DEVICE_DEFAULT_RECORDING : SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
     for (int i = 0; i < device_count; ++i) {
         const char* current_name = SDL_GetAudioDeviceName(devices[i]);
         if (current_name != nullptr && device_name == current_name) {
@@ -76,12 +76,11 @@ public:
         }
 
         const SDL_AudioDeviceID audio_device =
-            device_name.empty() ? (capture ? SDL_AUDIO_DEVICE_DEFAULT_RECORDING
-                                           : SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK)
-                                : FindAudioDeviceByName(device_name, capture);
+            device_name.empty()
+                ? (capture ? SDL_AUDIO_DEVICE_DEFAULT_RECORDING : SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK)
+                : FindAudioDeviceByName(device_name, capture);
 
-        stream = SDL_OpenAudioDeviceStream(audio_device, &spec, &SDLSinkStream::DataCallback,
-                                           this);
+        stream = SDL_OpenAudioDeviceStream(audio_device, &spec, &SDLSinkStream::DataCallback, this);
 
         if (stream == nullptr) {
             LOG_CRITICAL(Audio_Sink, "Error opening SDL audio device: {}", SDL_GetError());
@@ -275,9 +274,8 @@ std::vector<std::string> ListSDLSinkDevices(bool capture) {
     }
 
     int device_count = 0;
-    SDL_AudioDeviceID* devices =
-        capture ? SDL_GetAudioRecordingDevices(&device_count)
-                : SDL_GetAudioPlaybackDevices(&device_count);
+    SDL_AudioDeviceID* devices = capture ? SDL_GetAudioRecordingDevices(&device_count)
+                                         : SDL_GetAudioPlaybackDevices(&device_count);
     if (devices == nullptr) {
         return device_list;
     }
@@ -297,7 +295,8 @@ u32 GetSDLLatency() {
     return TargetSampleCount * 2;
 }
 
-// REVERTED back to 3833 - Below function IsSDLSuitable() removed, reverting to GetSDLLatency() above. - DIABLO 3 FIX
+// REVERTED back to 3833 - Below function IsSDLSuitable() removed, reverting to GetSDLLatency()
+// above. - DIABLO 3 FIX
 /*
 bool IsSDLSuitable() {
 #if !defined(HAVE_SDL3)

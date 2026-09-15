@@ -144,7 +144,8 @@ public:
             if (cur_ref_count == 0)
                 return false;
             ASSERT(cur_ref_count < cur_ref_count + 1);
-        } while (!m_ref_count.compare_exchange_weak(cur_ref_count, cur_ref_count + 1, std::memory_order_relaxed));
+        } while (!m_ref_count.compare_exchange_weak(cur_ref_count, cur_ref_count + 1,
+                                                    std::memory_order_relaxed));
         return true;
     }
 
@@ -155,7 +156,8 @@ public:
             if (cur_ref_count == 0)
                 return;
             ASSERT(cur_ref_count > 0);
-        } while (!m_ref_count.compare_exchange_weak(cur_ref_count, cur_ref_count - 1, std::memory_order_acq_rel));
+        } while (!m_ref_count.compare_exchange_weak(cur_ref_count, cur_ref_count - 1,
+                                                    std::memory_order_acq_rel));
         // If ref count hits 1, destroy the object.
         if (cur_ref_count == 1) {
             this->Destroy(kernel);
@@ -208,14 +210,9 @@ class KScopedAutoObject {
 public:
     YUZU_NON_COPYABLE(KScopedAutoObject);
 
-    constexpr KScopedAutoObject(KernelCore& kernel_)
-        : kernel{kernel_}
-    {}
+    constexpr KScopedAutoObject(KernelCore& kernel_) : kernel{kernel_} {}
 
-    constexpr KScopedAutoObject(KernelCore& kernel_, T* o)
-        : kernel{kernel_}
-        , m_obj(o)
-    {
+    constexpr KScopedAutoObject(KernelCore& kernel_, T* o) : kernel{kernel_}, m_obj(o) {
         if (m_obj != nullptr) {
             m_obj->Open(kernel);
         }

@@ -7,5 +7,4 @@
 
 namespace Dynarmic::A64 {
 
-
 }  // namespace Dynarmic::A64

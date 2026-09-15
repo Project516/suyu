@@ -81,7 +81,8 @@ Result CreateSession(Core::System& system, Handle* out_server, Handle* out_clien
     T::Register(system.Kernel(), session);
 
     // Add the server session to the handle table.
-    R_TRY(handle_table.Add(system.Kernel(), out_server, std::addressof(session->GetServerSession())));
+    R_TRY(
+        handle_table.Add(system.Kernel(), out_server, std::addressof(session->GetServerSession())));
 
     // Ensure that we maintain a clean handle state on exit.
     ON_RESULT_FAILURE {
@@ -89,7 +90,8 @@ Result CreateSession(Core::System& system, Handle* out_server, Handle* out_clien
     };
 
     // Add the client session to the handle table.
-    R_RETURN(handle_table.Add(system.Kernel(), out_client, std::addressof(session->GetClientSession())));
+    R_RETURN(
+        handle_table.Add(system.Kernel(), out_client, std::addressof(session->GetClientSession())));
 }
 
 } // namespace

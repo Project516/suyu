@@ -20,8 +20,10 @@ struct fmt::formatter<VideoCore::Surface::PixelFormat> : fmt::formatter<fmt::str
         using VideoCore::Surface::PixelFormat;
         const string_view name = [format] {
             switch (format) {
-#define PIXEL_FORMAT_ELEM(NAME, ...) case PixelFormat::NAME: return #NAME;
-    PIXEL_FORMAT_LIST
+#define PIXEL_FORMAT_ELEM(NAME, ...)                                                               \
+    case PixelFormat::NAME:                                                                        \
+        return #NAME;
+                PIXEL_FORMAT_LIST
 #undef PIXEL_FORMAT_ELEM
             case PixelFormat::MaxDepthStencilFormat:
             case PixelFormat::Invalid:

@@ -50,7 +50,8 @@ Result CreateCodeMemory(Core::System& system, Handle* out, u64 address, uint64_t
     };
 
     // Verify that the region is in range.
-    R_UNLESS(GetCurrentProcess(system.Kernel()).GetPageTable().Contains(address, size), ResultInvalidCurrentMemory);
+    R_UNLESS(GetCurrentProcess(system.Kernel()).GetPageTable().Contains(address, size),
+             ResultInvalidCurrentMemory);
 
     // Initialize the code memory.
     R_TRY(code_mem->Initialize(system.Kernel(), system.DeviceMemory(), address, size));
@@ -81,8 +82,8 @@ Result ControlCodeMemory(Core::System& system, Handle code_memory_handle,
 
     // Get the code memory from its handle.
     KScopedAutoObject code_mem = GetCurrentProcess(system.Kernel())
-        .GetHandleTable()
-        .GetObject<KCodeMemory>(system.Kernel(), code_memory_handle);
+                                     .GetHandleTable()
+                                     .GetObject<KCodeMemory>(system.Kernel(), code_memory_handle);
     R_UNLESS(code_mem.IsNotNull(), ResultInvalidHandle);
 
     // NOTE: Here, Atmosphere extends the SVC to allow code memory operations on one's own process.
@@ -92,7 +93,10 @@ Result ControlCodeMemory(Core::System& system, Handle code_memory_handle,
     switch (operation) {
     case CodeMemoryOperation::Map: {
         // Check that the region is in range.
-        R_UNLESS(GetCurrentProcess(system.Kernel()).GetPageTable().CanContain(address, size, KMemoryState::CodeOut), ResultInvalidMemoryRegion);
+        R_UNLESS(GetCurrentProcess(system.Kernel())
+                     .GetPageTable()
+                     .CanContain(address, size, KMemoryState::CodeOut),
+                 ResultInvalidMemoryRegion);
 
         // Check the memory permission.
         R_UNLESS(IsValidMapCodeMemoryPermission(perm), ResultInvalidNewMemoryPermission);
@@ -102,7 +106,10 @@ Result ControlCodeMemory(Core::System& system, Handle code_memory_handle,
     } break;
     case CodeMemoryOperation::Unmap: {
         // Check that the region is in range.
-        R_UNLESS(GetCurrentProcess(system.Kernel()).GetPageTable().CanContain(address, size, KMemoryState::CodeOut), ResultInvalidMemoryRegion);
+        R_UNLESS(GetCurrentProcess(system.Kernel())
+                     .GetPageTable()
+                     .CanContain(address, size, KMemoryState::CodeOut),
+                 ResultInvalidMemoryRegion);
 
         // Check the memory permission.
         R_UNLESS(IsValidUnmapCodeMemoryPermission(perm), ResultInvalidNewMemoryPermission);

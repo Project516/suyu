@@ -12,8 +12,8 @@
 #include <deque>
 #include <memory>
 #include <mutex>
-#include <vector>
 #include <span>
+#include <vector>
 
 #include "common/common_types.h"
 #include "common/range_mutex.h"
@@ -132,7 +132,8 @@ private:
         u8* host_ptr{};
     };
 
-    // Internal helper that performs the update assuming the caller already holds the necessary lock.
+    // Internal helper that performs the update assuming the caller already holds the necessary
+    // lock.
     void UpdatePagesCachedCountNoLock(DAddr addr, size_t size, s32 delta);
 
 private:
@@ -236,8 +237,6 @@ private:
     std::unique_ptr<CachedPages> cached_pages;
     Common::RangeMutex counter_guard;
     std::mutex mapping_guard;
-
-
 };
 
 } // namespace Core

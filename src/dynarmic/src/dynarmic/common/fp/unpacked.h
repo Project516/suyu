@@ -10,10 +10,9 @@
 
 #include <tuple>
 
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-
 #include "dynarmic/common/fp/fpcr.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::FP {
 

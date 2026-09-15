@@ -61,13 +61,14 @@ Result IRemoteStorageController::GetSecondarySave(Out<bool> out_has_secondary_sa
 }
 
 Result IRemoteStorageController::GetDataNewnessByApplicationId(Out<u8> out_newness,
-                                                              u64 application_id) {
+                                                               u64 application_id) {
     LOG_WARNING(Service_OLSC, "(STUBBED) called, application_id={:016X}", application_id);
     *out_newness = 0;
     R_SUCCEED();
 }
 
-Result IRemoteStorageController::GetDataInfo(Out<std::array<u8, 0x38>> out_data, u64 application_id) {
+Result IRemoteStorageController::GetDataInfo(Out<std::array<u8, 0x38>> out_data,
+                                             u64 application_id) {
     LOG_WARNING(Service_OLSC, "(STUBBED) called, application_id={:016X}", application_id);
     out_data->fill(0);
     R_SUCCEED();

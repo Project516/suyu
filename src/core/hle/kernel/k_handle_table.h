@@ -107,14 +107,17 @@ public:
         return this->template GetObjectWithoutPseudoHandle<T>(kernel, handle);
     }
 
-    KScopedAutoObject<KAutoObject> GetObjectForIpcWithoutPseudoHandle(KernelCore& kernel, Handle handle) const {
+    KScopedAutoObject<KAutoObject> GetObjectForIpcWithoutPseudoHandle(KernelCore& kernel,
+                                                                      Handle handle) const {
         // Lock and look up in table.
         KScopedDisableDispatch dd{kernel};
         KScopedSpinLock lk(m_lock);
         return {kernel, this->GetObjectImpl(handle)};
     }
-    KScopedAutoObject<KAutoObject> GetObjectForIpc(KernelCore& kernel, Handle handle, KThread* cur_thread) const;
-    KScopedAutoObject<KAutoObject> GetObjectByIndex(KernelCore& kernel, Handle* out_handle, size_t index) const {
+    KScopedAutoObject<KAutoObject> GetObjectForIpc(KernelCore& kernel, Handle handle,
+                                                   KThread* cur_thread) const;
+    KScopedAutoObject<KAutoObject> GetObjectByIndex(KernelCore& kernel, Handle* out_handle,
+                                                    size_t index) const {
         KScopedDisableDispatch dd{kernel};
         KScopedSpinLock lk(m_lock);
 
@@ -128,7 +131,8 @@ public:
     void Register(KernelCore& kernel, Handle handle, KAutoObject* obj);
 
     template <typename T>
-    bool GetMultipleObjects(KernelCore& kernel, T** out, const Handle* handles, size_t num_handles) const {
+    bool GetMultipleObjects(KernelCore& kernel, T** out, const Handle* handles,
+                            size_t num_handles) const {
         // Try to convert and open all the handles.
         size_t num_opened;
         {

@@ -5,28 +5,28 @@
 #include "suyu/nintendo_account.h"
 
 #include <QApplication>
-#include <QPainter>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QDirIterator>
+#include <QEventLoop>
+#include <QFile>
 #include <QFileInfo>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QPainter>
 #include <QResizeEvent>
 #include <QStandardItemModel>
+#include <QStandardPaths>
 #include <QThread>
 #include <QTimer>
 #include <QToolTip>
 #include <QUrl>
-#include <QCryptographicHash>
-#include <QEventLoop>
-#include <QFile>
-#include <QStandardPaths>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
-#include <QNetworkRequest>
 
 #include <QRegularExpression>
 
@@ -45,10 +45,9 @@
 #include "suyu/uisettings.h"
 
 GameLibrary::GameLibrary(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
-                        FileSys::ManualContentProvider* provider_,
-                        PlayTime::PlayTimeManager& play_time_manager_,
-                        Core::System& system_,
-                        GMainWindow* parent)
+                         FileSys::ManualContentProvider* provider_,
+                         PlayTime::PlayTimeManager& play_time_manager_, Core::System& system_,
+                         GMainWindow* parent)
     : QWidget(parent), main_layout(nullptr), toolbar_layout(nullptr), search_bar(nullptr),
       view_mode_button(nullptr), sort_combo(nullptr), game_count_label(nullptr),
       scroll_area(nullptr), game_container(nullptr), game_layout(nullptr),
@@ -71,16 +70,15 @@ GameLibrary::GameLibrary(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
     // immediately) while the actual scan was hooked up in PopulateAsync via a
     // connect() whose "signal" was really just a slot, so nothing ever emitted
     // it - between the two, the library never scanned anything at all.
-    connect(worker_thread, &QThread::started, worker, [this]() {
-        worker->FillControllerList(pending_game_dirs);
-    });
+    connect(worker_thread, &QThread::started, worker,
+            [this]() { worker->FillControllerList(pending_game_dirs); });
     connect(worker, &GameLibraryWorker::EntryReady, this,
             [this](const QString& title, const QString& file_path, const QString& program_id,
                    const QString& developer, u64 program_id_numeric, const QString& version,
-                   const QString& type, u64 size, const QString& compatibility,
-                   const QPixmap& icon, const QString& play_time) {
-                AddGameCard(title, file_path, program_id, developer, program_id_numeric,
-                           version, type, size, compatibility, icon, play_time);
+                   const QString& type, u64 size, const QString& compatibility, const QPixmap& icon,
+                   const QString& play_time) {
+                AddGameCard(title, file_path, program_id, developer, program_id_numeric, version,
+                            type, size, compatibility, icon, play_time);
             });
     connect(worker, &GameLibraryWorker::Finished, this, &GameLibrary::OnPopulationCompleted);
     connect(this, &GameLibrary::ShouldCancelWorker, worker, [this]() {
@@ -144,14 +142,20 @@ void GameLibrary::SetupToolbar() {
 
     // Sort combo box
     sort_combo = new QComboBox();
-    sort_combo->addItem(QStringLiteral("Sort by Title"), static_cast<int>(GameLibrarySortMode::Title));
-    sort_combo->addItem(QStringLiteral("Sort by Developer"), static_cast<int>(GameLibrarySortMode::Developer));
-    sort_combo->addItem(QStringLiteral("Sort by Size"), static_cast<int>(GameLibrarySortMode::Size));
-    sort_combo->addItem(QStringLiteral("Sort by Play Time"), static_cast<int>(GameLibrarySortMode::PlayTime));
-    sort_combo->addItem(QStringLiteral("Sort by Compatibility"), static_cast<int>(GameLibrarySortMode::Compatibility));
-    sort_combo->addItem(QStringLiteral("Sort by Type"), static_cast<int>(GameLibrarySortMode::Type));
-    connect(sort_combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &GameLibrary::OnSortModeChanged);
+    sort_combo->addItem(QStringLiteral("Sort by Title"),
+                        static_cast<int>(GameLibrarySortMode::Title));
+    sort_combo->addItem(QStringLiteral("Sort by Developer"),
+                        static_cast<int>(GameLibrarySortMode::Developer));
+    sort_combo->addItem(QStringLiteral("Sort by Size"),
+                        static_cast<int>(GameLibrarySortMode::Size));
+    sort_combo->addItem(QStringLiteral("Sort by Play Time"),
+                        static_cast<int>(GameLibrarySortMode::PlayTime));
+    sort_combo->addItem(QStringLiteral("Sort by Compatibility"),
+                        static_cast<int>(GameLibrarySortMode::Compatibility));
+    sort_combo->addItem(QStringLiteral("Sort by Type"),
+                        static_cast<int>(GameLibrarySortMode::Type));
+    connect(sort_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &GameLibrary::OnSortModeChanged);
     toolbar_layout->addWidget(sort_combo);
 
     // View mode button
@@ -276,8 +280,9 @@ void GameLibrary::OnFilterTextChanged(const QString& new_text) {
 
 void GameLibrary::OnUpdateThemedIcons() {
     // Update icons for current theme
-    view_mode_button->setIcon(view_mode == GameLibraryViewMode::Grid ?
-                             QIcon(QStringLiteral(":/icons/list_view.svg")) : QIcon(QStringLiteral(":/icons/grid_view.svg")));
+    view_mode_button->setIcon(view_mode == GameLibraryViewMode::Grid
+                                  ? QIcon(QStringLiteral(":/icons/list_view.svg"))
+                                  : QIcon(QStringLiteral(":/icons/grid_view.svg")));
 }
 
 void GameLibrary::OnGameCardSelected(const QString& file_path) {
@@ -299,15 +304,16 @@ void GameLibrary::OnGameCardRightClicked(const QString& file_path, const QPoint&
 }
 
 void GameLibrary::OnViewModeChanged() {
-    GameLibraryViewMode new_mode = (view_mode == GameLibraryViewMode::Grid) ?
-                                   GameLibraryViewMode::List : GameLibraryViewMode::Grid;
+    GameLibraryViewMode new_mode = (view_mode == GameLibraryViewMode::Grid)
+                                       ? GameLibraryViewMode::List
+                                       : GameLibraryViewMode::Grid;
     SetViewMode(new_mode);
 }
 
 void GameLibrary::OnSortModeChanged() {
     int index = sort_combo->currentIndex();
-    GameLibrarySortMode new_mode = static_cast<GameLibrarySortMode>(
-        sort_combo->itemData(index).toInt());
+    GameLibrarySortMode new_mode =
+        static_cast<GameLibrarySortMode>(sort_combo->itemData(index).toInt());
     SetSortMode(new_mode);
 }
 
@@ -325,7 +331,8 @@ void GameLibrary::OnPopulationCompleted() {
     if (current_filter.isEmpty()) {
         game_count_label->setText(QStringLiteral("%1 games").arg(total_count));
     } else {
-        game_count_label->setText(QStringLiteral("%1 of %2 games").arg(visible_count).arg(total_count));
+        game_count_label->setText(
+            QStringLiteral("%1 of %2 games").arg(visible_count).arg(total_count));
     }
 }
 
@@ -348,7 +355,8 @@ void GameLibrary::resizeEvent(QResizeEvent* event) {
 }
 
 void GameLibrary::UpdateLayout() {
-    if (!game_layout) return;
+    if (!game_layout)
+        return;
 
     // Force layout update
     game_layout->invalidate();
@@ -385,35 +393,36 @@ void GameLibrary::ApplyFilter() {
 }
 
 void GameLibrary::SortGameCards() {
-    if (filtered_cards.isEmpty()) return;
+    if (filtered_cards.isEmpty())
+        return;
 
     std::sort(filtered_cards.begin(), filtered_cards.end(),
               [this](const GameCard* a, const GameCard* b) {
-        switch (sort_mode) {
-            case GameLibrarySortMode::Title:
-                return a->GetTitle().toLower() < b->GetTitle().toLower();
-            case GameLibrarySortMode::Developer:
-                // Would need to store developer info in GameCard
-                return a->GetTitle().toLower() < b->GetTitle().toLower();
-            case GameLibrarySortMode::Size:
-                // Would need to store size info in GameCard
-                return a->GetTitle().toLower() < b->GetTitle().toLower();
-            case GameLibrarySortMode::PlayTime:
-                // Would need to store play time info in GameCard
-                return a->GetTitle().toLower() < b->GetTitle().toLower();
-            case GameLibrarySortMode::Compatibility:
-                // Would need to store compatibility info in GameCard
-                return a->GetTitle().toLower() < b->GetTitle().toLower();
-            case GameLibrarySortMode::Type:
-                // Would need to store type info in GameCard
-                return a->GetTitle().toLower() < b->GetTitle().toLower();
-            case GameLibrarySortMode::DateAdded:
-                // Would need to store date added info in GameCard
-                return a->GetTitle().toLower() < b->GetTitle().toLower();
-            default:
-                return a->GetTitle().toLower() < b->GetTitle().toLower();
-        }
-    });
+                  switch (sort_mode) {
+                  case GameLibrarySortMode::Title:
+                      return a->GetTitle().toLower() < b->GetTitle().toLower();
+                  case GameLibrarySortMode::Developer:
+                      // Would need to store developer info in GameCard
+                      return a->GetTitle().toLower() < b->GetTitle().toLower();
+                  case GameLibrarySortMode::Size:
+                      // Would need to store size info in GameCard
+                      return a->GetTitle().toLower() < b->GetTitle().toLower();
+                  case GameLibrarySortMode::PlayTime:
+                      // Would need to store play time info in GameCard
+                      return a->GetTitle().toLower() < b->GetTitle().toLower();
+                  case GameLibrarySortMode::Compatibility:
+                      // Would need to store compatibility info in GameCard
+                      return a->GetTitle().toLower() < b->GetTitle().toLower();
+                  case GameLibrarySortMode::Type:
+                      // Would need to store type info in GameCard
+                      return a->GetTitle().toLower() < b->GetTitle().toLower();
+                  case GameLibrarySortMode::DateAdded:
+                      // Would need to store date added info in GameCard
+                      return a->GetTitle().toLower() < b->GetTitle().toLower();
+                  default:
+                      return a->GetTitle().toLower() < b->GetTitle().toLower();
+                  }
+              });
 
     // Reorder cards in layout
     for (int i = 0; i < filtered_cards.size(); ++i) {
@@ -423,10 +432,11 @@ void GameLibrary::SortGameCards() {
     }
 }
 
-void GameLibrary::AddGameCard(const QString& title, const QString& file_path, const QString& program_id,
-                             const QString& developer, u64 program_id_numeric, const QString& version,
-                             const QString& type, u64 size, const QString& compatibility,
-                             const QPixmap& icon, const QString& play_time) {
+void GameLibrary::AddGameCard(const QString& title, const QString& file_path,
+                              const QString& program_id, const QString& developer,
+                              u64 program_id_numeric, const QString& version, const QString& type,
+                              u64 size, const QString& compatibility, const QPixmap& icon,
+                              const QString& play_time) {
     QMutexLocker locker(&cards_mutex);
 
     // Check if card already exists
@@ -435,8 +445,8 @@ void GameLibrary::AddGameCard(const QString& title, const QString& file_path, co
     }
 
     GameCard* card = new GameCard(game_container);
-    card->SetGameInfo(title, file_path, program_id, developer, program_id_numeric,
-                     version, type, size, compatibility, icon);
+    card->SetGameInfo(title, file_path, program_id, developer, program_id_numeric, version, type,
+                      size, compatibility, icon);
     card->SetPlayTime(play_time);
 
     // Connect signals
@@ -468,7 +478,8 @@ void GameLibrary::RemoveGameCard(const QString& file_path) {
     QMutexLocker locker(&cards_mutex);
 
     GameCard* card = file_path_to_card.value(file_path, nullptr);
-    if (!card) return;
+    if (!card)
+        return;
 
     // Remove from collections
     game_cards.removeAll(card);
@@ -509,7 +520,8 @@ void GameLibrary::UpdateGameCardPlayTime(u64 program_id, const QString& play_tim
 }
 
 void GameLibrary::SelectGameCard(GameCard* card) {
-    if (selected_card == card) return;
+    if (selected_card == card)
+        return;
 
     // Deselect previous card
     if (selected_card) {
@@ -541,15 +553,15 @@ GameCard* GameLibrary::FindGameCardByProgramId(u64 program_id) const {
 
 void GameLibrary::ShowContextMenu(const QString& file_path, const QPoint& global_pos) {
     GameCard* card = FindGameCard(file_path);
-    if (!card) return;
+    if (!card)
+        return;
 
     QMenu context_menu(this);
 
     // Add standard game actions
     QAction* play_action = context_menu.addAction(QStringLiteral("Play"));
-    connect(play_action, &QAction::triggered, [this, file_path, card]() {
-        emit GameChosen(file_path, card->GetProgramIdNumeric());
-    });
+    connect(play_action, &QAction::triggered,
+            [this, file_path, card]() { emit GameChosen(file_path, card->GetProgramIdNumeric()); });
 
     context_menu.addSeparator();
 
@@ -573,7 +585,8 @@ void GameLibrary::UpdateSearchResults() {
 }
 
 void GameLibrary::AnimateFilterChange() {
-    if (!filter_animation || !opacity_effect) return;
+    if (!filter_animation || !opacity_effect)
+        return;
 
     filter_animation->setStartValue(opacity_effect->opacity());
     filter_animation->setEndValue(0.0);
@@ -601,17 +614,17 @@ void GameLibrary::AddPermDirPopup(QMenu& context_menu, QModelIndex selected) {
 
 // GameLibraryWorker implementation
 GameLibraryWorker::GameLibraryWorker(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
-                                    FileSys::ManualContentProvider* provider_,
-                                    PlayTime::PlayTimeManager& play_time_manager_,
-                                    Core::System& system_)
+                                     FileSys::ManualContentProvider* provider_,
+                                     PlayTime::PlayTimeManager& play_time_manager_,
+                                     Core::System& system_)
     : vfs(std::move(vfs_)), provider(provider_), play_time_manager(play_time_manager_),
-      system(system_) {
-}
+      system(system_) {}
 
 GameLibraryWorker::~GameLibraryWorker() = default;
 
 void GameLibraryWorker::FillControllerList(const QVector<UISettings::GameDir>& game_dirs) {
-    if (stop_processing) return;
+    if (stop_processing)
+        return;
 
     ScanFileSystem(const_cast<QVector<UISettings::GameDir>&>(game_dirs));
 
@@ -620,8 +633,10 @@ void GameLibraryWorker::FillControllerList(const QVector<UISettings::GameDir>& g
     // one is strictly better (it's launchable and carries its own icon).
     const auto owned = LoadNintendoOwnedLibrary();
     for (const auto& game : owned) {
-        if (stop_processing) break;
-        if (game.title.isEmpty()) continue;
+        if (stop_processing)
+            break;
+        if (game.title.isEmpty())
+            continue;
 
         const u64 pid = game.title_id.toULongLong(nullptr, 16);
         if (pid != 0 && local_program_ids_.count(pid) > 0) {
@@ -644,9 +659,8 @@ void GameLibraryWorker::FillControllerList(const QVector<UISettings::GameDir>& g
         const QString display_type =
             game.is_digital ? QStringLiteral("eShop") : QStringLiteral("Physical");
         emit EntryReady(game.title, QStringLiteral("nintendo://%1").arg(game.title_id),
-                       game.title_id, game.platform, pid, QStringLiteral(""),
-                       display_type, 0, QStringLiteral("Unknown"), icon,
-                       QStringLiteral("0h 0m"));
+                        game.title_id, game.platform, pid, QStringLiteral(""), display_type, 0,
+                        QStringLiteral("Unknown"), icon, QStringLiteral("0h 0m"));
     }
 
     emit Finished();
@@ -654,19 +668,21 @@ void GameLibraryWorker::FillControllerList(const QVector<UISettings::GameDir>& g
 
 void GameLibraryWorker::ScanFileSystem(QVector<UISettings::GameDir>& game_dirs) {
     for (const auto& game_dir : game_dirs) {
-        if (stop_processing) break;
+        if (stop_processing)
+            break;
 
         const QString base_path = QString::fromStdString(game_dir.path);
         QDir dir(base_path);
-        if (!dir.exists()) continue;
+        if (!dir.exists())
+            continue;
 
-        QDirIterator it(base_path,
-                        QStringList{QStringLiteral("*.nsp"), QStringLiteral("*.xci"),
-                                    QStringLiteral("*.nro")},
-                        QDir::Files | QDir::Readable,
-                        QDirIterator::Subdirectories);
+        QDirIterator it(
+            base_path,
+            QStringList{QStringLiteral("*.nsp"), QStringLiteral("*.xci"), QStringLiteral("*.nro")},
+            QDir::Files | QDir::Readable, QDirIterator::Subdirectories);
         while (it.hasNext()) {
-            if (stop_processing) break;
+            if (stop_processing)
+                break;
             const QString file_path = it.next();
             if (file_path.contains(QStringLiteral(".cnmt.nca"), Qt::CaseInsensitive)) {
                 continue;
@@ -677,7 +693,8 @@ void GameLibraryWorker::ScanFileSystem(QVector<UISettings::GameDir>& game_dirs) 
 }
 
 void GameLibraryWorker::ProcessFile(const QString& file_path) {
-    if (stop_processing) return;
+    if (stop_processing)
+        return;
 
     const auto path = file_path.toStdString();
     const auto file = vfs->OpenFile(path, FileSys::OpenMode::Read);
@@ -711,14 +728,13 @@ void GameLibraryWorker::ProcessFile(const QString& file_path) {
     // Extract title
     std::string raw_title;
     loader->ReadTitle(raw_title);
-    QString title = raw_title.empty() ? QFileInfo(file_path).baseName()
-                                      : QString::fromStdString(raw_title);
+    QString title =
+        raw_title.empty() ? QFileInfo(file_path).baseName() : QString::fromStdString(raw_title);
     if (title.trimmed().isEmpty()) {
         return;
     }
 
-    static const QRegularExpression hash_like_title(
-        QStringLiteral("^[0-9a-fA-F]{16,}$"));
+    static const QRegularExpression hash_like_title(QStringLiteral("^[0-9a-fA-F]{16,}$"));
     if (hash_like_title.match(title.trimmed()).hasMatch()) {
         return;
     }
@@ -753,8 +769,7 @@ void GameLibraryWorker::ProcessFile(const QString& file_path) {
 
     // Play time
     QString play_time = QStringLiteral("0h 0m");
-    const auto play_seconds =
-        play_time_manager.GetPlayTime(program_id);
+    const auto play_seconds = play_time_manager.GetPlayTime(program_id);
     if (play_seconds > 0) {
         const auto hours = play_seconds / 3600;
         const auto minutes = (play_seconds % 3600) / 60;
@@ -762,8 +777,8 @@ void GameLibraryWorker::ProcessFile(const QString& file_path) {
     }
 
     local_program_ids_.insert(program_id);
-    emit EntryReady(title, file_path, QString::number(program_id, 16), developer,
-                   program_id, version, type, size, compatibility, icon, play_time);
+    emit EntryReady(title, file_path, QString::number(program_id, 16), developer, program_id,
+                    version, type, size, compatibility, icon, play_time);
 }
 
 QPixmap GameLibraryWorker::LoadCachedCoverArt(const QString& title) {
@@ -773,13 +788,12 @@ QPixmap GameLibraryWorker::LoadCachedCoverArt(const QString& title) {
     if (title.trimmed().isEmpty()) {
         return {};
     }
-    const QString cache_root =
-        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) +
-        QStringLiteral("/cover_cache");
+    const QString cache_root = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) +
+                               QStringLiteral("/cover_cache");
     const QByteArray key =
         QCryptographicHash::hash(title.trimmed().toUtf8(), QCryptographicHash::Sha1).toHex();
-    const QString path = QDir(cache_root).filePath(QString::fromLatin1(key) +
-                                                   QStringLiteral(".png"));
+    const QString path =
+        QDir(cache_root).filePath(QString::fromLatin1(key) + QStringLiteral(".png"));
     if (!QFileInfo::exists(path)) {
         return {};
     }

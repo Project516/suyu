@@ -19,9 +19,7 @@
 
 namespace Kernel {
 
-KAddressArbiter::KAddressArbiter(Core::System& system_)
-    : system{system_}
-{}
+KAddressArbiter::KAddressArbiter(Core::System& system_) : system{system_} {}
 KAddressArbiter::~KAddressArbiter() = default;
 
 namespace {
@@ -116,7 +114,8 @@ public:
     explicit ThreadQueueImplForKAddressArbiter(KernelCore& kernel, KAddressArbiter::ThreadTree* t)
         : KThreadQueue(kernel), m_tree(t) {}
 
-    void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
+    void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result,
+                    bool cancel_timer_task) override {
         // If the thread is waiting on an address arbiter, remove it from the tree.
         if (waiting_thread->IsWaitingForAddressArbiter()) {
             m_tree->erase(m_tree->iterator_to(*waiting_thread));
@@ -224,7 +223,8 @@ Result KAddressArbiter::SignalAndModifyByWaitingCountIfEqual(uint64_t addr, s32 
         s32 user_value{};
         bool succeeded{};
         if (value != new_value) {
-            succeeded = UpdateIfEqual(system.Kernel(), std::addressof(user_value), addr, value, new_value);
+            succeeded =
+                UpdateIfEqual(system.Kernel(), std::addressof(user_value), addr, value, new_value);
         } else {
             succeeded = ReadFromUser(system.Kernel(), std::addressof(user_value), addr);
         }
@@ -255,7 +255,8 @@ Result KAddressArbiter::WaitIfLessThan(uint64_t addr, s32 value, bool decrement,
     ThreadQueueImplForKAddressArbiter wait_queue(system.Kernel(), std::addressof(m_tree));
 
     {
-        KScopedSchedulerLockAndSleep slp{system.Kernel(), std::addressof(timer), cur_thread, timeout};
+        KScopedSchedulerLockAndSleep slp{system.Kernel(), std::addressof(timer), cur_thread,
+                                         timeout};
 
         // Check that the thread isn't terminating.
         if (cur_thread->IsTerminationRequested()) {
@@ -267,7 +268,8 @@ Result KAddressArbiter::WaitIfLessThan(uint64_t addr, s32 value, bool decrement,
         s32 user_value{};
         bool succeeded{};
         if (decrement) {
-            succeeded = DecrementIfLessThan(system.Kernel(), std::addressof(user_value), addr, value);
+            succeeded =
+                DecrementIfLessThan(system.Kernel(), std::addressof(user_value), addr, value);
         } else {
             succeeded = ReadFromUser(system.Kernel(), std::addressof(user_value), addr);
         }
@@ -310,7 +312,8 @@ Result KAddressArbiter::WaitIfEqual(uint64_t addr, s32 value, s64 timeout) {
     ThreadQueueImplForKAddressArbiter wait_queue(system.Kernel(), std::addressof(m_tree));
 
     {
-        KScopedSchedulerLockAndSleep slp{system.Kernel(), std::addressof(timer), cur_thread, timeout};
+        KScopedSchedulerLockAndSleep slp{system.Kernel(), std::addressof(timer), cur_thread,
+                                         timeout};
 
         // Check that the thread isn't terminating.
         if (cur_thread->IsTerminationRequested()) {

@@ -8,10 +8,11 @@
 
 #include "dynarmic/backend/block_range_information.h"
 
+#include <ankerl/unordered_dense.h>
 #include <boost/icl/interval_map.hpp>
 #include <boost/icl/interval_set.hpp>
+
 #include "common/common_types.h"
-#include <ankerl/unordered_dense.h>
 
 namespace Dynarmic::Backend {
 

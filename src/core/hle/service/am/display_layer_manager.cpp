@@ -157,8 +157,8 @@ void DisplayLayerManager::SetWindowVisibility(bool visible) {
         }
 
         for (const auto layer_id : m_managed_display_layers) {
-            LOG_INFO(Service_VI, "managed_layer={} visible={} applet_id={}",
-                     layer_id, m_visible, static_cast<u32>(m_applet_id));
+            LOG_INFO(Service_VI, "managed_layer={} visible={} applet_id={}", layer_id, m_visible,
+                     static_cast<u32>(m_applet_id));
             m_manager_display_service->SetLayerVisibility(m_visible, layer_id);
         }
     }

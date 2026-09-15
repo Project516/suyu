@@ -6,10 +6,9 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include "dynarmic/mcl/bit.hpp"
-
 #include "dynarmic/common/fp/rounding_mode.h"
 #include "dynarmic/frontend/A64/translate/impl/impl.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::A64 {
 namespace {

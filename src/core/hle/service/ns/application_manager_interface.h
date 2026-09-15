@@ -39,8 +39,7 @@ public:
         OutArray<ApplicationViewV19, BufferAttr_HipcMapAlias> out_application_views,
         InArray<u64, BufferAttr_HipcMapAlias> application_ids);
     Result GetApplicationViewWithPromotionInfo(
-        OutBuffer<BufferAttr_HipcMapAlias> out_buffer,
-        Out<u32> out_count,
+        OutBuffer<BufferAttr_HipcMapAlias> out_buffer, Out<u32> out_count,
         InArray<u64, BufferAttr_HipcMapAlias> application_ids);
     Result GetApplicationView(
         OutArray<ApplicationViewV20, BufferAttr_HipcMapAlias> out_application_views,
@@ -63,8 +62,7 @@ public:
                                         u64 application_id);
     Result CheckApplicationLaunchVersion(u64 application_id);
     Result GetApplicationTerminateResult(Out<Result> out_result, u64 application_id);
-    Result GetApplicationLogoData(Out<s64> out_size,
-                                  OutBuffer<BufferAttr_HipcMapAlias> out_buffer,
+    Result GetApplicationLogoData(Out<s64> out_size, OutBuffer<BufferAttr_HipcMapAlias> out_buffer,
                                   u64 application_id,
                                   InBuffer<BufferAttr_HipcMapAlias> logo_path_buffer);
     Result Unknown4022(OutCopyHandle<Kernel::KReadableEvent> out_event);

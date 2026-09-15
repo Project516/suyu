@@ -9,7 +9,8 @@
 #include <boost/asio.hpp>
 #include <boost/version.hpp>
 
-#if BOOST_VERSION > 108400 && (!defined(_WINDOWS) && !defined(__ANDROID__)) || defined(YUZU_BOOST_v1)
+#if BOOST_VERSION > 108400 && (!defined(_WINDOWS) && !defined(__ANDROID__)) ||                     \
+    defined(YUZU_BOOST_v1)
 #define USE_BOOST_v1
 #endif
 
@@ -82,9 +83,7 @@ namespace Core {
 class DebuggerImpl : public DebuggerBackend {
 public:
     explicit DebuggerImpl(Core::System& system_, u16 port)
-        : system{system_}
-        , debug_process{system_.Kernel()}
-    {
+        : system{system_}, debug_process{system_.Kernel()} {
         InitializeServer(port);
     }
 
@@ -245,9 +244,8 @@ private:
                 break;
             case DebuggerAction::ContinueThreads: {
                 auto* gdb = static_cast<GDBStub*>(frontend.get());
-                MarkResumed([this, threads = std::move(gdb->resume_threads)] {
-                    ResumeThreads(threads);
-                });
+                MarkResumed(
+                    [this, threads = std::move(gdb->resume_threads)] { ResumeThreads(threads); });
                 break;
             }
             case DebuggerAction::StepThread: {
@@ -356,11 +354,11 @@ private:
         using async_pipe = boost::process::async_pipe;
 #endif
 
-        ConnectionState(boost::asio::ip::tcp::socket&& client_socket_, async_pipe signal_pipe_, Kernel::KernelCore& kernel)
-            : client_socket{std::move(client_socket_)}
-            , signal_pipe{signal_pipe_}
-            , active_thread{kernel, nullptr}
-        {}
+        ConnectionState(boost::asio::ip::tcp::socket&& client_socket_, async_pipe signal_pipe_,
+                        Kernel::KernelCore& kernel)
+            : client_socket{std::move(client_socket_)}, signal_pipe{signal_pipe_}, active_thread{
+                                                                                       kernel,
+                                                                                       nullptr} {}
 
         boost::asio::ip::tcp::socket client_socket;
         async_pipe signal_pipe;

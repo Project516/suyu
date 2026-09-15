@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
-#include <cstring>
 #include <bit>
+#include <cstring>
 #include <numeric>
 #include <ranges>
 #include "common/cityhash.h"
@@ -40,21 +40,21 @@ constexpr std::array POLYGON_OFFSET_ENABLE_LUT = {
 };
 
 constexpr std::array TOPOLOGY_CLASS_REPRESENTATIVE_LUT = {
-    Maxwell::PrimitiveTopology::Points,              // Points
-    Maxwell::PrimitiveTopology::Lines,               // Lines
-    Maxwell::PrimitiveTopology::LineLoop,            // LineLoop
-    Maxwell::PrimitiveTopology::LineStrip,           // LineStrip
-    Maxwell::PrimitiveTopology::Triangles,           // Triangles
-    Maxwell::PrimitiveTopology::Triangles,           // TriangleStrip
-    Maxwell::PrimitiveTopology::Triangles,           // TriangleFan
-    Maxwell::PrimitiveTopology::Triangles,           // Quads
-    Maxwell::PrimitiveTopology::Triangles,           // QuadStrip
-    Maxwell::PrimitiveTopology::Triangles,           // Polygon
-    Maxwell::PrimitiveTopology::LinesAdjacency,      // LinesAdjacency
-    Maxwell::PrimitiveTopology::LinesAdjacency,      // LineStripAdjacency
-    Maxwell::PrimitiveTopology::TrianglesAdjacency,  // TrianglesAdjacency
-    Maxwell::PrimitiveTopology::TrianglesAdjacency,  // TriangleStripAdjacency
-    Maxwell::PrimitiveTopology::Patches,             // Patches
+    Maxwell::PrimitiveTopology::Points,             // Points
+    Maxwell::PrimitiveTopology::Lines,              // Lines
+    Maxwell::PrimitiveTopology::LineLoop,           // LineLoop
+    Maxwell::PrimitiveTopology::LineStrip,          // LineStrip
+    Maxwell::PrimitiveTopology::Triangles,          // Triangles
+    Maxwell::PrimitiveTopology::Triangles,          // TriangleStrip
+    Maxwell::PrimitiveTopology::Triangles,          // TriangleFan
+    Maxwell::PrimitiveTopology::Triangles,          // Quads
+    Maxwell::PrimitiveTopology::Triangles,          // QuadStrip
+    Maxwell::PrimitiveTopology::Triangles,          // Polygon
+    Maxwell::PrimitiveTopology::LinesAdjacency,     // LinesAdjacency
+    Maxwell::PrimitiveTopology::LinesAdjacency,     // LineStripAdjacency
+    Maxwell::PrimitiveTopology::TrianglesAdjacency, // TrianglesAdjacency
+    Maxwell::PrimitiveTopology::TrianglesAdjacency, // TriangleStripAdjacency
+    Maxwell::PrimitiveTopology::Patches,            // Patches
 };
 
 bool IsDualSourceBlendFactor(Maxwell::Blend::Factor factor) {
@@ -111,7 +111,8 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d, DynamicFe
     raw1 = 0;
     extended_dynamic_state.Assign(features.has_extended_dynamic_state ? 1 : 0);
     extended_dynamic_state_2.Assign(features.has_extended_dynamic_state_2 ? 1 : 0);
-    extended_dynamic_state_2_logic_op.Assign(features.has_extended_dynamic_state_2_logic_op ? 1 : 0);
+    extended_dynamic_state_2_logic_op.Assign(features.has_extended_dynamic_state_2_logic_op ? 1
+                                                                                            : 0);
     extended_dynamic_state_3_blend.Assign(features.has_extended_dynamic_state_3_blend ? 1 : 0);
     extended_dynamic_state_3_enables.Assign(features.has_extended_dynamic_state_3_enables ? 1 : 0);
     color_write_enable_dynamic.Assign(features.has_color_write_enable ? 1 : 0);
@@ -247,8 +248,7 @@ void FixedPipelineState::Refresh(Tegra::Engines::Maxwell3D& maxwell3d, DynamicFe
                 attachments[index].Refresh(regs, index);
                 auto& attachment = attachments[index];
                 if (color_write_enable_dynamic && attachment.mask_r == 0 &&
-                    attachment.mask_g == 0 && attachment.mask_b == 0 &&
-                    attachment.mask_a == 0) {
+                    attachment.mask_g == 0 && attachment.mask_b == 0 && attachment.mask_a == 0) {
                     attachment.mask_r.Assign(1);
                     attachment.mask_g.Assign(1);
                     attachment.mask_b.Assign(1);
@@ -295,8 +295,7 @@ void FixedPipelineState::BlendingAttachment::Refresh(const Maxwell& regs, size_t
             equation_a.Assign(PackBlendEquation(Maxwell::Blend::Equation::Add_GL));
             factor_source_rgb.Assign(PackBlendFactor(Maxwell::Blend::Factor::One_GL));
             factor_dest_rgb.Assign(PackBlendFactor(Maxwell::Blend::Factor::One_GL));
-            factor_source_a.Assign(
-                PackBlendFactor(Maxwell::Blend::Factor::OneMinusSourceColor_GL));
+            factor_source_a.Assign(PackBlendFactor(Maxwell::Blend::Factor::OneMinusSourceColor_GL));
             factor_dest_a.Assign(PackBlendFactor(Maxwell::Blend::Factor::Zero_GL));
             enable.Assign(1);
             return;

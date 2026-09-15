@@ -4,7 +4,7 @@ Renderdoc is a free, cross platform, multi-graphics API debugger. It is an inval
 
 RenderDoc can capture Eden's Vulkan output when its Vulkan layer is loaded before Eden creates the Vulkan device. Before using renderdoc to diagnose issues, it is always good to make sure there are no validation errors. Any errors means the behavior of the application is undefined. That said, renderdoc can help debug validation errors if you do have them.
 
-## Usage on Windows 
+## Usage on Windows
 
 You can either use RenderDoc UI to launch eden, or you can make eden attach it internally:
 

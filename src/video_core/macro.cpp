@@ -17,16 +17,15 @@
 #endif
 
 #include "common/assert.h"
-#include "common/scope_exit.h"
+#include "common/container_hash.h"
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
+#include "common/scope_exit.h"
 #include "common/settings.h"
-#include "common/container_hash.h"
-#include "video_core/engines/maxwell_3d.h"
-#include "video_core/engines/maxwell_3d.h"
 #include "video_core/dirty_flags.h"
-#include "video_core/rasterizer_interface.h"
+#include "video_core/engines/maxwell_3d.h"
 #include "video_core/macro.h"
+#include "video_core/rasterizer_interface.h"
 
 #include "common/assert.h"
 #include "common/bit_field.h"
@@ -64,7 +63,8 @@ bool IsTopologySafe(Maxwell3D::Regs::PrimitiveTopology topology) {
 
 } // Anonymous namespace
 
-void HLE_DrawArraysIndirect::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_DrawArraysIndirect::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                     std::span<const u32> parameters, [[maybe_unused]] u32 method) {
     auto topology = static_cast<Maxwell3D::Regs::PrimitiveTopology>(parameters[0]);
     if (!maxwell3d.AnyParametersDirty() || !IsTopologySafe(topology)) {
         Fallback(system, maxwell3d, parameters);
@@ -83,7 +83,8 @@ void HLE_DrawArraysIndirect::Execute(Core::System& system, Engines::Maxwell3D& m
 
     if (extended) {
         maxwell3d.engine_state = Maxwell3D::EngineHint::OnHLEMacro;
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
     }
 
     maxwell3d.draw_manager.DrawArrayIndirect(maxwell3d, topology);
@@ -93,7 +94,8 @@ void HLE_DrawArraysIndirect::Execute(Core::System& system, Engines::Maxwell3D& m
         maxwell3d.replace_table.clear();
     }
 }
-void HLE_DrawArraysIndirect::Fallback(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters) {
+void HLE_DrawArraysIndirect::Fallback(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                      std::span<const u32> parameters) {
     SCOPE_EXIT {
         if (extended) {
             maxwell3d.engine_state = Maxwell3D::EngineHint::None;
@@ -105,7 +107,8 @@ void HLE_DrawArraysIndirect::Fallback(Core::System& system, Engines::Maxwell3D& 
     auto topology = Maxwell3D::Regs::PrimitiveTopology(parameters[0]);
     const u32 vertex_first = parameters[3];
     const u32 vertex_count = parameters[1];
-    if (!IsTopologySafe(topology) && size_t(maxwell3d.GetMaxCurrentVertices()) < size_t(vertex_first) + size_t(vertex_count)) {
+    if (!IsTopologySafe(topology) &&
+        size_t(maxwell3d.GetMaxCurrentVertices()) < size_t(vertex_first) + size_t(vertex_count)) {
         ASSERT(false && "Faulty draw!");
         return;
     }
@@ -113,9 +116,11 @@ void HLE_DrawArraysIndirect::Fallback(Core::System& system, Engines::Maxwell3D& 
     if (extended) {
         maxwell3d.regs.global_base_instance_index = base_instance;
         maxwell3d.engine_state = Maxwell3D::EngineHint::OnHLEMacro;
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
     }
-    maxwell3d.draw_manager.DrawArray(maxwell3d, topology, vertex_first, vertex_count, base_instance, instance_count);
+    maxwell3d.draw_manager.DrawArray(maxwell3d, topology, vertex_first, vertex_count, base_instance,
+                                     instance_count);
     if (extended) {
         maxwell3d.regs.global_base_instance_index = 0;
         maxwell3d.engine_state = Maxwell3D::EngineHint::None;
@@ -123,7 +128,9 @@ void HLE_DrawArraysIndirect::Fallback(Core::System& system, Engines::Maxwell3D& 
     }
 }
 
-void HLE_DrawIndexedIndirect::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_DrawIndexedIndirect::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                      std::span<const u32> parameters,
+                                      [[maybe_unused]] u32 method) {
     auto topology = static_cast<Maxwell3D::Regs::PrimitiveTopology>(parameters[0]);
     if (!maxwell3d.AnyParametersDirty() || !IsTopologySafe(topology)) {
         Fallback(system, maxwell3d, parameters);
@@ -139,8 +146,10 @@ void HLE_DrawIndexedIndirect::Execute(Core::System& system, Engines::Maxwell3D& 
     maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
     if (extended) {
         maxwell3d.engine_state = Maxwell3D::EngineHint::OnHLEMacro;
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseVertex);
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x644, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseVertex);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x644, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
     }
     auto& params = maxwell3d.draw_manager.indirect_state;
     params.is_byte_count = false;
@@ -161,7 +170,8 @@ void HLE_DrawIndexedIndirect::Execute(Core::System& system, Engines::Maxwell3D& 
         maxwell3d.replace_table.clear();
     }
 }
-void HLE_DrawIndexedIndirect::Fallback(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters) {
+void HLE_DrawIndexedIndirect::Fallback(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                       std::span<const u32> parameters) {
     maxwell3d.RefreshParameters();
     const u32 instance_count = (maxwell3d.GetRegisterValue(0xD1B) & parameters[2]);
     const u32 element_base = parameters[4];
@@ -172,10 +182,14 @@ void HLE_DrawIndexedIndirect::Fallback(Core::System& system, Engines::Maxwell3D&
     maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
     if (extended) {
         maxwell3d.engine_state = Maxwell3D::EngineHint::OnHLEMacro;
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseVertex);
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x644, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseVertex);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x644, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
     }
-    maxwell3d.draw_manager.DrawIndex(maxwell3d, Tegra::Maxwell3D::Regs::PrimitiveTopology(parameters[0]), parameters[3], parameters[1], element_base, base_instance, instance_count);
+    maxwell3d.draw_manager.DrawIndex(
+        maxwell3d, Tegra::Maxwell3D::Regs::PrimitiveTopology(parameters[0]), parameters[3],
+        parameters[1], element_base, base_instance, instance_count);
     maxwell3d.regs.vertex_id_base = 0x0;
     maxwell3d.regs.global_base_vertex_index = 0x0;
     maxwell3d.regs.global_base_instance_index = 0x0;
@@ -184,7 +198,8 @@ void HLE_DrawIndexedIndirect::Fallback(Core::System& system, Engines::Maxwell3D&
         maxwell3d.replace_table.clear();
     }
 }
-void HLE_MultiLayerClear::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_MultiLayerClear::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                  std::span<const u32> parameters, [[maybe_unused]] u32 method) {
     maxwell3d.RefreshParameters();
     ASSERT(parameters.size() == 1);
 
@@ -196,7 +211,9 @@ void HLE_MultiLayerClear::Execute(Core::System& system, Engines::Maxwell3D& maxw
     maxwell3d.regs.clear_surface.raw = clear_params.raw;
     maxwell3d.draw_manager.Clear(maxwell3d, num_layers);
 }
-void HLE_MultiDrawIndexedIndirectCount::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_MultiDrawIndexedIndirectCount::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                                std::span<const u32> parameters,
+                                                [[maybe_unused]] u32 method) {
     const auto topology = Maxwell3D::Regs::PrimitiveTopology(parameters[2]);
     if (IsTopologySafe(topology)) {
         const u32 start_indirect = parameters[0];
@@ -223,9 +240,12 @@ void HLE_MultiDrawIndexedIndirectCount::Execute(Core::System& system, Engines::M
         params.stride = stride;
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
         maxwell3d.engine_state = Maxwell3D::EngineHint::OnHLEMacro;
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseVertex);
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x644, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x648, Maxwell3D::HLEReplacementAttributeType::DrawID);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseVertex);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x644, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
+        maxwell3d.SetHLEReplacementAttributeType(0, 0x648,
+                                                 Maxwell3D::HLEReplacementAttributeType::DrawID);
         maxwell3d.draw_manager.DrawIndexedIndirect(maxwell3d, topology, 0, estimate);
         maxwell3d.engine_state = Maxwell3D::EngineHint::None;
         maxwell3d.replace_table.clear();
@@ -233,7 +253,9 @@ void HLE_MultiDrawIndexedIndirectCount::Execute(Core::System& system, Engines::M
         Fallback(system, maxwell3d, parameters);
     }
 }
-void HLE_MultiDrawIndexedIndirectCount::Fallback(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters) {
+void HLE_MultiDrawIndexedIndirectCount::Fallback(Core::System& system,
+                                                 Engines::Maxwell3D& maxwell3d,
+                                                 std::span<const u32> parameters) {
     SCOPE_EXIT {
         // Clean everything.
         maxwell3d.regs.vertex_id_base = 0x0;
@@ -260,15 +282,21 @@ void HLE_MultiDrawIndexedIndirectCount::Fallback(Core::System& system, Engines::
         const u32 base_instance = parameters[base + 4];
         maxwell3d.regs.vertex_id_base = base_vertex;
         maxwell3d.engine_state = Maxwell3D::EngineHint::OnHLEMacro;
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseVertex);
-        maxwell3d.SetHLEReplacementAttributeType(0, 0x644, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x640, Maxwell3D::HLEReplacementAttributeType::BaseVertex);
+        maxwell3d.SetHLEReplacementAttributeType(
+            0, 0x644, Maxwell3D::HLEReplacementAttributeType::BaseInstance);
         maxwell3d.CallMethod(system, 0x8e3, 0x648, true);
         maxwell3d.CallMethod(system, 0x8e4, u32(index), true);
         maxwell3d.dirty.flags[VideoCommon::Dirty::IndexBuffer] = true;
-        maxwell3d.draw_manager.DrawIndex(maxwell3d, topology, parameters[base + 2], parameters[base], base_vertex, base_instance, parameters[base + 1]);
+        maxwell3d.draw_manager.DrawIndex(maxwell3d, topology, parameters[base + 2],
+                                         parameters[base], base_vertex, base_instance,
+                                         parameters[base + 1]);
     }
 }
-void HLE_DrawIndirectByteCount::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_DrawIndirectByteCount::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                        std::span<const u32> parameters,
+                                        [[maybe_unused]] u32 method) {
     const bool force = maxwell3d.Rasterizer().HasDrawTransformFeedback();
     if (force) {
         auto topology = Maxwell3D::Regs::PrimitiveTopology(parameters[0] & 0xFFFFU);
@@ -289,14 +317,18 @@ void HLE_DrawIndirectByteCount::Execute(Core::System& system, Engines::Maxwell3D
         Fallback(system, maxwell3d, parameters);
     }
 }
-void HLE_DrawIndirectByteCount::Fallback(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters) {
+void HLE_DrawIndirectByteCount::Fallback(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                         std::span<const u32> parameters) {
     maxwell3d.RefreshParameters();
     maxwell3d.regs.draw.begin = parameters[0];
     maxwell3d.regs.draw_auto_stride = parameters[1];
     maxwell3d.regs.draw_auto_byte_count = parameters[2];
-    maxwell3d.draw_manager.DrawArray(maxwell3d, maxwell3d.regs.draw.topology, 0, maxwell3d.regs.draw_auto_byte_count / maxwell3d.regs.draw_auto_stride, 0, 1);
+    maxwell3d.draw_manager.DrawArray(
+        maxwell3d, maxwell3d.regs.draw.topology, 0,
+        maxwell3d.regs.draw_auto_byte_count / maxwell3d.regs.draw_auto_stride, 0, 1);
 }
-void HLE_C713C83D8F63CCF3::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_C713C83D8F63CCF3::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                   std::span<const u32> parameters, [[maybe_unused]] u32 method) {
     maxwell3d.RefreshParameters();
     const u32 offset = (parameters[0] & 0x3FFFFFFF) << 2;
     const u32 address = maxwell3d.regs.shadow_scratch[24];
@@ -306,7 +338,8 @@ void HLE_C713C83D8F63CCF3::Execute(Core::System& system, Engines::Maxwell3D& max
     const_buffer.address_low = address << 8;
     const_buffer.offset = offset;
 }
-void HLE_D7333D26E0A93EDE::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_D7333D26E0A93EDE::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                   std::span<const u32> parameters, [[maybe_unused]] u32 method) {
     maxwell3d.RefreshParameters();
     const size_t index = parameters[0];
     const u32 address = maxwell3d.regs.shadow_scratch[42 + index];
@@ -316,7 +349,8 @@ void HLE_D7333D26E0A93EDE::Execute(Core::System& system, Engines::Maxwell3D& max
     const_buffer.address_high = (address >> 24) & 0xFF;
     const_buffer.address_low = address << 8;
 }
-void HLE_BindShader::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_BindShader::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                             std::span<const u32> parameters, [[maybe_unused]] u32 method) {
     maxwell3d.RefreshParameters();
     auto& regs = maxwell3d.regs;
     const u32 index = parameters[0];
@@ -340,7 +374,9 @@ void HLE_BindShader::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d
     bind_group.raw_config = 0x11;
     maxwell3d.ProcessCBBind(bind_group_id);
 }
-void HLE_SetRasterBoundingBox::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_SetRasterBoundingBox::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                       std::span<const u32> parameters,
+                                       [[maybe_unused]] u32 method) {
     maxwell3d.RefreshParameters();
     const u32 raster_mode = parameters[0];
     auto& regs = maxwell3d.regs;
@@ -349,8 +385,9 @@ void HLE_SetRasterBoundingBox::Execute(Core::System& system, Engines::Maxwell3D&
     regs.raster_bounding_box.raw = raster_mode & 0xFFFFF00F;
     regs.raster_bounding_box.pad.Assign(scratch_data & raster_enabled);
 }
-void HLE_ClearConstBuffer::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
-    static constexpr std::array<u32, 0x7000> zeroes{}; //must be bigger than either 7000 or 5F00
+void HLE_ClearConstBuffer::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                   std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+    static constexpr std::array<u32, 0x7000> zeroes{}; // must be bigger than either 7000 or 5F00
     maxwell3d.RefreshParameters();
     auto& regs = maxwell3d.regs;
     regs.const_buffer.size = u32(base_size);
@@ -359,7 +396,8 @@ void HLE_ClearConstBuffer::Execute(Core::System& system, Engines::Maxwell3D& max
     regs.const_buffer.offset = 0;
     maxwell3d.ProcessCBMultiData(zeroes.data(), parameters[2] * 4);
 }
-void HLE_ClearMemory::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_ClearMemory::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                              std::span<const u32> parameters, [[maybe_unused]] u32 method) {
     maxwell3d.RefreshParameters();
     const u32 needed_memory = parameters[2] / sizeof(u32);
     if (needed_memory > zero_memory.size()) {
@@ -371,9 +409,12 @@ void HLE_ClearMemory::Execute(Core::System& system, Engines::Maxwell3D& maxwell3
     regs.upload.dest.address_high = parameters[0];
     regs.upload.dest.address_low = parameters[1];
     maxwell3d.CallMethod(system, size_t(MAXWELL3D_REG_INDEX(launch_dma)), 0x1011, true);
-    maxwell3d.CallMultiMethod(system, size_t(MAXWELL3D_REG_INDEX(inline_data)), zero_memory.data(), needed_memory, needed_memory);
+    maxwell3d.CallMultiMethod(system, size_t(MAXWELL3D_REG_INDEX(inline_data)), zero_memory.data(),
+                              needed_memory, needed_memory);
 }
-void HLE_TransformFeedbackSetup::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, [[maybe_unused]] u32 method) {
+void HLE_TransformFeedbackSetup::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                         std::span<const u32> parameters,
+                                         [[maybe_unused]] u32 method) {
     maxwell3d.RefreshParameters();
     auto& regs = maxwell3d.regs;
     regs.transform_feedback_enabled = 1;
@@ -386,47 +427,55 @@ void HLE_TransformFeedbackSetup::Execute(Core::System& system, Engines::Maxwell3
     regs.upload.dest.address_high = parameters[0];
     regs.upload.dest.address_low = parameters[1];
     maxwell3d.CallMethod(system, size_t(MAXWELL3D_REG_INDEX(launch_dma)), 0x1011, true);
-    maxwell3d.CallMethod(system, size_t(MAXWELL3D_REG_INDEX(inline_data)), regs.transform_feedback.controls[0].stride, true);
+    maxwell3d.CallMethod(system, size_t(MAXWELL3D_REG_INDEX(inline_data)),
+                         regs.transform_feedback.controls[0].stride, true);
     maxwell3d.Rasterizer().RegisterTransformFeedback(regs.upload.dest.Address());
 }
 
-#define HLE_MACRO_LIST \
-    HLE_MACRO_ELEM(0x0D61FC9FAAC9FCADULL, HLE_DrawArraysIndirect, (false)) \
-    HLE_MACRO_ELEM(0x8A4D173EB99A8603ULL, HLE_DrawArraysIndirect, (true)) \
-    HLE_MACRO_ELEM(0x771BB18C62444DA0ULL, HLE_DrawIndexedIndirect, (false)) \
-    HLE_MACRO_ELEM(0x0217920100488FF7ULL, HLE_DrawIndexedIndirect, (true)) \
-    HLE_MACRO_ELEM(0x3F5E74B9C9A50164ULL, HLE_MultiDrawIndexedIndirectCount, ()) \
-    HLE_MACRO_ELEM(0xEAD26C3E2109B06BULL, HLE_MultiLayerClear, ()) \
-    HLE_MACRO_ELEM(0xC713C83D8F63CCF3ULL, HLE_C713C83D8F63CCF3, ()) \
-    HLE_MACRO_ELEM(0xD7333D26E0A93EDEULL, HLE_D7333D26E0A93EDE, ()) \
-    HLE_MACRO_ELEM(0xEB29B2A09AA06D38ULL, HLE_BindShader, ()) \
-    HLE_MACRO_ELEM(0xDB1341DBEB4C8AF7ULL, HLE_SetRasterBoundingBox, ()) \
-    HLE_MACRO_ELEM(0x6C97861D891EDf7EULL, HLE_ClearConstBuffer, (0x5F00)) \
-    HLE_MACRO_ELEM(0xD246FDDF3A6173D7ULL, HLE_ClearConstBuffer, (0x7000)) \
-    HLE_MACRO_ELEM(0xEE4D0004BEC8ECF4ULL, HLE_ClearMemory, ()) \
-    HLE_MACRO_ELEM(0xFC0CF27F5FFAA661ULL, HLE_TransformFeedbackSetup, ()) \
-    HLE_MACRO_ELEM(0xB5F74EDB717278ECULL, HLE_DrawIndirectByteCount, ()) \
+#define HLE_MACRO_LIST                                                                             \
+    HLE_MACRO_ELEM(0x0D61FC9FAAC9FCADULL, HLE_DrawArraysIndirect, (false))                         \
+    HLE_MACRO_ELEM(0x8A4D173EB99A8603ULL, HLE_DrawArraysIndirect, (true))                          \
+    HLE_MACRO_ELEM(0x771BB18C62444DA0ULL, HLE_DrawIndexedIndirect, (false))                        \
+    HLE_MACRO_ELEM(0x0217920100488FF7ULL, HLE_DrawIndexedIndirect, (true))                         \
+    HLE_MACRO_ELEM(0x3F5E74B9C9A50164ULL, HLE_MultiDrawIndexedIndirectCount, ())                   \
+    HLE_MACRO_ELEM(0xEAD26C3E2109B06BULL, HLE_MultiLayerClear, ())                                 \
+    HLE_MACRO_ELEM(0xC713C83D8F63CCF3ULL, HLE_C713C83D8F63CCF3, ())                                \
+    HLE_MACRO_ELEM(0xD7333D26E0A93EDEULL, HLE_D7333D26E0A93EDE, ())                                \
+    HLE_MACRO_ELEM(0xEB29B2A09AA06D38ULL, HLE_BindShader, ())                                      \
+    HLE_MACRO_ELEM(0xDB1341DBEB4C8AF7ULL, HLE_SetRasterBoundingBox, ())                            \
+    HLE_MACRO_ELEM(0x6C97861D891EDf7EULL, HLE_ClearConstBuffer, (0x5F00))                          \
+    HLE_MACRO_ELEM(0xD246FDDF3A6173D7ULL, HLE_ClearConstBuffer, (0x7000))                          \
+    HLE_MACRO_ELEM(0xEE4D0004BEC8ECF4ULL, HLE_ClearMemory, ())                                     \
+    HLE_MACRO_ELEM(0xFC0CF27F5FFAA661ULL, HLE_TransformFeedbackSetup, ())                          \
+    HLE_MACRO_ELEM(0xB5F74EDB717278ECULL, HLE_DrawIndirectByteCount, ())
 
 // Allocates and returns a cached macro if the hash matches a known function.
 [[nodiscard]] inline AnyCachedMacro GetHLEProgram(u64 hash) noexcept {
     // Compiler will make you a GREAT job at making an ad-hoc hash table :)
     switch (hash) {
-#define HLE_MACRO_ELEM(HASH, TY, VAL) case HASH: return TY VAL;
-    HLE_MACRO_LIST
+#define HLE_MACRO_ELEM(HASH, TY, VAL)                                                              \
+    case HASH:                                                                                     \
+        return TY VAL;
+        HLE_MACRO_LIST
 #undef HLE_MACRO_ELEM
-    default: return std::monostate{};
+    default:
+        return std::monostate{};
     }
 }
 [[nodiscard]] inline bool CanBeHLEProgram(u64 hash) noexcept {
     switch (hash) {
-#define HLE_MACRO_ELEM(HASH, TY, VAL) case HASH: return true;
-    HLE_MACRO_LIST
+#define HLE_MACRO_ELEM(HASH, TY, VAL)                                                              \
+    case HASH:                                                                                     \
+        return true;
+        HLE_MACRO_LIST
 #undef HLE_MACRO_ELEM
-    default: return false;
+    default:
+        return false;
     }
 }
 
-void MacroInterpreterImpl::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> params, u32 method) {
+void MacroInterpreterImpl::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                   std::span<const u32> params, u32 method) {
     Reset();
 
     registers[1] = params[0];
@@ -456,10 +505,12 @@ void MacroInterpreterImpl::Reset() {
     carry_flag = false;
 }
 
-/// @brief Executes a single macro instruction located at the current program counter. Returns whether
-/// the interpreter should keep running.
-/// @param is_delay_slot Whether the current step is being executed due to a delay slot in a previous instruction.
-bool MacroInterpreterImpl::Step(Core::System& system, Engines::Maxwell3D& maxwell3d, bool is_delay_slot) {
+/// @brief Executes a single macro instruction located at the current program counter. Returns
+/// whether the interpreter should keep running.
+/// @param is_delay_slot Whether the current step is being executed due to a delay slot in a
+/// previous instruction.
+bool MacroInterpreterImpl::Step(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                bool is_delay_slot) {
     u32 base_address = pc;
 
     Macro::Opcode opcode = GetOpcode();
@@ -474,12 +525,14 @@ bool MacroInterpreterImpl::Step(Core::System& system, Engines::Maxwell3D& maxwel
 
     switch (opcode.operation) {
     case Macro::Operation::ALU: {
-        u32 result = GetALUResult(opcode.alu_operation, GetRegister(opcode.src_a), GetRegister(opcode.src_b));
+        u32 result = GetALUResult(opcode.alu_operation, GetRegister(opcode.src_a),
+                                  GetRegister(opcode.src_b));
         ProcessResult(system, maxwell3d, opcode.result_operation, opcode.dst, result);
         break;
     }
     case Macro::Operation::AddImmediate: {
-        ProcessResult(system, maxwell3d, opcode.result_operation, opcode.dst, GetRegister(opcode.src_a) + opcode.immediate);
+        ProcessResult(system, maxwell3d, opcode.result_operation, opcode.dst,
+                      GetRegister(opcode.src_a) + opcode.immediate);
         break;
     }
     case Macro::Operation::ExtractInsert: {
@@ -587,8 +640,10 @@ u32 MacroInterpreterImpl::GetALUResult(Macro::ALUOperation operation, u32 src_a,
     }
 }
 
-/// Performs the result operation on the input result and stores it in the specified register (if necessary).
-void MacroInterpreterImpl::ProcessResult(Core::System& system, Engines::Maxwell3D& maxwell3d, Macro::ResultOperation operation, u32 reg, u32 result) {
+/// Performs the result operation on the input result and stores it in the specified register (if
+/// necessary).
+void MacroInterpreterImpl::ProcessResult(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                         Macro::ResultOperation operation, u32 reg, u32 result) {
     switch (operation) {
     case Macro::ResultOperation::IgnoreAndFetch:
         // Fetch parameter and ignore result.
@@ -672,7 +727,8 @@ void MacroInterpreterImpl::SetRegister(u32 register_id, u32 value) {
 void MacroInterpreterImpl::Send(Core::System& system, Engines::Maxwell3D& maxwell3d, u32 value) {
     maxwell3d.CallMethod(system, method_address.address, value, true);
     // Increment the method address by the method increment.
-    method_address.address.Assign(method_address.address.Value() + method_address.increment.Value());
+    method_address.address.Assign(method_address.address.Value() +
+                                  method_address.increment.Value());
 }
 
 /// Reads a GPU register located at the method address.
@@ -717,18 +773,17 @@ std::bitset<32> PersistentCallerSavedRegs() {
 #if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 static const auto default_cg_mode = Xbyak::DontSetProtectRWE;
 #else
-static const auto default_cg_mode = nullptr; //Allow RWE
+static const auto default_cg_mode = nullptr; // Allow RWE
 #endif
 
 struct MacroJITx64Impl final : public Xbyak::CodeGenerator, public DynamicCachedMacro {
     explicit MacroJITx64Impl(Core::System& system, std::span<const u32> code_)
-        : Xbyak::CodeGenerator(MAX_CODE_SIZE, default_cg_mode)
-        , code{code_}
-    {
+        : Xbyak::CodeGenerator(MAX_CODE_SIZE, default_cg_mode), code{code_} {
         Compile(system);
     }
 
-    void Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, u32 method) override;
+    void Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                 std::span<const u32> parameters, u32 method) override;
 
     void Compile_ALU(Core::System& system, Macro::Opcode opcode);
     void Compile_AddImmediate(Core::System& system, Macro::Opcode opcode);
@@ -775,7 +830,8 @@ struct MacroJITx64Impl final : public Xbyak::CodeGenerator, public DynamicCached
     std::span<const u32> code;
 };
 
-void MacroJITx64Impl::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters, u32 method) {
+void MacroJITx64Impl::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                              std::span<const u32> parameters, u32 method) {
     ASSERT_OR_EXECUTE(program != nullptr, { return; });
     JITState state{};
     state.maxwell3d = &maxwell3d;
@@ -956,7 +1012,8 @@ void MacroJITx64Impl::Compile_ExtractInsert(Core::System& system, Macro::Opcode 
     Compile_ProcessResult(system, opcode.result_operation, opcode.dst);
 }
 
-void MacroJITx64Impl::Compile_ExtractShiftLeftImmediate(Core::System& system, Macro::Opcode opcode) {
+void MacroJITx64Impl::Compile_ExtractShiftLeftImmediate(Core::System& system,
+                                                        Macro::Opcode opcode) {
     const auto dst = Compile_GetRegister(opcode.src_a, ecx);
     const auto src = Compile_GetRegister(opcode.src_b, RESULT);
 
@@ -1005,11 +1062,14 @@ void MacroJITx64Impl::Compile_Read(Core::System& system, Macro::Opcode opcode) {
         L(pass_range_check);
     }
     mov(rax, qword[STATE + offsetof(JITState, maxwell3d)]);
-    mov(RESULT, dword[rax + offsetof(Engines::Maxwell3D, regs) + offsetof(Engines::Maxwell3D::Regs, reg_array) + RESULT.cvt64() * sizeof(u32)]);
+    mov(RESULT,
+        dword[rax + offsetof(Engines::Maxwell3D, regs) +
+              offsetof(Engines::Maxwell3D::Regs, reg_array) + RESULT.cvt64() * sizeof(u32)]);
     Compile_ProcessResult(system, opcode.result_operation, opcode.dst);
 }
 
-static void MacroJIT_SendThunk(Core::System* system, Engines::Maxwell3D* maxwell3d, Macro::MethodAddress method_address, u32 value) {
+static void MacroJIT_SendThunk(Core::System* system, Engines::Maxwell3D* maxwell3d,
+                               Macro::MethodAddress method_address, u32 value) {
     maxwell3d->CallMethod(*system, method_address.address, value, true);
 }
 
@@ -1234,7 +1294,9 @@ bool MacroJITx64Impl::Compile_NextInstruction(Core::System& system) {
 }
 
 static void MacroJIT_ErrorThunk(uintptr_t parameter, uintptr_t max_parameter) {
-    LOG_CRITICAL(HW_GPU, "Macro JIT: invalid parameter access 0x{:x} (0x{:x} is the last parameter)", parameter, max_parameter - sizeof(u32));
+    LOG_CRITICAL(HW_GPU,
+                 "Macro JIT: invalid parameter access 0x{:x} (0x{:x} is the last parameter)",
+                 parameter, max_parameter - sizeof(u32));
 }
 
 Xbyak::Reg32 MacroJITx64Impl::Compile_FetchParameter() {
@@ -1263,7 +1325,8 @@ Xbyak::Reg32 MacroJITx64Impl::Compile_GetRegister(u32 index, Xbyak::Reg32 dst) {
     return dst;
 }
 
-void MacroJITx64Impl::Compile_ProcessResult(Core::System& system, Macro::ResultOperation operation, u32 reg) {
+void MacroJITx64Impl::Compile_ProcessResult(Core::System& system, Macro::ResultOperation operation,
+                                            u32 reg) {
     const auto SetRegister = [this](u32 reg_index, const Xbyak::Reg32& result) {
         // Register 0 is supposed to always return 0. NOP is implemented as a store to the zero
         // register.
@@ -1339,13 +1402,15 @@ static void Dump(u64 hash, std::span<const u32> code, bool decompiled = false) {
 
     std::fstream macro_file(name, std::ios::out | std::ios::binary);
     if (!macro_file) {
-        LOG_ERROR(Common_Filesystem, "Unable to open or create file at {}", Common::FS::PathToUTF8String(name));
+        LOG_ERROR(Common_Filesystem, "Unable to open or create file at {}",
+                  Common::FS::PathToUTF8String(name));
         return;
     }
     macro_file.write(reinterpret_cast<const char*>(code.data()), code.size_bytes());
 }
 
-void MacroEngine::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, u32 method, std::span<const u32> parameters) {
+void MacroEngine::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, u32 method,
+                          std::span<const u32> parameters) {
     auto const execute_variant = [&system, &maxwell3d, &parameters, method](AnyCachedMacro& acm) {
         if (auto a = std::get_if<HLE_DrawArraysIndirect>(&acm))
             return a->Execute(system, maxwell3d, parameters, method);
@@ -1379,7 +1444,7 @@ void MacroEngine::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, u
     if (auto const it = macro_cache.find(method); it != macro_cache.end()) {
         auto& ci = it->second;
         if (!CanBeHLEProgram(ci.hash) || Settings::values.disable_macro_hle)
-            maxwell3d.RefreshParameters(); //LLE must reload parameters
+            maxwell3d.RefreshParameters(); // LLE must reload parameters
         execute_variant(ci.program);
     } else {
         // Macro not compiled, check if it's uploaded and if so, compile it
@@ -1403,7 +1468,8 @@ void MacroEngine::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, u
             const auto rebased_method = method - mid_method.value();
             auto& code = uploaded_macro_code[method];
             code.resize(macro_cached.size() - rebased_method);
-            std::memcpy(code.data(), macro_cached.data() + rebased_method, code.size() * sizeof(u32));
+            std::memcpy(code.data(), macro_cached.data() + rebased_method,
+                        code.size() * sizeof(u32));
             ci.hash = Common::HashValue(code);
             ci.program = Compile(system, maxwell3d, code);
         } else {
@@ -1422,7 +1488,8 @@ void MacroEngine::Execute(Core::System& system, Engines::Maxwell3D& maxwell3d, u
     }
 }
 
-AnyCachedMacro MacroEngine::Compile(Core::System& system, Engines::Maxwell3D& maxwell3d, std::span<const u32> code) {
+AnyCachedMacro MacroEngine::Compile(Core::System& system, Engines::Maxwell3D& maxwell3d,
+                                    std::span<const u32> code) {
 #ifdef ARCHITECTURE_x86_64
     if (!is_interpreted)
         return std::make_unique<MacroJITx64Impl>(system, code);

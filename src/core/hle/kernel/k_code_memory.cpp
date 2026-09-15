@@ -22,7 +22,8 @@ namespace Kernel {
 KCodeMemory::KCodeMemory(KernelCore& kernel)
     : KAutoObjectWithSlabHeapAndContainer{kernel}, m_lock(kernel) {}
 
-Result KCodeMemory::Initialize(KernelCore& kernel, Core::DeviceMemory& device_memory, KProcessAddress addr, size_t size) {
+Result KCodeMemory::Initialize(KernelCore& kernel, Core::DeviceMemory& device_memory,
+                               KProcessAddress addr, size_t size) {
     // Set members.
     m_owner = GetCurrentProcessPointer(kernel);
 
@@ -95,7 +96,7 @@ Result KCodeMemory::Unmap(KernelCore& kernel, KProcessAddress address, size_t si
 
     // Unmap the memory.
     R_TRY(GetCurrentProcess(kernel).GetPageTable().UnmapPageGroup(address, *m_page_group,
-                                                                    KMemoryState::CodeOut));
+                                                                  KMemoryState::CodeOut));
 
     // Mark ourselves as unmapped.
     m_is_mapped = false;
@@ -103,7 +104,8 @@ Result KCodeMemory::Unmap(KernelCore& kernel, KProcessAddress address, size_t si
     R_SUCCEED();
 }
 
-Result KCodeMemory::MapToOwner(KernelCore& kernel, KProcessAddress address, size_t size, Svc::MemoryPermission perm) {
+Result KCodeMemory::MapToOwner(KernelCore& kernel, KProcessAddress address, size_t size,
+                               Svc::MemoryPermission perm) {
     // Validate the size.
     R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 

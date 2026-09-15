@@ -96,7 +96,8 @@ void ConfigureMotionTouch::SetConfiguration() {
     touch_from_button_maps = Settings::values.touch_from_button_maps;
     for (const auto& touch_map : touch_from_button_maps)
         ui->touch_from_button_map->addItem(QString::fromStdString(touch_map.name));
-    if (auto const index = Settings::values.touch_from_button_map_index.GetValue(); int(index) < ui->touch_from_button_map->count())
+    if (auto const index = Settings::values.touch_from_button_map_index.GetValue();
+        int(index) < ui->touch_from_button_map->count())
         ui->touch_from_button_map->setCurrentIndex(index);
 
     min_x = touch_param.Get("min_x", 100);

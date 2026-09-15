@@ -51,11 +51,21 @@ static std::string EscapeGDB(std::string_view data) {
     std::string escaped;
     for (char const c : data)
         switch (c) {
-        case '#': escaped += "}\x03"; break;
-        case '$': escaped += "}\x04"; break;
-        case '*': escaped += "}\x0a"; break;
-        case '}': escaped += "}\x5d"; break;
-        default: escaped += c; break;
+        case '#':
+            escaped += "}\x03";
+            break;
+        case '$':
+            escaped += "}\x04";
+            break;
+        case '*':
+            escaped += "}\x0a";
+            break;
+        case '}':
+            escaped += "}\x5d";
+            break;
+        default:
+            escaped += c;
+            break;
         }
     return escaped;
 }
@@ -70,10 +80,18 @@ static std::string EscapeXML(std::string_view data) {
     std::string escaped;
     for (char32_t const c : converted)
         switch (c) {
-        case '&': escaped += "&amp;"; break;
-        case '"': escaped += "&quot;"; break;
-        case '<': escaped += "&lt;"; break;
-        case '>': escaped += "&gt;"; break;
+        case '&':
+            escaped += "&amp;";
+            break;
+        case '"':
+            escaped += "&quot;";
+            break;
+        case '<':
+            escaped += "&lt;";
+            break;
+        case '>':
+            escaped += "&gt;";
+            break;
         default:
             if (c > 0x7f) {
                 escaped += fmt::format("&#{};", u32(c));
@@ -134,13 +152,13 @@ void GDBStub::ProcessData(std::vector<DebuggerAction>& actions) {
     // Acknowledgement
     if (c == GDB_STUB_ACK || c == GDB_STUB_NACK) {
         current_command.erase(current_command.begin());
-    // Interrupt
+        // Interrupt
     } else if (c == GDB_STUB_INT3) {
         LOG_INFO(Debug_GDBStub, "Received interrupt");
         current_command.erase(current_command.begin());
         actions.push_back(DebuggerAction::Interrupt);
         SendStatus(GDB_STUB_ACK);
-    // Otherwise, require the data to be the start of a command
+        // Otherwise, require the data to be the start of a command
     } else if (c != GDB_STUB_START) {
         LOG_ERROR(Debug_GDBStub, "Invalid command buffer contents: {}", current_command.data());
         current_command.clear();
@@ -177,7 +195,8 @@ void GDBStub::ExecuteCommand(std::string_view packet, std::vector<DebuggerAction
     switch (packet[0]) {
     case 'H': {
         s64 thread_id = strtoll(command.data() + 1, nullptr, 16);
-        Kernel::KThread* thread = thread_id >= 1 ? GetThreadByID(thread_id) : backend.GetActiveThread();
+        Kernel::KThread* thread =
+            thread_id >= 1 ? GetThreadByID(thread_id) : backend.GetActiveThread();
         if (thread) {
             SendReply(GDB_STUB_REPLY_OK);
             backend.SetActiveThread(thread);
@@ -233,7 +252,8 @@ void GDBStub::ExecuteCommand(std::string_view packet, std::vector<DebuggerAction
         std::vector<u8> mem(size);
         if (debug_process->GetMemory().ReadBlock(addr, mem.data(), size)) {
             // Restore any bytes belonging to replaced instructions.
-            for (auto it = replaced_instructions.lower_bound(addr); it != replaced_instructions.end() && it->first < addr + size; it++) {
+            for (auto it = replaced_instructions.lower_bound(addr);
+                 it != replaced_instructions.end() && it->first < addr + size; it++) {
                 // Get the bytes of the instruction we previously replaced.
                 const u32 original_bytes = it->second;
 
@@ -304,7 +324,8 @@ enum class BreakpointType {
 void GDBStub::HandleBreakpointInsert(std::string_view command) {
     const auto type = BreakpointType(strtoll(command.data(), nullptr, 16));
     const auto addr_sep = std::find(command.begin(), command.end(), ',') - command.begin() + 1;
-    const auto size_sep = std::find(command.begin() + addr_sep, command.end(), ',') - command.begin() + 1;
+    const auto size_sep =
+        std::find(command.begin() + addr_sep, command.end(), ',') - command.begin() + 1;
     const size_t addr = size_t(strtoll(command.data() + addr_sep, nullptr, 16));
     const size_t size = size_t(strtoll(command.data() + size_sep, nullptr, 16));
 
@@ -323,13 +344,16 @@ void GDBStub::HandleBreakpointInsert(std::string_view command) {
         success = true;
         break;
     case BreakpointType::WriteWatch:
-        success = debug_process->InsertWatchpoint(system.Kernel(), addr, size, Kernel::DebugWatchpointType::Write);
+        success = debug_process->InsertWatchpoint(system.Kernel(), addr, size,
+                                                  Kernel::DebugWatchpointType::Write);
         break;
     case BreakpointType::ReadWatch:
-        success = debug_process->InsertWatchpoint(system.Kernel(), addr, size, Kernel::DebugWatchpointType::Read);
+        success = debug_process->InsertWatchpoint(system.Kernel(), addr, size,
+                                                  Kernel::DebugWatchpointType::Read);
         break;
     case BreakpointType::AccessWatch:
-        success = debug_process->InsertWatchpoint(system.Kernel(), addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
+        success = debug_process->InsertWatchpoint(system.Kernel(), addr, size,
+                                                  Kernel::DebugWatchpointType::ReadOrWrite);
         break;
     case BreakpointType::Hardware:
     default:
@@ -359,7 +383,8 @@ void GDBStub::HandleBreakpointRemove(std::string_view sv) {
     bool success = false;
     switch (type) {
     case BreakpointType::Software: {
-        if (auto const orig_insn = replaced_instructions.find(addr); orig_insn != replaced_instructions.end()) {
+        if (auto const orig_insn = replaced_instructions.find(addr);
+            orig_insn != replaced_instructions.end()) {
             debug_process->GetMemory().Write32(addr, orig_insn->second);
             Core::InvalidateInstructionCacheRange(debug_process, addr, sizeof(u32));
             replaced_instructions.erase(addr);
@@ -368,13 +393,16 @@ void GDBStub::HandleBreakpointRemove(std::string_view sv) {
         break;
     }
     case BreakpointType::WriteWatch:
-        success = debug_process->RemoveWatchpoint(system.Kernel(), addr, size, Kernel::DebugWatchpointType::Write);
+        success = debug_process->RemoveWatchpoint(system.Kernel(), addr, size,
+                                                  Kernel::DebugWatchpointType::Write);
         break;
     case BreakpointType::ReadWatch:
-        success = debug_process->RemoveWatchpoint(system.Kernel(), addr, size, Kernel::DebugWatchpointType::Read);
+        success = debug_process->RemoveWatchpoint(system.Kernel(), addr, size,
+                                                  Kernel::DebugWatchpointType::Read);
         break;
     case BreakpointType::AccessWatch:
-        success = debug_process->RemoveWatchpoint(system.Kernel(), addr, size, Kernel::DebugWatchpointType::ReadOrWrite);
+        success = debug_process->RemoveWatchpoint(system.Kernel(), addr, size,
+                                                  Kernel::DebugWatchpointType::ReadOrWrite);
         break;
     case BreakpointType::Hardware:
     default:
@@ -509,7 +537,8 @@ void GDBStub::HandleVCont(std::string_view sv, std::vector<DebuggerAction>& acti
     while (!remaining.empty()) {
         const auto entry_end = remaining.find(';');
         const auto entry = remaining.substr(0, entry_end);
-        remaining = entry_end == std::string_view::npos ? std::string_view{} : remaining.substr(entry_end + 1);
+        remaining = entry_end == std::string_view::npos ? std::string_view{}
+                                                        : remaining.substr(entry_end + 1);
 
         if (entry.empty()) {
             SendReply(GDB_STUB_REPLY_ERR);
@@ -518,7 +547,9 @@ void GDBStub::HandleVCont(std::string_view sv, std::vector<DebuggerAction>& acti
 
         const auto thread_sep = entry.find(':');
         const auto action_token = entry.substr(0, thread_sep);
-        const auto thread_token = thread_sep == std::string_view::npos ? std::string_view{} : entry.substr(thread_sep + 1);
+        const auto thread_token = thread_sep == std::string_view::npos
+                                      ? std::string_view{}
+                                      : entry.substr(thread_sep + 1);
 
         if (action_token.empty()) {
             SendReply(GDB_STUB_REPLY_ERR);
@@ -550,7 +581,8 @@ void GDBStub::HandleVCont(std::string_view sv, std::vector<DebuggerAction>& acti
             SendReply(GDB_STUB_REPLY_ERR);
             return;
         } else if (is_hex_string(thread_token)) {
-            directive.thread = GetThreadByID(strtoull(std::string(thread_token).c_str(), nullptr, 16));
+            directive.thread =
+                GetThreadByID(strtoull(std::string(thread_token).c_str(), nullptr, 16));
         } else {
             SendReply(GDB_STUB_REPLY_ERR);
             return;
@@ -609,34 +641,37 @@ void GDBStub::HandleVCont(std::string_view sv, std::vector<DebuggerAction>& acti
 }
 
 static constexpr const char* GetMemoryStateName(Kernel::Svc::MemoryState state) {
-#define MEMORY_STATE_LIST \
-    MEMORY_STATE_ELEM(Free) \
-    MEMORY_STATE_ELEM(Io) \
-    MEMORY_STATE_ELEM(Static) \
-    MEMORY_STATE_ELEM(Code) \
-    MEMORY_STATE_ELEM(CodeData) \
-    MEMORY_STATE_ELEM(Normal) \
-    MEMORY_STATE_ELEM(Shared) \
-    MEMORY_STATE_ELEM(AliasCode) \
-    MEMORY_STATE_ELEM(AliasCodeData) \
-    MEMORY_STATE_ELEM(Ipc) \
-    MEMORY_STATE_ELEM(Stack) \
-    MEMORY_STATE_ELEM(ThreadLocal) \
-    MEMORY_STATE_ELEM(Transferred) \
-    MEMORY_STATE_ELEM(SharedTransferred) \
-    MEMORY_STATE_ELEM(SharedCode) \
-    MEMORY_STATE_ELEM(Inaccessible) \
-    MEMORY_STATE_ELEM(NonSecureIpc) \
-    MEMORY_STATE_ELEM(NonDeviceIpc) \
-    MEMORY_STATE_ELEM(Kernel) \
-    MEMORY_STATE_ELEM(GeneratedCode) \
-    MEMORY_STATE_ELEM(CodeOut) \
+#define MEMORY_STATE_LIST                                                                          \
+    MEMORY_STATE_ELEM(Free)                                                                        \
+    MEMORY_STATE_ELEM(Io)                                                                          \
+    MEMORY_STATE_ELEM(Static)                                                                      \
+    MEMORY_STATE_ELEM(Code)                                                                        \
+    MEMORY_STATE_ELEM(CodeData)                                                                    \
+    MEMORY_STATE_ELEM(Normal)                                                                      \
+    MEMORY_STATE_ELEM(Shared)                                                                      \
+    MEMORY_STATE_ELEM(AliasCode)                                                                   \
+    MEMORY_STATE_ELEM(AliasCodeData)                                                               \
+    MEMORY_STATE_ELEM(Ipc)                                                                         \
+    MEMORY_STATE_ELEM(Stack)                                                                       \
+    MEMORY_STATE_ELEM(ThreadLocal)                                                                 \
+    MEMORY_STATE_ELEM(Transferred)                                                                 \
+    MEMORY_STATE_ELEM(SharedTransferred)                                                           \
+    MEMORY_STATE_ELEM(SharedCode)                                                                  \
+    MEMORY_STATE_ELEM(Inaccessible)                                                                \
+    MEMORY_STATE_ELEM(NonSecureIpc)                                                                \
+    MEMORY_STATE_ELEM(NonDeviceIpc)                                                                \
+    MEMORY_STATE_ELEM(Kernel)                                                                      \
+    MEMORY_STATE_ELEM(GeneratedCode)                                                               \
+    MEMORY_STATE_ELEM(CodeOut)                                                                     \
     MEMORY_STATE_ELEM(Coverage)
     switch (state) {
-#define MEMORY_STATE_ELEM(elem) case Kernel::Svc::MemoryState::elem: return #elem;
-    MEMORY_STATE_LIST
+#define MEMORY_STATE_ELEM(elem)                                                                    \
+    case Kernel::Svc::MemoryState::elem:                                                           \
+        return #elem;
+        MEMORY_STATE_LIST
 #undef MEMORY_STATE_LIST
-    default: return "Unknown";
+    default:
+        return "Unknown";
     }
 }
 
@@ -645,10 +680,14 @@ static constexpr const char* GetMemoryPermissionString(const Kernel::Svc::Memory
         return "   ";
     } else {
         switch (info.permission) {
-        case Kernel::Svc::MemoryPermission::ReadExecute: return "r-x";
-        case Kernel::Svc::MemoryPermission::Read: return "r--";
-        case Kernel::Svc::MemoryPermission::ReadWrite: return "rw-";
-        default: return "---";
+        case Kernel::Svc::MemoryPermission::ReadExecute:
+            return "r-x";
+        case Kernel::Svc::MemoryPermission::Read:
+            return "r--";
+        case Kernel::Svc::MemoryPermission::ReadWrite:
+            return "rw-";
+        default:
+            return "---";
         }
     }
 }
@@ -675,8 +714,7 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
 
         reply = fmt::format("Process:     {:#x} ({})\n"
                             "Program Id:  {:#018x}\n",
-                            debug_process->GetProcessId(),
-                            debug_process->GetName(),
+                            debug_process->GetProcessId(), debug_process->GetName(),
                             debug_process->GetProgramId());
         reply += fmt::format(
             "Layout:\n"
@@ -690,12 +728,14 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
             GetInteger(page_table.GetHeapRegionStart()),
             GetInteger(page_table.GetHeapRegionStart()) + page_table.GetHeapRegionSize() - 1,
             GetInteger(page_table.GetAliasCodeRegionStart()),
-            GetInteger(page_table.GetAliasCodeRegionStart()) + page_table.GetAliasCodeRegionSize() - 1,
+            GetInteger(page_table.GetAliasCodeRegionStart()) + page_table.GetAliasCodeRegionSize() -
+                1,
             GetInteger(page_table.GetStackRegionStart()),
             GetInteger(page_table.GetStackRegionStart()) + page_table.GetStackRegionSize() - 1);
 
         for (const auto& [vaddr, name] : modules)
-            reply += fmt::format("  {:#012x} - {:#012x} {}\n", vaddr, GetInteger(Core::GetModuleEnd(debug_process, vaddr)), name);
+            reply += fmt::format("  {:#012x} - {:#012x} {}\n", vaddr,
+                                 GetInteger(Core::GetModuleEnd(debug_process, vaddr)), name);
     } else if (command_str == "mappings" || command_str == "get mappings") {
         reply = "Mappings:\n";
         VAddr cur_addr = 0;
@@ -715,10 +755,13 @@ void GDBStub::HandleRcmd(const std::vector<u8>& command) {
                 const char* state = GetMemoryStateName(svc_mem_info.state);
                 const char* perm = GetMemoryPermissionString(svc_mem_info);
                 const char l = True(svc_mem_info.attribute & MemoryAttribute::Locked) ? 'L' : '-';
-                const char i = True(svc_mem_info.attribute & MemoryAttribute::IpcLocked) ? 'I' : '-';
-                const char d = True(svc_mem_info.attribute & MemoryAttribute::DeviceShared) ? 'D' : '-';
+                const char i =
+                    True(svc_mem_info.attribute & MemoryAttribute::IpcLocked) ? 'I' : '-';
+                const char d =
+                    True(svc_mem_info.attribute & MemoryAttribute::DeviceShared) ? 'D' : '-';
                 const char u = True(svc_mem_info.attribute & MemoryAttribute::Uncached) ? 'U' : '-';
-                const char p =True(svc_mem_info.attribute & MemoryAttribute::PermissionLocked) ? 'P' : '-';
+                const char p =
+                    True(svc_mem_info.attribute & MemoryAttribute::PermissionLocked) ? 'P' : '-';
 
                 reply += fmt::format(
                     "  {:#012x} - {:#012x} {} {} {}{}{}{}{} [{}, {}]\n", svc_mem_info.base_address,
@@ -775,7 +818,8 @@ std::optional<std::string> GDBStub::DetachCommand() {
 
     // Verify checksum
     if (calculated != received) {
-        LOG_ERROR(Debug_GDBStub, "Checksum mismatch: calculated {:02x}, received {:02x}", calculated, received);
+        LOG_ERROR(Debug_GDBStub, "Checksum mismatch: calculated {:02x}, received {:02x}",
+                  calculated, received);
         return std::nullopt;
     }
 
@@ -784,7 +828,8 @@ std::optional<std::string> GDBStub::DetachCommand() {
 
 void GDBStub::SendReply(std::string_view data) {
     const auto escaped = EscapeGDB(data);
-    const auto output = fmt::format("{}{}{}{:02x}", GDB_STUB_START, escaped, GDB_STUB_END, CalculateChecksum(escaped));
+    const auto output = fmt::format("{}{}{}{:02x}", GDB_STUB_START, escaped, GDB_STUB_END,
+                                    CalculateChecksum(escaped));
     LOG_TRACE(Debug_GDBStub, "Writing reply: {}", output);
 
     // C++ string support is complete rubbish

@@ -20,7 +20,8 @@ namespace Service::AM::Frontend {
 
 constexpr Result ERROR_INVALID_PIN{ErrorModule::PCTL, 221};
 
-static void LogCurrentStorage(Kernel::KernelCore& kernel, std::shared_ptr<Applet> applet, std::string_view prefix) {
+static void LogCurrentStorage(Kernel::KernelCore& kernel, std::shared_ptr<Applet> applet,
+                              std::string_view prefix) {
     std::shared_ptr<IStorage> storage;
     while (R_SUCCEEDED(applet->caller_applet_broker->GetInData().Pop(kernel, &storage))) {
         const auto data = storage->GetData();
@@ -29,7 +30,8 @@ static void LogCurrentStorage(Kernel::KernelCore& kernel, std::shared_ptr<Applet
                  prefix, data.size(), Common::HexToString(data));
     }
 
-    while (R_SUCCEEDED(applet->caller_applet_broker->GetInteractiveInData().Pop(kernel, &storage))) {
+    while (
+        R_SUCCEEDED(applet->caller_applet_broker->GetInteractiveInData().Pop(kernel, &storage))) {
         const auto data = storage->GetData();
         LOG_INFO(Service_AM,
                  "called (STUBBED), during {} received interactive data with size={:08X}, data={}",

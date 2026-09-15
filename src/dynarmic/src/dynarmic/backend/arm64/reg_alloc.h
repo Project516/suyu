@@ -14,16 +14,16 @@
 #include <utility>
 #include <vector>
 
+#include <ankerl/unordered_dense.h>
+#include <oaknut/oaknut.hpp>
+
 #include "common/assert.h"
 #include "common/common_types.h"
-#include "dynarmic/mcl/is_instance_of_template.hpp"
-#include <oaknut/oaknut.hpp>
-#include <ankerl/unordered_dense.h>
-
 #include "dynarmic/backend/arm64/stack_layout.h"
 #include "dynarmic/ir/cond.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/value.h"
+#include "dynarmic/mcl/is_instance_of_template.hpp"
 
 namespace Dynarmic::Backend::Arm64 {
 
@@ -161,11 +161,10 @@ public:
     using ArgumentInfo = std::array<Argument, IR::max_arg_count>;
 
     explicit RegAlloc(oaknut::CodeGenerator& code, FpsrManager& fpsr_manager, std::vector<int> gpr_order, std::vector<int> fpr_order) noexcept
-        : code{code}
-        , fpsr_manager{fpsr_manager}
-        , gpr_order{gpr_order}
-        , fpr_order{fpr_order}
-    {}
+            : code{code}
+            , fpsr_manager{fpsr_manager}
+            , gpr_order{gpr_order}
+            , fpr_order{fpr_order} {}
 
     ArgumentInfo GetArgumentInfo(IR::Inst* inst);
     bool WasValueDefined(IR::Inst* inst) const;
@@ -306,12 +305,17 @@ public:
 
 private:
     friend struct Argument;
-    template<typename> friend struct RAReg;
+    template<typename>
+    friend struct RAReg;
 
-    template<HostLoc::Kind kind> int GenerateImmediate(const IR::Value& value);
-    template<HostLoc::Kind kind> int RealizeReadImpl(const IR::Value& value);
-    template<HostLoc::Kind kind> int RealizeWriteImpl(const IR::Inst* value);
-    template<HostLoc::Kind kind> int RealizeReadWriteImpl(const IR::Value& read_value, const IR::Inst* write_value);
+    template<HostLoc::Kind kind>
+    int GenerateImmediate(const IR::Value& value);
+    template<HostLoc::Kind kind>
+    int RealizeReadImpl(const IR::Value& value);
+    template<HostLoc::Kind kind>
+    int RealizeWriteImpl(const IR::Inst* value);
+    template<HostLoc::Kind kind>
+    int RealizeReadWriteImpl(const IR::Value& read_value, const IR::Inst* write_value);
 
     int AllocateRegister(const std::array<HostLocInfo, 32>& regs, const std::vector<int>& order) const;
     void SpillGpr(int index);

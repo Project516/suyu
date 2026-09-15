@@ -4,8 +4,8 @@
 // SPDX-FileCopyrightText: Copyright 2024 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "core/hle/service/psc/ovln/receiver.h"
 #include "core/hle/service/cmif_serialization.h"
+#include "core/hle/service/psc/ovln/receiver.h"
 
 namespace Service::PSC {
 
@@ -64,7 +64,7 @@ Result IReceiver::Receive(Out<OverlayNotification> out_notification, Out<Message
 }
 
 Result IReceiver::ReceiveWithTick(Out<OverlayNotification> out_notification,
-                                   Out<MessageFlags> out_flags, Out<u64> out_tick) {
+                                  Out<MessageFlags> out_flags, Out<u64> out_tick) {
     LOG_DEBUG(Service_PSC, "called");
 
     // Find the message with the lowest ID across all sources

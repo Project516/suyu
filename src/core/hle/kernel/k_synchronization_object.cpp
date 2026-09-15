@@ -21,10 +21,12 @@ namespace {
 
 class ThreadQueueImplForKSynchronizationObjectWait final : public KThreadQueueWithoutEndWait {
 public:
-    ThreadQueueImplForKSynchronizationObjectWait(KernelCore& kernel, KSynchronizationObject** o, KSynchronizationObject::ThreadListNode* n, s32 c)
+    ThreadQueueImplForKSynchronizationObjectWait(KernelCore& kernel, KSynchronizationObject** o,
+                                                 KSynchronizationObject::ThreadListNode* n, s32 c)
         : KThreadQueueWithoutEndWait(kernel), m_objects(o), m_nodes(n), m_count(c) {}
 
-    void NotifyAvailable(KernelCore& kernel, KThread* waiting_thread, KSynchronizationObject* signaled_object, Result wait_result) override {
+    void NotifyAvailable(KernelCore& kernel, KThread* waiting_thread,
+                         KSynchronizationObject* signaled_object, Result wait_result) override {
         // Determine the sync index, and unlink all nodes.
         s32 sync_index = -1;
         for (auto i = 0; i < m_count; ++i) {
@@ -47,7 +49,8 @@ public:
         KThreadQueue::EndWait(kernel, waiting_thread, wait_result);
     }
 
-    void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result, bool cancel_timer_task) override {
+    void CancelWait(KernelCore& kernel, KThread* waiting_thread, Result wait_result,
+                    bool cancel_timer_task) override {
         // Remove all nodes from our list.
         for (auto i = 0; i < m_count; ++i) {
             m_objects[i]->UnlinkNode(std::addressof(m_nodes[i]));
@@ -164,7 +167,8 @@ void KSynchronizationObject::NotifyAvailable(KernelCore& kernel, Result result) 
     }
 }
 
-std::vector<KThread*> KSynchronizationObject::GetWaitingThreadsForDebugging(KernelCore& kernel) const {
+std::vector<KThread*> KSynchronizationObject::GetWaitingThreadsForDebugging(
+    KernelCore& kernel) const {
     std::vector<KThread*> threads;
 
     // If debugging, dump the list of waiters.

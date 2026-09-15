@@ -128,12 +128,10 @@ Result SessionRequestManager::HandleDomainSyncRequest(Kernel::KServerSession* se
     return ResultSuccess;
 }
 
-HLERequestContext::HLERequestContext(Kernel::KernelCore& kernel_, Core::Memory::Memory& memory_, Kernel::KServerSession* server_session_, Kernel::KThread* thread_)
-    : server_session(server_session_)
-    , thread(thread_)
-    , kernel{kernel_}
-    , memory{memory_}
-{
+HLERequestContext::HLERequestContext(Kernel::KernelCore& kernel_, Core::Memory::Memory& memory_,
+                                     Kernel::KServerSession* server_session_,
+                                     Kernel::KThread* thread_)
+    : server_session(server_session_), thread(thread_), kernel{kernel_}, memory{memory_} {
     cmd_buf[0] = 0;
 }
 
@@ -217,14 +215,13 @@ void HLERequestContext::ParseCommandBuffer(u32_le* src_cmdbuf, bool incoming) {
         }
 
         const u32 expected_magic = incoming ? Common::MakeMagic('S', 'F', 'C', 'I')
-                                             : Common::MakeMagic('S', 'F', 'C', 'O');
+                                            : Common::MakeMagic('S', 'F', 'C', 'O');
         if (data_payload_header->magic != expected_magic) {
             LOG_ERROR(IPC,
                       "Malformed {}IPC payload header: magic={:#010x} expected={:#010x}; "
                       "cmd_type={} cmd={} desc={}",
                       incoming ? "in" : "out", data_payload_header->magic, expected_magic,
-                      static_cast<u32>(command_header->type.Value()), command,
-                      Description());
+                      static_cast<u32>(command_header->type.Value()), command, Description());
             ASSERT_MSG(false, "Malformed IPC payload header");
         }
     }
@@ -509,7 +506,8 @@ bool HLERequestContext::CanWriteBuffer(std::size_t buffer_index) const {
 }
 
 void HLERequestContext::AddMoveInterface(SessionRequestHandlerPtr s) {
-    ASSERT(Kernel::GetCurrentProcess(kernel).GetResourceLimit()->Reserve(kernel, Kernel::LimitableResource::SessionCountMax, 1));
+    ASSERT(Kernel::GetCurrentProcess(kernel).GetResourceLimit()->Reserve(
+        kernel, Kernel::LimitableResource::SessionCountMax, 1));
 
     auto* session = Kernel::KSession::Create(kernel);
     session->Initialize(kernel, nullptr, 0);
