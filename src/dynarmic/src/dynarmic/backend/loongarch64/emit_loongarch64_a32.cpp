@@ -1,12 +1,11 @@
 // SPDX-FileCopyrightText: Copyright 2026 suyu Emulator Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
-
 #include "dynarmic/backend/loongarch64/a32_jitstate.h"
 #include "dynarmic/backend/loongarch64/abi.h"
 #include "dynarmic/backend/loongarch64/emit_context.h"
 #include "dynarmic/backend/loongarch64/emit_loongarch64.h"
+#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
 #include "dynarmic/backend/loongarch64/reg_alloc.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"

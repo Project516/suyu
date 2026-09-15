@@ -138,7 +138,9 @@ u64 Process::GetProgramId() const {
 
 void Process::Suspend(bool suspended) {
     if (m_process) {
-        m_process->SetActivity(m_system.Kernel(), suspended ? Kernel::Svc::ProcessActivity::Paused : Kernel::Svc::ProcessActivity::Runnable);
+        m_process->SetActivity(m_system.Kernel(), suspended
+                                                      ? Kernel::Svc::ProcessActivity::Paused
+                                                      : Kernel::Svc::ProcessActivity::Runnable);
     }
 }
 

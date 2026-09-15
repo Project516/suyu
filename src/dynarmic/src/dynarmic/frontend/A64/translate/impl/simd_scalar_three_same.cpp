@@ -8,9 +8,8 @@
 
 #include <optional>
 
-#include "dynarmic/mcl/bit.hpp"
-
 #include "dynarmic/frontend/A64/translate/impl/impl.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::A64 {
 namespace {

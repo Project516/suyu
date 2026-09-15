@@ -8,12 +8,7 @@
 
 namespace Nintendo {
 
-enum class AuthenticationState {
-    NotAuthenticated,
-    InProgress,
-    Authenticated,
-    Failed
-};
+enum class AuthenticationState { NotAuthenticated, InProgress, Authenticated, Failed };
 
 enum class LibraryError {
     None,

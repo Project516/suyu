@@ -8,14 +8,13 @@
 
 #pragma once
 
+#include <bit>
 #include <cstring>
 #include <utility>
 
-#include <bit>
 #include "common/common_types.h"
-#include "dynarmic/mcl/function_info.hpp"
-
 #include "dynarmic/backend/x64/callback.h"
+#include "dynarmic/mcl/function_info.hpp"
 
 namespace Dynarmic {
 namespace Backend::X64 {
@@ -32,7 +31,8 @@ struct ThunkBuilder<R (C::*)(Args...), mfp> {
     }
 };
 
-template<typename T, typename P> inline T bit_cast_pointee(const P source_ptr) noexcept {
+template<typename T, typename P>
+inline T bit_cast_pointee(const P source_ptr) noexcept {
     std::aligned_storage_t<sizeof(T), alignof(T)> dest;
     std::memcpy(&dest, std::bit_cast<void*>(source_ptr), sizeof(T));
     return reinterpret_cast<T&>(dest);

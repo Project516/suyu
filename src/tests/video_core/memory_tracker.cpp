@@ -2,18 +2,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <memory>
+#include <optional>
 #include <stdexcept>
-#include <ankerl/unordered_dense.h>
 #include <tuple>
 #include <vector>
-#include <optional>
+#include <ankerl/unordered_dense.h>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "common/common_types.h"
-#include "video_core/buffer_cache/memory_tracker_base.h"
 #include "core/device_memory.h"
 #include "core/memory.h"
+#include "video_core/buffer_cache/memory_tracker_base.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
 
 namespace {
@@ -48,8 +48,12 @@ public:
         // TODO: for now assume fine?
     }
 
-    [[nodiscard]] size_t UpdateCalls() const noexcept { return update_calls; }
-    [[nodiscard]] const std::vector<std::tuple<DAddr, u64, int>>& UpdateCallsList() const noexcept { return calls; }
+    [[nodiscard]] size_t UpdateCalls() const noexcept {
+        return update_calls;
+    }
+    [[nodiscard]] const std::vector<std::tuple<DAddr, u64, int>>& UpdateCallsList() const noexcept {
+        return calls;
+    }
 
     [[nodiscard]] int Count(DAddr addr) const noexcept {
         const auto it = page_table.find(addr >> Core::DEVICE_PAGEBITS);
@@ -91,18 +95,24 @@ TEST_CASE("MemoryTracker: Large region", "[video_core]") {
     std::optional<MemoryTracker> memory_track(rasterizer);
     memory_track->UnmarkRegionAsCpuModified(c, WORD * 32);
     memory_track->MarkRegionAsCpuModified(c + 4096, WORD * 4);
-    REQUIRE(memory_track->ModifiedCpuRegion(c, WORD + PAGE * 2) == Range{c + PAGE, c + WORD + PAGE * 2});
-    REQUIRE(memory_track->ModifiedCpuRegion(c + PAGE * 2, PAGE * 6) == Range{c + PAGE * 2, c + PAGE * 8});
+    REQUIRE(memory_track->ModifiedCpuRegion(c, WORD + PAGE * 2) ==
+            Range{c + PAGE, c + WORD + PAGE * 2});
+    REQUIRE(memory_track->ModifiedCpuRegion(c + PAGE * 2, PAGE * 6) ==
+            Range{c + PAGE * 2, c + PAGE * 8});
     REQUIRE(memory_track->ModifiedCpuRegion(c, WORD * 32) == Range{c + PAGE, c + WORD * 4 + PAGE});
-    REQUIRE(memory_track->ModifiedCpuRegion(c + WORD * 4, PAGE) == Range{c + WORD * 4, c + WORD * 4 + PAGE});
-    REQUIRE(memory_track->ModifiedCpuRegion(c + WORD * 3 + PAGE * 63, PAGE) == Range{c + WORD * 3 + PAGE * 63, c + WORD * 4});
+    REQUIRE(memory_track->ModifiedCpuRegion(c + WORD * 4, PAGE) ==
+            Range{c + WORD * 4, c + WORD * 4 + PAGE});
+    REQUIRE(memory_track->ModifiedCpuRegion(c + WORD * 3 + PAGE * 63, PAGE) ==
+            Range{c + WORD * 3 + PAGE * 63, c + WORD * 4});
 
     memory_track->MarkRegionAsCpuModified(c + WORD * 5 + PAGE * 6, PAGE);
     memory_track->MarkRegionAsCpuModified(c + WORD * 5 + PAGE * 8, PAGE);
-    REQUIRE(memory_track->ModifiedCpuRegion(c + WORD * 5, WORD) == Range{c + WORD * 5 + PAGE * 6, c + WORD * 5 + PAGE * 9});
+    REQUIRE(memory_track->ModifiedCpuRegion(c + WORD * 5, WORD) ==
+            Range{c + WORD * 5 + PAGE * 6, c + WORD * 5 + PAGE * 9});
 
     memory_track->UnmarkRegionAsCpuModified(c + WORD * 5 + PAGE * 8, PAGE);
-    REQUIRE(memory_track->ModifiedCpuRegion(c + WORD * 5, WORD) == Range{c + WORD * 5 + PAGE * 6, c + WORD * 5 + PAGE * 7});
+    REQUIRE(memory_track->ModifiedCpuRegion(c + WORD * 5, WORD) ==
+            Range{c + WORD * 5 + PAGE * 6, c + WORD * 5 + PAGE * 7});
 
     memory_track->MarkRegionAsCpuModified(c + PAGE, WORD * 31 + PAGE * 63);
     REQUIRE(memory_track->ModifiedCpuRegion(c, WORD * 32) == Range{c + PAGE, c + WORD * 32});

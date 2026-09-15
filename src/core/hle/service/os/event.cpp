@@ -10,9 +10,7 @@
 
 namespace Service {
 
-Event::Event(KernelHelpers::ServiceContext& ctx_)
-    : ctx{ctx_}
-{
+Event::Event(KernelHelpers::ServiceContext& ctx_) : ctx{ctx_} {
     m_event = ctx.CreateEvent("Event");
 }
 

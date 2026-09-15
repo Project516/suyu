@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <biscuit/assembler.hpp>
 #include <ankerl/unordered_dense.h>
+#include <biscuit/assembler.hpp>
 
 #include "dynarmic/backend/riscv64/code_block.h"
 #include "dynarmic/backend/riscv64/emit_riscv64.h"

@@ -11,8 +11,8 @@ namespace Core {
 
 StandaloneExclusiveMonitor::StandaloneExclusiveMonitor(Memory::Memory& memory_,
                                                        std::size_t core_count_)
-    : exclusive_addresses(core_count_, kInvalidAddress), exclusive_values(core_count_),
-      memory{memory_} {}
+    : exclusive_addresses(core_count_, kInvalidAddress),
+      exclusive_values(core_count_), memory{memory_} {}
 
 StandaloneExclusiveMonitor::~StandaloneExclusiveMonitor() = default;
 
@@ -113,7 +113,8 @@ bool StandaloneExclusiveMonitor::ExclusiveWrite64(std::size_t core_index, VAddr 
     });
 }
 
-bool StandaloneExclusiveMonitor::ExclusiveWrite128(std::size_t core_index, VAddr vaddr, u128 value) {
+bool StandaloneExclusiveMonitor::ExclusiveWrite128(std::size_t core_index, VAddr vaddr,
+                                                   u128 value) {
     return DoExclusiveOperation<u128>(core_index, vaddr, [&](u128 expected) -> bool {
         return memory.WriteExclusive128(vaddr, value, expected);
     });

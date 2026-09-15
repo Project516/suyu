@@ -778,9 +778,7 @@ bool MsgPack::Reader::ReadNewsStruct(NewsStruct& out) {
             return false;
         }
 
-        auto read_u64 = [&](u64& target) -> bool {
-            return ReadUInt(target);
-        };
+        auto read_u64 = [&](u64& target) -> bool { return ReadUInt(target); };
 
         if (key == "version") {
             if (!ReadNewsVersion(out.version)) {

@@ -14,9 +14,7 @@
 
 namespace Service::HID {
 
-NpadAbstractNfcHandler::NpadAbstractNfcHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+NpadAbstractNfcHandler::NpadAbstractNfcHandler(Kernel::KernelCore& kernel_) : kernel{kernel_} {}
 
 NpadAbstractNfcHandler::~NpadAbstractNfcHandler() = default;
 

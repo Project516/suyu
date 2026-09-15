@@ -12,13 +12,11 @@
 
 #include "common/assert.h"
 #include "common/common_types.h"
-#include "dynarmic/mcl/integer_of_size.hpp"
-#include "dynarmic/backend/x64/xbyak.h"
-
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/block_of_code.h"
 #include "dynarmic/backend/x64/constants.h"
 #include "dynarmic/backend/x64/emit_x64.h"
+#include "dynarmic/backend/x64/xbyak.h"
 #include "dynarmic/common/cast_util.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
@@ -28,6 +26,7 @@
 #include "dynarmic/interface/optimization_flags.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/microinstruction.h"
+#include "dynarmic/mcl/integer_of_size.hpp"
 
 #define FCODE(NAME) [&](auto... args) { if (fsize == 32) code.NAME##s(args...); else code.NAME##d(args...); }
 #define ICODE(NAME) [&](auto... args) { if (fsize == 32) code.NAME##d(args...); else code.NAME##q(args...); }
@@ -1076,10 +1075,17 @@ static void EmitFPRound(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst, siz
         code.mov(code.ABI_PARAM3.cvt32(), ctx.FPCR().Value());
         code.mov(code.ABI_PARAM4.cvt32(), extra_args);
         switch (fsize) {
-        case 64: code.CallFunction(EmitFPRoundThunk<u64>); break;
-        case 32: code.CallFunction(EmitFPRoundThunk<u32>); break;
-        case 16: code.CallFunction(EmitFPRoundThunk<u16>); break;
-        default: UNREACHABLE();
+        case 64:
+            code.CallFunction(EmitFPRoundThunk<u64>);
+            break;
+        case 32:
+            code.CallFunction(EmitFPRoundThunk<u32>);
+            break;
+        case 16:
+            code.CallFunction(EmitFPRoundThunk<u16>);
+            break;
+        default:
+            UNREACHABLE();
         }
     }
 }
@@ -1168,7 +1174,7 @@ static void EmitFPRSqrtEstimate(BlockOfCode& code, EmitContext& ctx, IR::Inst* i
                     // a > 0 && a < 0x00800000;
                     code.sub(tmp, 1);
                     code.cmp(tmp, 0x007FFFFF);
-                    code.jb(fallback, code.T_NEAR); //within -127,128
+                    code.jb(fallback, code.T_NEAR);  // within -127,128
                     needs_fallback = true;
                 }
 
@@ -1711,7 +1717,7 @@ static void EmitFPToFixed(BlockOfCode& code, EmitContext& ctx, IR::Inst* inst) {
     }
     // See EmitFPToFixedThunk
     auto const extra_args = (u32(unsigned_) << 24) | (u32(isize) << 16)
-        | (u32(rounding_mode) << 8) | (u32(fbits));
+                          | (u32(rounding_mode) << 8) | (u32(fbits));
     ctx.reg_alloc.HostCall(code, inst, args[0]);
     code.lea(code.ABI_PARAM2, code.ptr[code.ABI_JIT_PTR + code.GetJitStateInfo().offsetof_fpsr_exc]);
     code.mov(code.ABI_PARAM3.cvt32(), ctx.FPCR().Value());

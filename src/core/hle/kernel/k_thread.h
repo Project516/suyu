@@ -100,7 +100,7 @@ enum class DpcFlag : u32 {
 };
 
 enum class ExceptionFlag : u8 {
-    IsCallingSvc       = 1 << 0,
+    IsCallingSvc = 1 << 0,
     InExceptionHandler = 1 << 1,
 };
 DECLARE_ENUM_FLAG_OPERATORS(ExceptionFlag);
@@ -458,13 +458,16 @@ public:
     }
 
     void SetExceptionFlag(ExceptionFlag flag) {
-        GetStackParameters().exception_flags.fetch_or(static_cast<u8>(flag), std::memory_order_relaxed);
+        GetStackParameters().exception_flags.fetch_or(static_cast<u8>(flag),
+                                                      std::memory_order_relaxed);
     }
     void ClearExceptionFlag(ExceptionFlag flag) {
-        GetStackParameters().exception_flags.fetch_and(static_cast<u8>(~static_cast<u8>(flag)), std::memory_order_relaxed);
+        GetStackParameters().exception_flags.fetch_and(static_cast<u8>(~static_cast<u8>(flag)),
+                                                       std::memory_order_relaxed);
     }
     bool IsExceptionFlagSet(ExceptionFlag flag) const {
-        return (GetStackParameters().exception_flags.load(std::memory_order_relaxed) & static_cast<u8>(flag)) != 0;
+        return (GetStackParameters().exception_flags.load(std::memory_order_relaxed) &
+                static_cast<u8>(flag)) != 0;
     }
 
     class QueueEntry {
@@ -593,7 +596,8 @@ public:
         return this->RemoveWaiterByKey(kernel, out_has_waiters, key, false);
     }
 
-    KThread* RemoveKernelWaiterByKey(KernelCore& kernel, bool* out_has_waiters, KProcessAddress key) {
+    KThread* RemoveKernelWaiterByKey(KernelCore& kernel, bool* out_has_waiters,
+                                     KProcessAddress key) {
         return this->RemoveWaiterByKey(kernel, out_has_waiters, key, true);
     }
 
@@ -633,7 +637,8 @@ public:
     }
 
     void BeginWait(KernelCore& kernel, KThreadQueue* queue);
-    void NotifyAvailable(KernelCore& kernel, KSynchronizationObject* signaled_object, Result wait_result);
+    void NotifyAvailable(KernelCore& kernel, KSynchronizationObject* signaled_object,
+                         Result wait_result);
     void EndWait(KernelCore& kernel, Result wait_result);
     void CancelWait(KernelCore& kernel, Result wait_result, bool cancel_timer_task);
 
@@ -681,7 +686,8 @@ public:
     }
 
 private:
-    KThread* RemoveWaiterByKey(KernelCore& kernel, bool* out_has_waiters, KProcessAddress key, bool is_kernel_address_key);
+    KThread* RemoveWaiterByKey(KernelCore& kernel, bool* out_has_waiters, KProcessAddress key,
+                               bool is_kernel_address_key);
 
     static constexpr size_t PriorityInheritanceCountMax = 10;
     union SyncObjectBuffer {
@@ -734,12 +740,13 @@ private:
 
     void IncreaseBasePriority(KernelCore& kernel, s32 priority);
 
-    Result Initialize(KernelCore& kernel, KThreadFunction func, uintptr_t arg, KProcessAddress user_stack_top, s32 prio,
-                      s32 virt_core, KProcess* owner, ThreadType type);
+    Result Initialize(KernelCore& kernel, KThreadFunction func, uintptr_t arg,
+                      KProcessAddress user_stack_top, s32 prio, s32 virt_core, KProcess* owner,
+                      ThreadType type);
 
-    static Result InitializeThread(KernelCore& kernel, KThread* thread, KThreadFunction func, uintptr_t arg,
-                                   KProcessAddress user_stack_top, s32 prio, s32 core,
-                                   KProcess* owner, ThreadType type,
+    static Result InitializeThread(KernelCore& kernel, KThread* thread, KThreadFunction func,
+                                   uintptr_t arg, KProcessAddress user_stack_top, s32 prio,
+                                   s32 core, KProcess* owner, ThreadType type,
                                    std::function<void()>&& init_func);
 
     // For core KThread implementation
@@ -869,7 +876,8 @@ public:
     }
 
     void AddHeldLock(KernelCore& kernel, LockWithPriorityInheritanceInfo* lock_info);
-    LockWithPriorityInheritanceInfo* FindHeldLock(KernelCore& kernel, KProcessAddress address_key, bool is_kernel_address_key);
+    LockWithPriorityInheritanceInfo* FindHeldLock(KernelCore& kernel, KProcessAddress address_key,
+                                                  bool is_kernel_address_key);
 
 private:
     using LockWithPriorityInheritanceInfoList =

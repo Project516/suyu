@@ -277,11 +277,14 @@ EmitContext::EmitContext(IR::Program& program, Bindings& bindings, const Profile
         if (!info.loads.Generic(index) || !runtime_info.previous_stage_stores.Generic(index)) {
             continue;
         }
-        const std::string qualifier{(stage == Stage::VertexA || stage == Stage::VertexB) ? "attribute(" : "user(locn"};
+        const std::string qualifier{
+            (stage == Stage::VertexA || stage == Stage::VertexB) ? "attribute(" : "user(locn"};
         // TODO: uncomment
-        header += fmt::format("float4 attr{} [[{}{})]];\n"/*,
-                              InterpDecorator(info.interpolation[index])*/, index/*,
-                              InputArrayDecorator(stage)*/, qualifier, index);
+        header += fmt::format("float4 attr{} [[{}{})]];\n" /*,
+                               InterpDecorator(info.interpolation[index])*/
+                              ,
+                              index /*,
+InputArrayDecorator(stage)*/, qualifier, index);
         has_stage_input = true;
     }
     for (size_t index = 0; index < info.uses_patches.size(); ++index) {
@@ -445,8 +448,10 @@ void EmitContext::DefineInputs(Bindings& bindings) {
 // TODO
 void EmitContext::DefineStageOut(size_t index, u32 invocations) {
     std::string name{fmt::format("attr{}", index)};
-    header += fmt::format("float4 {} [[user(locn{})]];\n", name/*,
-                          OutputDecorator(stage, invocations)*/, index);
+    header += fmt::format("float4 {} [[user(locn{})]];\n", name /*,
+                           OutputDecorator(stage, invocations)*/
+                          ,
+                          index);
 
     const GenericElementInfo element_info{
         .name = "__out." + name,

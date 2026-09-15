@@ -8,8 +8,8 @@
 
 #include <array>
 
-#include <sirit/sirit.h>
 #include <ankerl/unordered_dense.h>
+#include <sirit/sirit.h>
 
 #include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/frontend/ir/program.h"

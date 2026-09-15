@@ -33,7 +33,8 @@ public:
     explicit KTransferMemory(KernelCore& kernel);
     ~KTransferMemory() override;
 
-    Result Initialize(KernelCore& kernel, KProcessAddress address, std::size_t size, Svc::MemoryPermission owner_perm);
+    Result Initialize(KernelCore& kernel, KProcessAddress address, std::size_t size,
+                      Svc::MemoryPermission owner_perm);
 
     void Finalize(KernelCore& kernel) override;
 
@@ -57,7 +58,8 @@ public:
 
     size_t GetSize() const;
 
-    Result Map(KernelCore& kernel, KProcessAddress address, size_t size, Svc::MemoryPermission map_perm);
+    Result Map(KernelCore& kernel, KProcessAddress address, size_t size,
+               Svc::MemoryPermission map_perm);
     Result Unmap(KernelCore& kernel, KProcessAddress address, size_t size);
 
 private:

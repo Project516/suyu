@@ -6,14 +6,21 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include <type_traits>
-#include <fmt/format.h>
-#include "dynarmic/mcl/bit.hpp"
 #include "dynarmic/tests/unicorn_emu/a32_unicorn.h"
+
+#include <type_traits>
+
+#include <fmt/format.h>
+
 #include "common/assert.h"
+#include "dynarmic/mcl/bit.hpp"
 #include "dynarmic/tests/A32/testenv.h"
 
-#define CHECKED(expr) do if ((expr)) ASSERT(false && "Call " #expr " failed with error\n"); while (0)
+#define CHECKED(expr)                                              \
+    do                                                             \
+        if ((expr))                                                \
+            ASSERT(false && "Call " #expr " failed with error\n"); \
+    while (0)
 
 constexpr u32 BEGIN_ADDRESS = 0;
 constexpr u32 END_ADDRESS = ~u32(0);

@@ -10,8 +10,8 @@
 #include <set>
 #include <span>
 #include <string>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 
 #include "common/common_types.h"
 #include "common/logging.h"
@@ -75,7 +75,6 @@ VK_DEFINE_HANDLE(VmaAllocator)
             workgroup_memory_explicit_layout)                                                      \
     FEATURE(EXT, TextureCompressionASTCHDR, TEXTURE_COMPRESSION_ASTC_HDR,                          \
             texture_compression_astc_hdr)
-
 
 // Define miscellaneous extensions which may be used by the implementation here.
 #define FOR_EACH_VK_EXTENSION(EXTENSION)                                                           \
@@ -327,21 +326,21 @@ public:
         return properties.properties.limits.maxPushConstantsSize;
     }
 
-#define FN_MAX_LIMIT_LIST \
-    FN_MAX_LIMIT_ELEM(ComputeSharedMemorySize) \
-    FN_MAX_LIMIT_ELEM(PerStageDescriptorSampledImages) \
-    FN_MAX_LIMIT_ELEM(PerStageResources) \
-    FN_MAX_LIMIT_ELEM(DescriptorSetSamplers) \
-    FN_MAX_LIMIT_ELEM(DescriptorSetUniformBuffers) \
-    FN_MAX_LIMIT_ELEM(DescriptorSetUniformBuffersDynamic) \
-    FN_MAX_LIMIT_ELEM(DescriptorSetStorageBuffers) \
-    FN_MAX_LIMIT_ELEM(DescriptorSetStorageBuffersDynamic) \
-    FN_MAX_LIMIT_ELEM(DescriptorSetSampledImages) \
-    FN_MAX_LIMIT_ELEM(DescriptorSetStorageImages) \
+#define FN_MAX_LIMIT_LIST                                                                          \
+    FN_MAX_LIMIT_ELEM(ComputeSharedMemorySize)                                                     \
+    FN_MAX_LIMIT_ELEM(PerStageDescriptorSampledImages)                                             \
+    FN_MAX_LIMIT_ELEM(PerStageResources)                                                           \
+    FN_MAX_LIMIT_ELEM(DescriptorSetSamplers)                                                       \
+    FN_MAX_LIMIT_ELEM(DescriptorSetUniformBuffers)                                                 \
+    FN_MAX_LIMIT_ELEM(DescriptorSetUniformBuffersDynamic)                                          \
+    FN_MAX_LIMIT_ELEM(DescriptorSetStorageBuffers)                                                 \
+    FN_MAX_LIMIT_ELEM(DescriptorSetStorageBuffersDynamic)                                          \
+    FN_MAX_LIMIT_ELEM(DescriptorSetSampledImages)                                                  \
+    FN_MAX_LIMIT_ELEM(DescriptorSetStorageImages)                                                  \
     FN_MAX_LIMIT_ELEM(DescriptorSetInputAttachments)
-#define FN_MAX_LIMIT_ELEM(name) \
+#define FN_MAX_LIMIT_ELEM(name)                                                                    \
     u32 GetMax##name() const { return properties.properties.limits.max##name; }
-FN_MAX_LIMIT_LIST
+    FN_MAX_LIMIT_LIST
 #undef FN_MAX_LIMIT_ELEM
 #undef FN_MAX_LIMIT_LIST
 
@@ -1092,7 +1091,7 @@ private:
     bool cant_blit_msaa{};                     ///< Does not support MSAA<->MSAA blitting.
     bool must_emulate_scaled_formats{};        ///< Requires scaled vertex format emulation
     bool dynamic_state3_blending{};            ///< Has blending features of dynamic_state3.
-    bool dynamic_state3_enables{};             ///< Has at least one enable feature of dynamic_state3.
+    bool dynamic_state3_enables{}; ///< Has at least one enable feature of dynamic_state3.
     bool dynamic_state3_depth_clamp_enable{};
     bool dynamic_state3_logic_op_enable{};
     bool dynamic_state3_line_raster_mode{};
@@ -1100,10 +1099,10 @@ private:
     bool dynamic_state3_line_stipple_enable{};
     bool dynamic_state3_alpha_to_coverage{};
     bool dynamic_state3_alpha_to_one{};
-    bool supports_conditional_barriers{};      ///< Allows barriers in conditional control flow.
-    size_t sampler_heap_budget{};              ///< Sampler budget for buggy drivers (0 = unlimited).
-    u64 device_access_memory{};                ///< Total size of device local memory in bytes.
-    u32 sets_per_pool{};                       ///< Sets per Description Pool
+    bool supports_conditional_barriers{}; ///< Allows barriers in conditional control flow.
+    size_t sampler_heap_budget{};         ///< Sampler budget for buggy drivers (0 = unlimited).
+    u64 device_access_memory{};           ///< Total size of device local memory in bytes.
+    u32 sets_per_pool{};                  ///< Sets per Description Pool
     NvidiaArchitecture nvidia_arch{NvidiaArchitecture::Arch_AmpereOrNewer};
 
     // Telemetry parameters

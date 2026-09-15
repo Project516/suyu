@@ -25,14 +25,13 @@
 #include <cstring>
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
-#include "dynarmic/backend/x64/xbyak.h"
-
 #include "dynarmic/backend/x64/a32_jitstate.h"
 #include "dynarmic/backend/x64/abi.h"
 #include "dynarmic/backend/x64/hostloc.h"
 #include "dynarmic/backend/x64/perf_map.h"
 #include "dynarmic/backend/x64/stack_layout.h"
+#include "dynarmic/backend/x64/xbyak.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::Backend::X64 {
 
@@ -88,22 +87,22 @@ public:
         size += DYNARMIC_PAGE_SIZE;
 
         int mode = MAP_PRIVATE;
-#if defined(MAP_ANONYMOUS)
+#    if defined(MAP_ANONYMOUS)
         mode |= MAP_ANONYMOUS;
-#elif defined(MAP_ANON)
+#    elif defined(MAP_ANON)
         mode |= MAP_ANON;
-#else
-#   error "not supported"
-#endif
-#ifdef MAP_JIT
+#    else
+#        error "not supported"
+#    endif
+#    ifdef MAP_JIT
         mode |= MAP_JIT;
-#endif
+#    endif
         int prot = PROT_READ | PROT_WRITE;
-#ifdef PROT_MPROTECT
+#    ifdef PROT_MPROTECT
         // https://man.netbsd.org/mprotect.2 specifies that an mprotect() that is LESS
         // restrictive than the original mapping MUST fail
         prot |= PROT_MPROTECT(PROT_READ) | PROT_MPROTECT(PROT_WRITE) | PROT_MPROTECT(PROT_EXEC);
-#endif
+#    endif
         void* p = mmap(nullptr, size, prot, mode, -1, 0);
         if (p == MAP_FAILED) {
             using Xbyak::Error;
@@ -236,7 +235,7 @@ bool IsUnderRosetta() {
 #ifdef DYNARMIC_ENABLE_NO_EXECUTE_SUPPORT
 static const auto default_cg_mode = Xbyak::DontSetProtectRWE;
 #else
-static const auto default_cg_mode = nullptr; //Allow RWE
+static const auto default_cg_mode = nullptr;  // Allow RWE
 #endif
 
 BlockOfCode::BlockOfCode(RunCodeCallbacks cb, JitStateInfo jsi, size_t total_code_size, std::function<void(BlockOfCode&)> rcp)
@@ -338,7 +337,7 @@ void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
     ABI_PushCalleeSaveRegistersAndAdjustStack(*this, sizeof(StackLayout));
 
     mov(ABI_JIT_PTR, ABI_PARAM1);
-    mov(rbx, ABI_PARAM2); // save temporarily in non-volatile register
+    mov(rbx, ABI_PARAM2);  // save temporarily in non-volatile register
 
     if (cb.enable_cycle_counting) {
         cb.GetTicksRemaining->EmitCall(*this);
@@ -372,7 +371,8 @@ void BlockOfCode::GenRunCode(std::function<void(BlockOfCode&)> rcp) {
 
     cmp(dword[ABI_JIT_PTR + jsi.offsetof_halt_reason], 0);
     jne(return_to_caller_mxcsr_already_exited, T_NEAR);
-    lock(); or_(dword[ABI_JIT_PTR + jsi.offsetof_halt_reason], u32(HaltReason::Step));
+    lock();
+    or_(dword[ABI_JIT_PTR + jsi.offsetof_halt_reason], u32(HaltReason::Step));
 
     SwitchMxcsrOnEntry();
     jmp(ABI_PARAM2);

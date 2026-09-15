@@ -31,7 +31,8 @@ OpusDecoder::~OpusDecoder() {
     }
 }
 
-Result OpusDecoder::Initialize(const OpusParametersEx& params, Kernel::KTransferMemory* transfer_memory, u64 transfer_memory_size) {
+Result OpusDecoder::Initialize(const OpusParametersEx& params,
+                               Kernel::KTransferMemory* transfer_memory, u64 transfer_memory_size) {
     auto frame_size{params.use_large_frame_size ? 5760 : 1920};
     shared_buffer.resize(transfer_memory_size);
     shared_memory_mapped = true;
@@ -46,7 +47,8 @@ Result OpusDecoder::Initialize(const OpusParametersEx& params, Kernel::KTransfer
     ON_RESULT_FAILURE {
         if (shared_memory_mapped) {
             shared_memory_mapped = false;
-            ASSERT(R_SUCCEEDED(hardware_opus.UnmapMemory(shared_buffer.data(), shared_buffer.size())));
+            ASSERT(
+                R_SUCCEEDED(hardware_opus.UnmapMemory(shared_buffer.data(), shared_buffer.size())));
         }
     };
 
@@ -60,7 +62,8 @@ Result OpusDecoder::Initialize(const OpusParametersEx& params, Kernel::KTransfer
     R_SUCCEED();
 }
 
-Result OpusDecoder::Initialize(const OpusMultiStreamParametersEx& params, Kernel::KTransferMemory* transfer_memory, u64 transfer_memory_size) {
+Result OpusDecoder::Initialize(const OpusMultiStreamParametersEx& params,
+                               Kernel::KTransferMemory* transfer_memory, u64 transfer_memory_size) {
     auto frame_size{params.use_large_frame_size ? 5760 : 1920};
     shared_buffer.resize(transfer_memory_size, 0);
     shared_memory_mapped = true;
@@ -75,7 +78,8 @@ Result OpusDecoder::Initialize(const OpusMultiStreamParametersEx& params, Kernel
     ON_RESULT_FAILURE {
         if (shared_memory_mapped) {
             shared_memory_mapped = false;
-            ASSERT(R_SUCCEEDED(hardware_opus.UnmapMemory(shared_buffer.data(), shared_buffer.size())));
+            ASSERT(
+                R_SUCCEEDED(hardware_opus.UnmapMemory(shared_buffer.data(), shared_buffer.size())));
         }
     };
 

@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <catch2/catch_test_macros.hpp>
-#include <oaknut/oaknut.hpp>
 #include <immintrin.h>
+#include <oaknut/oaknut.hpp>
 
-#include "dynarmic/tests/A64/testenv.h"
-#include "dynarmic/tests/native/testenv.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/interface/exclusive_monitor.h"
+#include "dynarmic/tests/A64/testenv.h"
+#include "dynarmic/tests/native/testenv.h"
 
 using namespace Dynarmic;
 using namespace oaknut::util;

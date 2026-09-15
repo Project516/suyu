@@ -19,7 +19,7 @@ TBD
 
     ***NOTE***: Eden only supports the *.bin* amiibo format, ***NOT*** the *.nfc* format.
 
-    </aside> 
+    </aside>
 
 ### Steps
 

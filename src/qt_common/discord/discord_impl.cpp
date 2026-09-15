@@ -70,9 +70,8 @@ std::string DiscordImpl::GetGameString(const std::string& title) {
 }
 
 static constexpr char DEFAULT_DISCORD_TEXT[] = "suyu is an emulator for the Nintendo Switch";
-static constexpr char DEFAULT_DISCORD_IMAGE[] =
-    "https://github.com/suyu-emu/suyu"
-    "suyu.png";
+static constexpr char DEFAULT_DISCORD_IMAGE[] = "https://github.com/suyu-emu/suyu"
+                                                "suyu.png";
 
 void DiscordImpl::UpdateGameStatus(bool use_default) {
     const std::string url = use_default ? std::string{DEFAULT_DISCORD_IMAGE} : game_url;

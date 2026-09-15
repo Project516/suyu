@@ -3,16 +3,16 @@
 
 #pragma once
 
-#include <QWidget>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPixmap>
-#include <QPushButton>
-#include <QMouseEvent>
-#include <QPropertyAnimation>
 #include <QGraphicsDropShadowEffect>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMouseEvent>
+#include <QPixmap>
+#include <QPropertyAnimation>
+#include <QPushButton>
 #include <QStyle>
+#include <QVBoxLayout>
+#include <QWidget>
 
 #include "common/common_types.h"
 #include "suyu/compatibility_list.h"

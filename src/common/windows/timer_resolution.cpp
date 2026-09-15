@@ -65,14 +65,17 @@ TimerResolution GetTimerResolution() {
 
 void SetHighQoS() {
     // https://learn.microsoft.com/en-us/windows/win32/procthread/quality-of-service
-    static auto pf = (decltype(&SetProcessInformation))(void*)GetProcAddress(GetModuleHandle(TEXT("Kernel32.dll")), "SetProcessInformation");
+    static auto pf = (decltype(&SetProcessInformation))(void*)GetProcAddress(
+        GetModuleHandle(TEXT("Kernel32.dll")), "SetProcessInformation");
     if (pf) {
         PROCESS_POWER_THROTTLING_STATE PowerThrottling{
             .Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION,
-            .ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED | PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION,
+            .ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED |
+                           PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION,
             .StateMask = 0,
         };
-        pf(GetCurrentProcess(), ProcessPowerThrottling, &PowerThrottling, sizeof(PROCESS_POWER_THROTTLING_STATE)); // Windows 7+
+        pf(GetCurrentProcess(), ProcessPowerThrottling, &PowerThrottling,
+           sizeof(PROCESS_POWER_THROTTLING_STATE)); // Windows 7+
     }
 }
 

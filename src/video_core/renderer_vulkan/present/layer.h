@@ -11,11 +11,11 @@
 
 #include "common/math_util.h"
 #include "video_core/host1x/gpu_device_memory_manager.h"
-#include "video_core/vulkan_common/vulkan_wrapper.h"
 #include "video_core/renderer_vulkan/present/fsr.h"
-#include "video_core/renderer_vulkan/present/sgsr.h"
 #include "video_core/renderer_vulkan/present/fxaa.h"
+#include "video_core/renderer_vulkan/present/sgsr.h"
 #include "video_core/renderer_vulkan/present/smaa.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Layout {
 struct FramebufferLayout;
@@ -71,9 +71,13 @@ private:
     u64 CalculateBufferSize(const Tegra::FramebufferConfig& framebuffer) const;
     u64 GetRawImageOffset(const Tegra::FramebufferConfig& framebuffer, size_t image_index) const;
 
-    void SetMatrixData(const Device& device, PresentPushConstants& data, const Layout::FramebufferLayout& layout) const;
-    void SetVertexData(const Device& device, PresentPushConstants& data, const Layout::FramebufferLayout& layout, const Common::Rectangle<f32>& crop) const;
-    void UpdateDescriptorSet(const Device& device, VkImageView image_view, VkSampler sampler, size_t image_index);
+    void SetMatrixData(const Device& device, PresentPushConstants& data,
+                       const Layout::FramebufferLayout& layout) const;
+    void SetVertexData(const Device& device, PresentPushConstants& data,
+                       const Layout::FramebufferLayout& layout,
+                       const Common::Rectangle<f32>& crop) const;
+    void UpdateDescriptorSet(const Device& device, VkImageView image_view, VkSampler sampler,
+                             size_t image_index);
     void UpdateRawImage(const Tegra::FramebufferConfig& framebuffer, size_t image_index);
 
 private:

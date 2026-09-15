@@ -12,6 +12,7 @@
 #include <map>
 #include <optional>
 #include <tuple>
+
 #include <ankerl/unordered_dense.h>
 #include <boost/container/static_vector.hpp>
 
@@ -53,7 +54,7 @@ public:
 
     void InvalidateCacheRanges(const boost::icl::interval_set<u64>& ranges);
 
-//protected:
+    // protected:
     struct FastDispatchEntry {
         u64 location_descriptor = 0xFFFF'FFFF'FFFF'FFFFull;
         const void* code_ptr = nullptr;
@@ -116,9 +117,9 @@ public:
     void EmitPatchJmp(const IR::LocationDescriptor& target_desc, CodePtr target_code_ptr = nullptr) override;
     void EmitPatchMovRcx(CodePtr target_code_ptr = nullptr) override;
 
-//data
+    // data
     const A64::UserConfig conf;
-    RegAlloc reg_alloc; //reusable reg alloc
+    RegAlloc reg_alloc;  // reusable reg alloc
     BlockRangeInformation<u64> block_ranges;
     std::array<FastDispatchEntry, fast_dispatch_table_size> fast_dispatch_table;
     ankerl::unordered_dense::map<u64, FastmemPatchInfo> fastmem_patch_info;

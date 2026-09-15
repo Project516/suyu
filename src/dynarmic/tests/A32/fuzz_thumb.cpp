@@ -16,13 +16,8 @@
 #include <tuple>
 
 #include <catch2/catch_test_macros.hpp>
-#include "dynarmic/mcl/bit.hpp"
-#include "common/common_types.h"
 
-#include "dynarmic/tests/rand_int.h"
-#include "dynarmic/tests/unicorn_emu/a32_unicorn.h"
-#include "dynarmic/tests/A32/testenv.h"
-#include "dynarmic/tests/native/testenv.h"
+#include "common/common_types.h"
 #include "dynarmic/frontend/A32/FPSCR.h"
 #include "dynarmic/frontend/A32/PSR.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
@@ -30,6 +25,11 @@
 #include "dynarmic/interface/A32/a32.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/opt_passes.h"
+#include "dynarmic/mcl/bit.hpp"
+#include "dynarmic/tests/A32/testenv.h"
+#include "dynarmic/tests/native/testenv.h"
+#include "dynarmic/tests/rand_int.h"
+#include "dynarmic/tests/unicorn_emu/a32_unicorn.h"
 
 using namespace Dynarmic;
 

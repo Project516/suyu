@@ -15,10 +15,10 @@
 #include "core/hle/service/am/frontend/applet_controller.h"
 #include "core/hle/service/am/frontend/applet_mii_edit_types.h"
 #include "core/hle/service/am/frontend/applet_software_keyboard_types.h"
+#include "core/hle/service/am/process_creation.h"
 #include "core/hle/service/am/service/storage.h"
 #include "core/hle/service/am/window_system.h"
 #include "hid_core/hid_types.h"
-#include "core/hle/service/am/process_creation.h"
 
 namespace Service::AM {
 
@@ -34,7 +34,8 @@ struct LaunchParameterAccountPreselectedUser {
 };
 static_assert(sizeof(LaunchParameterAccountPreselectedUser) == 0x88);
 
-AppletStorageChannel& InitializeFakeCallerApplet(Core::System& system, std::shared_ptr<Applet>& applet) {
+AppletStorageChannel& InitializeFakeCallerApplet(Core::System& system,
+                                                 std::shared_ptr<Applet>& applet) {
     applet->caller_applet_broker = std::make_shared<AppletDataBroker>(system);
     return applet->caller_applet_broker->GetInData();
 }
@@ -270,8 +271,10 @@ void AppletManager::SetWindowSystem(WindowSystem* window_system) {
     LOG_INFO(Service_AM, "SetWindowSystem: pending process arrived");
 
     if (Settings::values.enable_overlay && m_window_system->GetOverlayDisplayApplet() == nullptr) {
-        if (auto overlay_process = CreateProcess(m_system, static_cast<u64>(AppletProgramId::OverlayDisplay), 0, 0)) {
-            auto overlay_applet = std::make_shared<Applet>(m_system, std::move(overlay_process), false);
+        if (auto overlay_process =
+                CreateProcess(m_system, static_cast<u64>(AppletProgramId::OverlayDisplay), 0, 0)) {
+            auto overlay_applet =
+                std::make_shared<Applet>(m_system, std::move(overlay_process), false);
             overlay_applet->program_id = static_cast<u64>(AppletProgramId::OverlayDisplay);
             overlay_applet->applet_id = AppletId::OverlayDisplay;
             overlay_applet->type = AppletType::OverlayApplet;
@@ -281,7 +284,8 @@ void AppletManager::SetWindowSystem(WindowSystem* window_system) {
             overlay_applet->home_button_long_pressed_blocked = false;
             m_window_system->TrackApplet(overlay_applet, false);
             overlay_applet->process->Run();
-            LOG_INFO(Service_AM, "called, Overlay applet launched before application (initially hidden, watching home button)");
+            LOG_INFO(Service_AM, "called, Overlay applet launched before application (initially "
+                                 "hidden, watching home button)");
         }
     }
 

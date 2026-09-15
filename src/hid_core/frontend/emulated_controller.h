@@ -7,12 +7,12 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <vector>
-#include <atomic>
 
 #include <ankerl/unordered_dense.h>
 

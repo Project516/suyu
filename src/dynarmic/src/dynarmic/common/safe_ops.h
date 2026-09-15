@@ -10,10 +10,9 @@
 
 #include <type_traits>
 
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-
 #include "dynarmic/common/u128.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::Safe {
 
@@ -31,8 +30,8 @@ T LogicalShiftLeft(T value, int shift_amount) {
     if (shift_amount >= int(mcl::bitsizeof<T>))
         return 0;
     return shift_amount < 0
-        ? LogicalShiftRight(value, -shift_amount)
-        : T(std::make_unsigned_t<T>(value) << shift_amount);
+             ? LogicalShiftRight(value, -shift_amount)
+             : T(std::make_unsigned_t<T>(value) << shift_amount);
 }
 
 template<>
@@ -45,8 +44,8 @@ T LogicalShiftRight(T value, int shift_amount) {
     if (shift_amount >= int(mcl::bitsizeof<T>))
         return 0;
     return shift_amount < 0
-        ? LogicalShiftLeft(value, -shift_amount)
-        : T(std::make_unsigned_t<T>(value) >> shift_amount);
+             ? LogicalShiftLeft(value, -shift_amount)
+             : T(std::make_unsigned_t<T>(value) >> shift_amount);
 }
 
 template<>
@@ -64,8 +63,8 @@ T ArithmeticShiftLeft(T value, int shift_amount) {
     if (shift_amount >= int(mcl::bitsizeof<T>))
         return 0;
     return shift_amount < 0
-        ? ArithmeticShiftRight(value, -shift_amount)
-        : T(std::make_unsigned_t<T>(value) << shift_amount);
+             ? ArithmeticShiftRight(value, -shift_amount)
+             : T(std::make_unsigned_t<T>(value) << shift_amount);
 }
 
 template<typename T>
@@ -73,8 +72,8 @@ T ArithmeticShiftRight(T value, int shift_amount) {
     if (shift_amount >= int(mcl::bitsizeof<T>))
         return mcl::bit::most_significant_bit(value) ? ~T(0) : 0;
     return shift_amount < 0
-        ? ArithmeticShiftLeft(value, -shift_amount)
-        : T(std::make_signed_t<T>(value) >> shift_amount);
+             ? ArithmeticShiftLeft(value, -shift_amount)
+             : T(std::make_signed_t<T>(value) >> shift_amount);
 }
 
 template<typename T>

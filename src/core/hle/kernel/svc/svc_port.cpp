@@ -109,9 +109,11 @@ Result ConnectToPort(Core::System& system, Handle* out, Handle port) {
     // Create the session.
     KAutoObject* session;
     if (client_port->IsLight(system.Kernel())) {
-        R_TRY(client_port->CreateLightSession(system.Kernel(), reinterpret_cast<KLightClientSession**>(std::addressof(session))));
+        R_TRY(client_port->CreateLightSession(
+            system.Kernel(), reinterpret_cast<KLightClientSession**>(std::addressof(session))));
     } else {
-        R_TRY(client_port->CreateSession(system.Kernel(), reinterpret_cast<KClientSession**>(std::addressof(session))));
+        R_TRY(client_port->CreateSession(
+            system.Kernel(), reinterpret_cast<KClientSession**>(std::addressof(session))));
     }
 
     // Register the session.
@@ -122,7 +124,8 @@ Result ConnectToPort(Core::System& system, Handle* out, Handle port) {
     R_SUCCEED();
 }
 
-Result ManageNamedPort(Core::System& system, Handle* out_server_handle, uint64_t user_name, int32_t max_sessions) {
+Result ManageNamedPort(Core::System& system, Handle* out_server_handle, uint64_t user_name,
+                       int32_t max_sessions) {
     // Copy the provided name from user memory to kernel memory.
     auto string_name =
         GetCurrentMemory(system.Kernel()).ReadCString(user_name, KObjectName::NameLengthMax);
@@ -156,7 +159,8 @@ Result ManageNamedPort(Core::System& system, Handle* out_server_handle, uint64_t
         };
 
         // Register the handle in the table.
-        R_TRY(handle_table.Add(system.Kernel(), out_server_handle, std::addressof(port->GetServerPort())));
+        R_TRY(handle_table.Add(system.Kernel(), out_server_handle,
+                               std::addressof(port->GetServerPort())));
         ON_RESULT_FAILURE {
             handle_table.Remove(system.Kernel(), *out_server_handle);
         };

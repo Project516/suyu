@@ -10,10 +10,10 @@
 
 #pragma once
 
+#include <bit>
 #include <cstdlib>
 #include <cstring>
 #include <type_traits>
-#include <bit>
 #include "common/common_types.h"
 
 namespace Common {
@@ -547,12 +547,15 @@ public:
 protected:
     T value{};
     using swap_t = std::conditional_t<
-        std::is_same_v<base, u16>, Swap16T<u16>, std::conditional_t<
-        std::is_same_v<base, s16>, Swap16T<s16>, std::conditional_t<
-        std::is_same_v<base, u32>, Swap32T<u32>, std::conditional_t<
-        std::is_same_v<base, s32>, Swap32T<s32>, std::conditional_t<
-        std::is_same_v<base, u64>, Swap64T<u64>, std::conditional_t<
-        std::is_same_v<base, s64>, Swap64T<s64>, void>>>>>>;
+        std::is_same_v<base, u16>, Swap16T<u16>,
+        std::conditional_t<
+            std::is_same_v<base, s16>, Swap16T<s16>,
+            std::conditional_t<
+                std::is_same_v<base, u32>, Swap32T<u32>,
+                std::conditional_t<std::is_same_v<base, s32>, Swap32T<s32>,
+                                   std::conditional_t<std::is_same_v<base, u64>, Swap64T<u64>,
+                                                      std::conditional_t<std::is_same_v<base, s64>,
+                                                                         Swap64T<s64>, void>>>>>>;
     static T swap(T x) {
         return T(swap_t::swap(base(x)));
     }

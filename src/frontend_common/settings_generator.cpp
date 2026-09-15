@@ -3,8 +3,8 @@
 
 #include <random>
 #include <frozen/string.h>
-#include "common/settings.h"
 #include "common/random.h"
+#include "common/settings.h"
 #include "settings_generator.h"
 
 namespace FrontendCommon {
@@ -33,4 +33,4 @@ void GenerateSettings() {
         Settings::values.serial_battery.SetValue(distribution(gen));
 }
 
-}
+} // namespace FrontendCommon

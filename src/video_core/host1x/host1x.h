@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <ankerl/unordered_dense.h>
 #include <unordered_map>
 #include <variant>
+#include <ankerl/unordered_dense.h>
 
 #include "common/common_types.h"
 
@@ -109,7 +109,8 @@ private:
 
     std::shared_ptr<FFmpeg::Frame> GetDecodeOrderLocked(s32 fd, u64 offset) {
         if (auto const it = m_frame_devices.find(fd); it != m_frame_devices.end()) {
-            if (auto const it2 = it->second.m_decode_order.find(offset); it2 != it->second.m_decode_order.end()) {
+            if (auto const it2 = it->second.m_decode_order.find(offset);
+                it2 != it->second.m_decode_order.end()) {
                 // TODO: this "mapped" prevents us from fully embracing ankerl
                 return std::move(it->second.m_decode_order.extract(it2).mapped());
             }
@@ -185,11 +186,8 @@ public:
     Tegra::MemoryManager gmmu_manager;
     Common::FlatAllocator<u32, 0, 32> allocator;
     FrameQueue frame_queue;
-    std::array<std::variant<
-        std::monostate,
-        Tegra::Host1x::Nvdec,
-        Tegra::Host1x::Vic
-    >, 1024> devices;
+    std::array<std::variant<std::monostate, Tegra::Host1x::Nvdec, Tegra::Host1x::Vic>, 1024>
+        devices;
 #ifdef YUZU_LEGACY
     std::once_flag nvdec_first_init;
     std::once_flag vic_first_init;

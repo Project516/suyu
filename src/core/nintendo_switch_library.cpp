@@ -41,7 +41,8 @@ public:
         for (const auto& [program_id, content_type] : cache.GetAllEntries()) {
             if (content_type == FileSys::ContentRecordType::Program) {
                 const auto title_name = GetGameName(program_id);
-                const auto file_path = cache.GetEntryUnparsed(program_id, FileSys::ContentRecordType::Program);
+                const auto file_path =
+                    cache.GetEntryUnparsed(program_id, FileSys::ContentRecordType::Program);
                 const auto version = GetGameVersion(program_id);
 
                 if (!title_name.empty() && !file_path.empty()) {
@@ -70,10 +71,12 @@ public:
     }
 
     [[nodiscard]] bool LaunchGame(u64 program_id) {
-        const auto file_path = system.GetContentProvider().GetUserNANDCache().GetEntryUnparsed(program_id, FileSys::ContentRecordType::Program);
+        const auto file_path = system.GetContentProvider().GetUserNANDCache().GetEntryUnparsed(
+            program_id, FileSys::ContentRecordType::Program);
 
         if (file_path.empty()) {
-            LOG_ERROR(Core, "Failed to launch game. File not found for program_id={:016X}", program_id);
+            LOG_ERROR(Core, "Failed to launch game. File not found for program_id={:016X}",
+                      program_id);
             return false;
         }
 
@@ -85,13 +88,15 @@ public:
 
         // Check firmware compatibility
         if (!CheckFirmwareCompatibility(program_id)) {
-            LOG_ERROR(Core, "Firmware version not compatible with game. program_id={:016X}", program_id);
+            LOG_ERROR(Core, "Firmware version not compatible with game. program_id={:016X}",
+                      program_id);
             return false;
         }
 
         const auto result = system.Load(*loader);
         if (result != ResultStatus::Success) {
-            LOG_ERROR(Core, "Failed to load game. Error: {}, program_id={:016X}", result, program_id);
+            LOG_ERROR(Core, "Failed to load game. Error: {}, program_id={:016X}", result,
+                      program_id);
             return false;
         }
 

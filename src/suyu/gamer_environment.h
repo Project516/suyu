@@ -4,23 +4,23 @@
 #pragma once
 
 #include <functional>
+#include <QDateTime>
+#include <QElapsedTimer>
+#include <QHBoxLayout>
+#include <QHash>
 #include <QIcon>
 #include <QJsonObject>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QPainter>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSet>
 #include <QStackedWidget>
 #include <QStyledItemDelegate>
 #include <QTextBrowser>
-#include <QDateTime>
-#include <QElapsedTimer>
 #include <QTimer>
-#include <QHash>
-#include <QSet>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -47,13 +47,12 @@ public:
     void paint(QPainter* painter, const QStyleOptionViewItem& option,
                const QModelIndex& index) const override;
 
-    QSize sizeHint(const QStyleOptionViewItem& option,
-                   const QModelIndex& index) const override;
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
     static constexpr int CARD_W = 220;
     static constexpr int CARD_H = 320;
     static constexpr int ICON_H = 240;
-    static constexpr int PAD    = 6;
+    static constexpr int PAD = 6;
 };
 
 // Full-screen Gamer mode widget with gradient background, left nav sidebar, and game card grid.
@@ -121,8 +120,7 @@ private:
     void LoadRedditFeed();
     void FetchRedditAccessToken();
     QPushButton* CreateNavButton(const QString& icon_text, const QString& label,
-                                 bool active = false,
-                                 const QIcon& svg_icon = QIcon());
+                                 bool active = false, const QIcon& svg_icon = QIcon());
     void StartSocialMusic();
     void StopSocialMusic();
     QString LoadingScreenTileDataUri() const;
@@ -145,26 +143,26 @@ private:
     QString CoverCachePathForTitle(const QString& title) const;
     QString ExtractIgdbImageUrl(const QString& html) const;
     // ── Sidebar ──────────────────────────────────────────────────────────────
-    QWidget*              sidebar_{};
+    QWidget* sidebar_{};
     QVector<QPushButton*> nav_buttons_;
-    QPushButton*          active_nav_btn_{};
-    QLabel*               version_label_{};
+    QPushButton* active_nav_btn_{};
+    QLabel* version_label_{};
 
     // ── Content stack ────────────────────────────────────────────────────────
     QStackedWidget* content_stack_{};
 
     // Library page (index 0)
-    QWidget*    library_page_{};
-    QLineEdit*  search_bar_{};
+    QWidget* library_page_{};
+    QLineEdit* search_bar_{};
     QListWidget* game_grid_{};
-    QLabel*     stats_label_{};
-    QLabel*     empty_label_{};
+    QLabel* stats_label_{};
+    QLabel* empty_label_{};
 
     // Social page (index 1)
-    QWidget*      social_page_{};
+    QWidget* social_page_{};
     QTextBrowser* social_browser_{};
-    QPushButton*  social_refresh_btn_{};
-    QPushButton*  social_post_btn_{};
+    QPushButton* social_refresh_btn_{};
+    QPushButton* social_post_btn_{};
     // Back/Refresh/New Post/Music are all rendered as pills INSIDE the
     // custom Miiverse header (in the QWebEngineView's own page), not as
     // separate native widgets above it, so there is no visible native
@@ -199,8 +197,8 @@ private:
     QPushButton* load_game_btn_{};
 
     // ── Data ─────────────────────────────────────────────────────────────────
-    GameList*    game_list_{};
+    GameList* game_list_{};
     GMainWindow* main_window_{};
-    QString      filter_text_;
-    QString      version_string_{QStringLiteral("suyu")};
+    QString filter_text_;
+    QString version_string_{QStringLiteral("suyu")};
 };

@@ -4,10 +4,10 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstring>
 #include "common/hex_util.h"
 #include "common/logging.h"
 #include "common/uuid.h"
-#include <cstring>
 
 #include "core/core.h"
 #include "core/hle/service/acc/profile_manager.h"
@@ -178,8 +178,8 @@ private:
         const auto data_a = ctx.ReadBufferA(0);
 
         LOG_DEBUG(Service_PREPO,
-                  "called, field0={}, title_id={:016X}, data_a_size={}, data_x_size={}",
-                  field0, title_id, data_a.size(), data_x.size());
+                  "called, field0={}, title_id={:016X}, data_a_size={}, data_x_size={}", field0,
+                  title_id, data_a.size(), data_x.size());
 
         const auto& reporter{system.GetReporter()};
         reporter.SavePlayReport(Core::Reporter::PlayReportType::System, title_id, {data_a, data_x});
@@ -203,9 +203,10 @@ private:
         Common::UUID uuid{};
         std::memcpy(uuid.uuid.data(), user_id.data(), sizeof(Common::UUID));
 
-        LOG_DEBUG(Service_PREPO,
-                  "called, user_id={}, field0={:016X}, title_id={:016X}, data_a_size={}, data_x_size={}",
-                  uuid.FormattedString(), field0, title_id, data_a.size(), data_x.size());
+        LOG_DEBUG(
+            Service_PREPO,
+            "called, user_id={}, field0={:016X}, title_id={:016X}, data_a_size={}, data_x_size={}",
+            uuid.FormattedString(), field0, title_id, data_a.size(), data_x.size());
 
         const auto& reporter{system.GetReporter()};
         reporter.SavePlayReport(Core::Reporter::PlayReportType::System, title_id, {data_a, data_x},

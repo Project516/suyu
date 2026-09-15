@@ -9,8 +9,6 @@
 #include <tuple>
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
-
 #include "dynarmic/frontend/A32/a32_ir_emitter.h"
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/frontend/A32/decoder/asimd.h"
@@ -24,6 +22,7 @@
 #include "dynarmic/frontend/imm.h"
 #include "dynarmic/interface/A32/config.h"
 #include "dynarmic/ir/basic_block.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::A32 {
 namespace {

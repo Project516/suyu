@@ -8,8 +8,10 @@ static constexpr Uint8 SDL_RELEASED = 0;
 
 #include "common/fs/path_util.h"
 #include "common/logging/log.h"
+#include "common/param_package.h"
 #include "common/scm_rev.h"
 #include "common/settings.h"
+#include "common/settings_input.h"
 #include "core/core.h"
 #include "core/perf_stats.h"
 #include "hid_core/hid_core.h"
@@ -17,24 +19,21 @@ static constexpr Uint8 SDL_RELEASED = 0;
 #include "input_common/drivers/mouse.h"
 #include "input_common/drivers/touch_screen.h"
 #include "input_common/main.h"
-#include "common/param_package.h"
-#include "common/settings_input.h"
 #include "suyu_cmd/emu_window/emu_window_sdl2.h"
 #include "suyu_cmd/suyu_icon.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
-#include <windows.h>
-#include <shellapi.h>
-#include <cstdio>
 #include <array>
+#include <cstdio>
 #include <filesystem>
 #include <iterator>
-#include <vector>
-#include <system_error>
 #include <string>
+#include <system_error>
 #include <vector>
+#include <shellapi.h>
+#include <windows.h>
 
 // ── F12 debug panel ─────────────────────────────────────────────────────────
 // A real interactive window (not a message box): live status text refreshed on
@@ -190,8 +189,9 @@ void DevRefreshDevices(DevPanelState& st) {
         SendMessageW(st.devices, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(wide.c_str()));
     }
     if (st.device_list.empty()) {
-        SendMessageW(st.devices, CB_ADDSTRING, 0,
-                     reinterpret_cast<LPARAM>(L"(no controller detected - plug one in and rescan)"));
+        SendMessageW(
+            st.devices, CB_ADDSTRING, 0,
+            reinterpret_cast<LPARAM>(L"(no controller detected - plug one in and rescan)"));
     }
     SendMessageW(st.devices, CB_SETCURSEL, 0, 0);
 }
@@ -226,10 +226,9 @@ void DevApplyPadMapping(DevPanelState& st) {
 void DevApplyKeyboardMapping(DevPanelState& st) {
     // Same layout the emulator ships as its keyboard default.
     static constexpr std::array<int, Settings::NativeButton::NumButtons> kButtons = {
-        SDL_SCANCODE_A, SDL_SCANCODE_S, SDL_SCANCODE_Z, SDL_SCANCODE_X,
-        SDL_SCANCODE_T, SDL_SCANCODE_G, SDL_SCANCODE_F, SDL_SCANCODE_H,
-        SDL_SCANCODE_Q, SDL_SCANCODE_W, SDL_SCANCODE_M, SDL_SCANCODE_N,
-        SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_B,
+        SDL_SCANCODE_A, SDL_SCANCODE_S, SDL_SCANCODE_Z, SDL_SCANCODE_X, SDL_SCANCODE_T,
+        SDL_SCANCODE_G, SDL_SCANCODE_F, SDL_SCANCODE_H, SDL_SCANCODE_Q, SDL_SCANCODE_W,
+        SDL_SCANCODE_M, SDL_SCANCODE_N, SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_B,
     };
     static constexpr std::array<std::array<int, 4>, Settings::NativeAnalog::NumAnalogs> kAnalogs{{
         {SDL_SCANCODE_UP, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT},
@@ -290,8 +289,7 @@ void DevRefreshMods(HWND list) {
             for (const auto& mod : std::filesystem::directory_iterator(tid.path(), ec)) {
                 const std::wstring entry =
                     tid.path().filename().wstring() + L"  /  " + mod.path().filename().wstring();
-                SendMessageW(list, LB_ADDSTRING, 0,
-                             reinterpret_cast<LPARAM>(entry.c_str()));
+                SendMessageW(list, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(entry.c_str()));
                 any = true;
             }
         }
@@ -398,13 +396,13 @@ void ShowDevMenu(Core::System& system, InputCommon::InputSubsystem* input) {
     std::string game_name;
     [[maybe_unused]] auto _ = system.GetGameName(game_name);
     const std::wstring title =
-        (game_name.empty() ? std::wstring(L"Game") : std::wstring(game_name.begin(), game_name.end())) +
+        (game_name.empty() ? std::wstring(L"Game")
+                           : std::wstring(game_name.begin(), game_name.end())) +
         L" - Debug Panel (F12)";
 
-    const HWND hwnd = CreateWindowExW(0, kClass, title.c_str(),
-                                      WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT,
-                                      CW_USEDEFAULT, 720, 780, nullptr, nullptr,
-                                      GetModuleHandleW(nullptr), nullptr);
+    const HWND hwnd = CreateWindowExW(
+        0, kClass, title.c_str(), WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT,
+        CW_USEDEFAULT, 720, 780, nullptr, nullptr, GetModuleHandleW(nullptr), nullptr);
     if (hwnd == nullptr) {
         return;
     }
@@ -413,31 +411,30 @@ void ShowDevMenu(Core::System& system, InputCommon::InputSubsystem* input) {
     DevPanelState state{};
     state.system = &system;
     state.input = input;
-    state.status = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", L"",
-                                   WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY |
-                                       ES_AUTOVSCROLL | WS_VSCROLL,
-                                   10, 10, 690, 190, hwnd,
-                                   reinterpret_cast<HMENU>(kIdStatus), inst, nullptr);
+    state.status = CreateWindowExW(
+        WS_EX_CLIENTEDGE, L"EDIT", L"",
+        WS_CHILD | WS_VISIBLE | ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL, 10, 10,
+        690, 190, hwnd, reinterpret_cast<HMENU>(kIdStatus), inst, nullptr);
     CreateWindowExW(0, L"STATIC", L"Mods discovered under mods/ (double-click to rescan):",
                     WS_CHILD | WS_VISIBLE, 12, 208, 500, 18, hwnd, nullptr, inst, nullptr);
     state.mods = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", nullptr,
-                                 WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOTIFY, 10, 228, 690,
-                                 110, hwnd, reinterpret_cast<HMENU>(kIdMods), inst, nullptr);
+                                 WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOTIFY, 10, 228, 690, 110,
+                                 hwnd, reinterpret_cast<HMENU>(kIdMods), inst, nullptr);
     CreateWindowExW(0, L"STATIC", L"Controls - Player 1:", WS_CHILD | WS_VISIBLE, 12, 348, 140, 18,
                     hwnd, nullptr, inst, nullptr);
-    state.devices = CreateWindowExW(0, L"COMBOBOX", nullptr,
-                                    WS_CHILD | WS_VISIBLE | WS_VSCROLL | CBS_DROPDOWNLIST, 150, 344,
-                                    280, 200, hwnd, reinterpret_cast<HMENU>(kIdDevices), inst,
-                                    nullptr);
+    state.devices = CreateWindowExW(
+        0, L"COMBOBOX", nullptr, WS_CHILD | WS_VISIBLE | WS_VSCROLL | CBS_DROPDOWNLIST, 150, 344,
+        280, 200, hwnd, reinterpret_cast<HMENU>(kIdDevices), inst, nullptr);
     CreateWindowExW(0, L"BUTTON", L"Rescan", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 440, 344, 80,
                     26, hwnd, reinterpret_cast<HMENU>(kIdRescanPads), inst, nullptr);
-    CreateWindowExW(0, L"BUTTON", L"Use controller", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 528, 344,
-                    172, 26, hwnd, reinterpret_cast<HMENU>(kIdApplyPad), inst, nullptr);
+    CreateWindowExW(0, L"BUTTON", L"Use controller", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 528,
+                    344, 172, 26, hwnd, reinterpret_cast<HMENU>(kIdApplyPad), inst, nullptr);
     CreateWindowExW(0, L"BUTTON", L"Use keyboard", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 528, 376,
                     172, 26, hwnd, reinterpret_cast<HMENU>(kIdKeyboard), inst, nullptr);
-    CreateWindowExW(0, L"STATIC",
-                    L"Pick an entry and press Rebind (or double-click), then press the input you want:",
-                    WS_CHILD | WS_VISIBLE, 12, 410, 560, 18, hwnd, nullptr, inst, nullptr);
+    CreateWindowExW(
+        0, L"STATIC",
+        L"Pick an entry and press Rebind (or double-click), then press the input you want:",
+        WS_CHILD | WS_VISIBLE, 12, 410, 560, 18, hwnd, nullptr, inst, nullptr);
     state.binds = CreateWindowExW(WS_EX_CLIENTEDGE, L"LISTBOX", nullptr,
                                   WS_CHILD | WS_VISIBLE | WS_VSCROLL | LBS_NOTIFY, 10, 430, 510,
                                   190, hwnd, reinterpret_cast<HMENU>(kIdBindList), inst, nullptr);
@@ -693,8 +690,7 @@ void EmuWindow_SDL2::WaitEvent() {
     case SDL_EVENT_MOUSE_BUTTON_UP:
         // ignore if it came from touch
         if (event.button.which != SDL_TOUCH_MOUSEID) {
-            OnMouseButton(event.button.button,
-                          event.button.down ? SDL_PRESSED : SDL_RELEASED,
+            OnMouseButton(event.button.button, event.button.down ? SDL_PRESSED : SDL_RELEASED,
                           static_cast<s32>(event.button.x), static_cast<s32>(event.button.y));
         }
         break;
@@ -728,9 +724,9 @@ void EmuWindow_SDL2::WaitEvent() {
             }
         } else {
             const auto title =
-                fmt::format("{} | {} | FPS: {:.0f} ({:.0f}%)", game_name.empty() ? "suyu" : game_name,
-                            Common::g_build_fullname, results.average_game_fps,
-                            results.emulation_speed * 100.0);
+                fmt::format("{} | {} | FPS: {:.0f} ({:.0f}%)",
+                            game_name.empty() ? "suyu" : game_name, Common::g_build_fullname,
+                            results.average_game_fps, results.emulation_speed * 100.0);
             SDL_SetWindowTitle(render_window, title.c_str());
         }
         last_time = current_time;
@@ -744,9 +740,8 @@ void EmuWindow_SDL2::SetWindowIcon() {
     // (RT_GROUP_ICON id 1, see suyu/game_export.cpp) — use that instead of the
     // suyu logo so the window reads as the game, not the emulator.
     if (g_native_export_mode) {
-        const HICON hicon = static_cast<HICON>(
-            LoadImageW(GetModuleHandleW(nullptr), MAKEINTRESOURCEW(1), IMAGE_ICON, 256, 256,
-                       LR_DEFAULTCOLOR));
+        const HICON hicon = static_cast<HICON>(LoadImageW(
+            GetModuleHandleW(nullptr), MAKEINTRESOURCEW(1), IMAGE_ICON, 256, 256, LR_DEFAULTCOLOR));
         if (hicon != nullptr) {
             ICONINFO info{};
             if (GetIconInfo(hicon, &info)) {
@@ -768,8 +763,8 @@ void EmuWindow_SDL2::SetWindowIcon() {
                     for (std::size_t i = 0; i + 3 < pixels.size(); i += 4) {
                         std::swap(pixels[i], pixels[i + 2]);
                     }
-                    SDL_Surface* const icon_surface = SDL_CreateSurfaceFrom(
-                        w, h, SDL_PIXELFORMAT_RGBA32, pixels.data(), w * 4);
+                    SDL_Surface* const icon_surface =
+                        SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, pixels.data(), w * 4);
                     if (icon_surface != nullptr) {
                         SDL_SetWindowIcon(render_window, icon_surface);
                         SDL_DestroySurface(icon_surface);
@@ -787,7 +782,7 @@ void EmuWindow_SDL2::SetWindowIcon() {
             DestroyIcon(hicon);
         }
         LOG_WARNING(Frontend, "Native export: failed to load game icon from exe resources, "
-                               "falling back to suyu icon.");
+                              "falling back to suyu icon.");
     }
 #endif
     SDL_IOStream* const suyu_icon_stream = SDL_IOFromConstMem((void*)suyu_icon, suyu_icon_size);

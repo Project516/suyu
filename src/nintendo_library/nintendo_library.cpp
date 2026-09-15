@@ -6,14 +6,14 @@
 #include <curl/curl.h>
 #endif
 
-#include <nlohmann/json.hpp>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
 #include <regex>
 #include <sstream>
-#include <fstream>
-#include <filesystem>
 #include <thread>
-#include <chrono>
-#include <iomanip>
+#include <nlohmann/json.hpp>
 
 #include "common/logging/log.h"
 
@@ -30,14 +30,16 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
 // Implementation class using PIMPL pattern
 class Library::Impl {
 public:
-    Impl() : auth_state(AuthenticationState::NotAuthenticated),
-             last_error(LibraryError::None),
-             initialized(false)
+    Impl()
+        : auth_state(AuthenticationState::NotAuthenticated), last_error(LibraryError::None),
+          initialized(false)
 #ifdef USE_CURL
-             , curl_handle(nullptr)
+          ,
+          curl_handle(nullptr)
 #endif
     {
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like "
+                     "Gecko) Chrome/120.0.0.0 Safari/537.36";
     }
 
     ~Impl() {
@@ -85,7 +87,8 @@ public:
         // No HTTP library available
         initialized = true;
         last_error = LibraryError::ServiceUnavailable;
-        status_message = "Nintendo Library initialized (network features disabled - no HTTP library)";
+        status_message =
+            "Nintendo Library initialized (network features disabled - no HTTP library)";
         LOG_WARNING(Service, "Nintendo Library initialized without HTTP support");
         return true;
 #endif
@@ -162,9 +165,7 @@ bool Library::StartAuthentication(const std::string& username, const std::string
     LOG_INFO(Service, "Starting Nintendo account authentication for user: {}", username);
 
     // Perform authentication in a separate thread to avoid blocking
-    std::thread auth_thread([this]() {
-        PerformAuthentication();
-    });
+    std::thread auth_thread([this]() { PerformAuthentication(); });
     auth_thread.detach();
 
     return true;
@@ -206,8 +207,8 @@ void Library::PerformAuthentication() {
 
         // Step 3: Perform login
         std::string login_data = "authenticity_token=" + csrf_token +
-                                "&user%5Bemail%5D=" + UrlEncode(impl->username) +
-                                "&user%5Bpassword%5D=" + UrlEncode(impl->password);
+                                 "&user%5Bemail%5D=" + UrlEncode(impl->username) +
+                                 "&user%5Bpassword%5D=" + UrlEncode(impl->password);
 
         res = cli.Post("/login", login_data, "application/x-www-form-urlencoded");
         if (!res) {
@@ -272,8 +273,8 @@ void Library::PerformAuthentication() {
 
         // Step 3: Perform login
         std::string login_data = "authenticity_token=" + csrf_token +
-                                "&user%5Bemail%5D=" + UrlEncode(impl->username) +
-                                "&user%5Bpassword%5D=" + UrlEncode(impl->password);
+                                 "&user%5Bemail%5D=" + UrlEncode(impl->username) +
+                                 "&user%5Bpassword%5D=" + UrlEncode(impl->password);
 
         response.clear();
         curl_easy_setopt(impl->curl_handle, CURLOPT_URL, "https://accounts.nintendo.com/login");
@@ -402,7 +403,8 @@ bool Library::RefreshGameList() {
             LOG_INFO(Service, "No games found in Nintendo purchase history");
         } else {
             impl->status_message = "Found " + std::to_string(impl->cached_games.size()) + " games";
-            LOG_INFO(Service, "Found {} games in Nintendo purchase history", impl->cached_games.size());
+            LOG_INFO(Service, "Found {} games in Nintendo purchase history",
+                     impl->cached_games.size());
         }
 
         impl->last_error = LibraryError::None;
@@ -446,7 +448,8 @@ bool Library::RefreshGameList() {
             LOG_INFO(Service, "No games found in Nintendo purchase history");
         } else {
             impl->status_message = "Found " + std::to_string(impl->cached_games.size()) + " games";
-            LOG_INFO(Service, "Found {} games in Nintendo purchase history", impl->cached_games.size());
+            LOG_INFO(Service, "Found {} games in Nintendo purchase history",
+                     impl->cached_games.size());
         }
 
         impl->last_error = LibraryError::None;
@@ -469,9 +472,13 @@ std::vector<GameInfo> Library::ParsePurchaseHistory(const std::string& html) {
     try {
         // Look for game entries in the purchase history
         // Nintendo's purchase history typically contains game titles and purchase dates
-        std::regex game_regex(R"(<div[^>]*class="[^"]*order-item[^"]*"[^>]*>.*?</div>)", std::regex_constants::icase);
-        std::regex title_regex(R"(<h[0-9][^>]*>([^<]+)</h[0-9]>|<span[^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)</span>)", std::regex_constants::icase);
-        std::regex date_regex(R"((\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2}))", std::regex_constants::icase);
+        std::regex game_regex(R"(<div[^>]*class="[^"]*order-item[^"]*"[^>]*>.*?</div>)",
+                              std::regex_constants::icase);
+        std::regex title_regex(
+            R"(<h[0-9][^>]*>([^<]+)</h[0-9]>|<span[^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)</span>)",
+            std::regex_constants::icase);
+        std::regex date_regex(R"((\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2}))",
+                              std::regex_constants::icase);
         std::regex platform_regex(R"(Nintendo Switch|3DS|Wii U|Wii)", std::regex_constants::icase);
 
         std::sregex_iterator games_begin(html.begin(), html.end(), game_regex);
@@ -484,10 +491,13 @@ std::vector<GameInfo> Library::ParsePurchaseHistory(const std::string& html) {
             // Extract title
             std::smatch title_match;
             if (std::regex_search(game_html, title_match, title_regex)) {
-                game_info.title_name = title_match[1].str().empty() ? title_match[2].str() : title_match[1].str();
+                game_info.title_name =
+                    title_match[1].str().empty() ? title_match[2].str() : title_match[1].str();
                 // Clean up title
-                game_info.title_name = std::regex_replace(game_info.title_name, std::regex(R"(\s+)"), " ");
-                game_info.title_name = std::regex_replace(game_info.title_name, std::regex(R"(^\s+|\s+$)"), "");
+                game_info.title_name =
+                    std::regex_replace(game_info.title_name, std::regex(R"(\s+)"), " ");
+                game_info.title_name =
+                    std::regex_replace(game_info.title_name, std::regex(R"(^\s+|\s+$)"), "");
             }
 
             // Extract purchase date
@@ -504,7 +514,8 @@ std::vector<GameInfo> Library::ParsePurchaseHistory(const std::string& html) {
                 game_info.platform = "Nintendo Switch"; // Default assumption
             }
 
-            // Generate a simple title ID (this would need to be more sophisticated in a real implementation)
+            // Generate a simple title ID (this would need to be more sophisticated in a real
+            // implementation)
             if (!game_info.title_name.empty()) {
                 std::hash<std::string> hasher;
                 size_t hash = hasher(game_info.title_name);
@@ -520,7 +531,9 @@ std::vector<GameInfo> Library::ParsePurchaseHistory(const std::string& html) {
         // If no games found with the primary regex, try a simpler approach
         if (games.empty()) {
             // Look for any text that might be game titles
-            std::regex simple_title_regex(R"(<[^>]*>([^<]*(?:Mario|Zelda|Pokemon|Metroid|Kirby|Splatoon|Animal Crossing|Fire Emblem|Xenoblade)[^<]*)</[^>]*>)", std::regex_constants::icase);
+            std::regex simple_title_regex(
+                R"(<[^>]*>([^<]*(?:Mario|Zelda|Pokemon|Metroid|Kirby|Splatoon|Animal Crossing|Fire Emblem|Xenoblade)[^<]*)</[^>]*>)",
+                std::regex_constants::icase);
             std::sregex_iterator titles_begin(html.begin(), html.end(), simple_title_regex);
             std::sregex_iterator titles_end;
 

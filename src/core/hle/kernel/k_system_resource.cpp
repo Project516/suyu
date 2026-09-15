@@ -10,7 +10,9 @@
 
 namespace Kernel {
 
-Result KSecureSystemResource::Initialize(KernelCore& kernel, size_t size, KResourceLimit* resource_limit, KMemoryManager::Pool pool) {
+Result KSecureSystemResource::Initialize(KernelCore& kernel, size_t size,
+                                         KResourceLimit* resource_limit,
+                                         KMemoryManager::Pool pool) {
     // Set members.
     m_resource_limit = resource_limit;
     m_resource_size = size;
@@ -20,7 +22,8 @@ Result KSecureSystemResource::Initialize(KernelCore& kernel, size_t size, KResou
     const size_t secure_size = this->CalculateRequiredSecureMemorySize();
 
     // Reserve memory for our secure resource.
-    KScopedResourceReservation memory_reservation(kernel, m_resource_limit, Svc::LimitableResource::PhysicalMemoryMax, secure_size);
+    KScopedResourceReservation memory_reservation(
+        kernel, m_resource_limit, Svc::LimitableResource::PhysicalMemoryMax, secure_size);
     R_UNLESS(memory_reservation.Succeeded(), ResultLimitReached);
 
     // Allocate secure memory.
@@ -93,7 +96,8 @@ void KSecureSystemResource::Finalize(KernelCore& kernel) {
     m_resource_limit->Close(kernel);
 }
 
-size_t KSecureSystemResource::CalculateRequiredSecureMemorySize(size_t size, KMemoryManager::Pool pool) {
+size_t KSecureSystemResource::CalculateRequiredSecureMemorySize(size_t size,
+                                                                KMemoryManager::Pool pool) {
     return KSystemControl::CalculateRequiredSecureMemorySize(size, static_cast<u32>(pool));
 }
 

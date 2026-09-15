@@ -9,13 +9,13 @@
 #include <memory>
 
 #include "common/common_types.h"
+#include "video_core/dma_pusher.h"
 #include "video_core/engines/fermi_2d.h"
-#include "video_core/engines/kepler_memory.h"
 #include "video_core/engines/kepler_compute.h"
+#include "video_core/engines/kepler_memory.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/engines/maxwell_dma.h"
 #include "video_core/engines/nv01_timer.h"
-#include "video_core/dma_pusher.h"
 
 namespace Core {
 class System;
@@ -40,7 +40,8 @@ struct ChannelState {
     void BindRasterizer(VideoCore::RasterizerInterface* rasterizer);
 
     struct Payload {
-        explicit Payload(Core::System& system, MemoryManager& memory_manager, ChannelState& channel_state);
+        explicit Payload(Core::System& system, MemoryManager& memory_manager,
+                         ChannelState& channel_state);
 
         /// 3D engine
         Engines::Maxwell3D maxwell_3d;

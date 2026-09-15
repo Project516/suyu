@@ -11,7 +11,6 @@
 #include <utility>
 
 #include "common/common_types.h"
-
 #include "dynarmic/frontend/A32/a32_location_descriptor.h"
 #include "dynarmic/ir/ir_emitter.h"
 #include "dynarmic/ir/value.h"
@@ -31,6 +30,7 @@ enum class Reg;
  */
 class IREmitter : public IR::IREmitter {
     IR::U64 ImmCurrentLocationDescriptor();
+
 public:
     IREmitter(IR::Block& block, LocationDescriptor descriptor, ArchVersion arch_version)
             : IR::IREmitter(block), current_location(descriptor), arch_version(arch_version) {}
@@ -109,6 +109,7 @@ public:
     IR::U64 CoprocGetTwoWords(size_t coproc_no, bool two, size_t opc, CoprocReg CRm);
     void CoprocLoadWords(size_t coproc_no, bool two, bool long_transfer, CoprocReg CRd, const IR::U32& address, bool has_option, u8 option);
     void CoprocStoreWords(size_t coproc_no, bool two, bool long_transfer, CoprocReg CRd, const IR::U32& address, bool has_option, u8 option);
+
 public:
     LocationDescriptor current_location;
     enum ArchVersion arch_version;

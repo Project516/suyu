@@ -8,11 +8,11 @@
 
 #include "dynarmic/backend/arm64/emit_arm64_memory.h"
 
+#include <bit>
+#include <cstddef>
 #include <optional>
 #include <utility>
-#include <cstddef>
 
-#include <bit>
 #include <oaknut/oaknut.hpp>
 
 #include "dynarmic/backend/arm64/abi.h"

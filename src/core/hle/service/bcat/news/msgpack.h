@@ -85,8 +85,12 @@ public:
         void WriteBool(bool value);
 
         std::vector<u8> Take();
-        const std::vector<u8>& Buffer() const { return out; }
-        void Clear() { out.clear(); }
+        const std::vector<u8>& Buffer() const {
+            return out;
+        }
+        void Clear() {
+            out.clear();
+        }
 
     private:
         void WriteBytes(std::span<const u8> bytes);
@@ -118,8 +122,12 @@ public:
         bool ReadString(std::string& value);
         bool ReadBinary(std::vector<u8>& value);
 
-        bool End() const { return offset >= data.size(); }
-        std::string_view Error() const { return error; }
+        bool End() const {
+            return offset >= data.size();
+        }
+        std::string_view Error() const {
+            return error;
+        }
 
     private:
         bool Fail(const char* msg);

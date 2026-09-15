@@ -170,7 +170,8 @@ Result ISelfController::SetOperationModeChangedNotification(bool enabled) {
     LOG_INFO(Service_AM, "called, enabled={}", enabled);
 
     std::scoped_lock lk{m_applet->lock};
-    m_applet->lifecycle_manager.SetOperationModeChangedNotificationEnabled(system.Kernel(), enabled);
+    m_applet->lifecycle_manager.SetOperationModeChangedNotificationEnabled(system.Kernel(),
+                                                                           enabled);
 
     R_SUCCEED();
 }
@@ -179,7 +180,8 @@ Result ISelfController::SetPerformanceModeChangedNotification(bool enabled) {
     LOG_INFO(Service_AM, "called, enabled={}", enabled);
 
     std::scoped_lock lk{m_applet->lock};
-    m_applet->lifecycle_manager.SetPerformanceModeChangedNotificationEnabled(system.Kernel(), enabled);
+    m_applet->lifecycle_manager.SetPerformanceModeChangedNotificationEnabled(system.Kernel(),
+                                                                             enabled);
 
     R_SUCCEED();
 }

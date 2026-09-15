@@ -19,8 +19,8 @@
 #include <QtConcurrentRun>
 #include "common/logging.h"
 #include "network/announce_multiplayer_session.h"
-#include "ui_chat_room.h"
 #include "qt_common/game_list/game_list_p.h"
+#include "ui_chat_room.h"
 #include "yuzu/multiplayer/chat_room.h"
 #include "yuzu/multiplayer/message.h"
 #ifdef ENABLE_WEB_SERVICE

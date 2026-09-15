@@ -17,9 +17,7 @@
 
 namespace Kernel {
 
-PhysicalCore::PhysicalCore(KernelCore& kernel, std::size_t core_index)
-    : m_core_index{core_index}
-{
+PhysicalCore::PhysicalCore(KernelCore& kernel, std::size_t core_index) : m_core_index{core_index} {
     m_is_single_core = !kernel.IsMulticore();
 }
 PhysicalCore::~PhysicalCore() = default;
@@ -118,11 +116,12 @@ void PhysicalCore::RunThread(KernelCore& kernel, Kernel::KThread* thread) {
         // If a step completed successfully, skip other halt reason handlers
         // the step takes priority (e.g. step may also set InstructionBreakpoint
         // if the next instruction happens to be a breakpoint).
-        const bool step_completed = True(hr & Core::HaltReason::StepThread)
-                                    && thread->GetStepState() == StepState::StepPerformed;
+        const bool step_completed = True(hr & Core::HaltReason::StepThread) &&
+                                    thread->GetStepState() == StepState::StepPerformed;
         const bool supervisor_call = !step_completed && True(hr & Core::HaltReason::SupervisorCall);
         const bool prefetch_abort = !step_completed && True(hr & Core::HaltReason::PrefetchAbort);
-        const bool breakpoint = !step_completed && True(hr & Core::HaltReason::InstructionBreakpoint);
+        const bool breakpoint =
+            !step_completed && True(hr & Core::HaltReason::InstructionBreakpoint);
         const bool data_abort = !step_completed && True(hr & Core::HaltReason::DataAbort);
         const bool interrupt = !step_completed && True(hr & Core::HaltReason::BreakLoop);
 

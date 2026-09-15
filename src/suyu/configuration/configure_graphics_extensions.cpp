@@ -5,22 +5,23 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <vector>
-#include <QLabel>
-#include <qnamespace.h>
 #include <QCheckBox>
+#include <QLabel>
 #include <QSlider>
+#include <qnamespace.h>
 #include "common/settings.h"
 #include "core/core.h"
-#include "ui_configure_graphics_extensions.h"
 #include "suyu/configuration/configuration_shared.h"
 #include "suyu/configuration/configure_graphics_extensions.h"
 #include "suyu/configuration/shared_translation.h"
 #include "suyu/configuration/shared_widget.h"
+#include "ui_configure_graphics_extensions.h"
 
 ConfigureGraphicsExtensions::ConfigureGraphicsExtensions(
     const Core::System& system_, std::shared_ptr<std::vector<ConfigurationShared::Tab*>> group_,
     const ConfigurationShared::Builder& builder, QWidget* parent)
-    : Tab(group_, parent), ui{std::make_unique<Ui::ConfigureGraphicsExtensions>()}, system{system_} {
+    : Tab(group_, parent), ui{std::make_unique<Ui::ConfigureGraphicsExtensions>()}, system{
+                                                                                        system_} {
 
     ui->setupUi(this);
 

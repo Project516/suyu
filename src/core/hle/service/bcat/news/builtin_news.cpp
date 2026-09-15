@@ -44,9 +44,9 @@ ankerl::unordered_dense::map<std::string, std::vector<u8>> news_images_small;
 ankerl::unordered_dense::map<std::string, std::vector<u8>> news_images_large;
 std::mutex images_mutex;
 
-
 std::filesystem::path GetCachePath() {
-    return Common::FS::GetSuyuPath(Common::FS::SuyuPath::CacheDir) / "news" / "github_releases.json";
+    return Common::FS::GetSuyuPath(Common::FS::SuyuPath::CacheDir) / "news" /
+           "github_releases.json";
 }
 
 std::filesystem::path GetDefaultLogoPath(bool large) {
@@ -60,27 +60,32 @@ std::filesystem::path GetNewsImagePath(std::string_view news_id, bool large) {
 }
 
 u32 HashToNewsId(std::string_view key) {
-    return static_cast<u32>(std::hash<std::string_view>{}(key) & 0x7FFFFFFF);
+    return static_cast<u32>(std::hash<std::string_view>{}(key)&0x7FFFFFFF);
 }
 
 std::vector<u8> TryLoadFromDisk(const std::filesystem::path& path) {
-    if (!std::filesystem::exists(path)) return {};
+    if (!std::filesystem::exists(path))
+        return {};
 
     std::ifstream f(path, std::ios::binary | std::ios::ate);
-    if (!f) return {};
+    if (!f)
+        return {};
 
     const auto file_size = static_cast<std::streamsize>(f.tellg());
-    if (file_size <= 0 || file_size > 10 * 1024 * 1024) return {};
+    if (file_size <= 0 || file_size > 10 * 1024 * 1024)
+        return {};
 
     f.seekg(0);
     std::vector<u8> data(static_cast<size_t>(file_size));
-    if (!f.read(reinterpret_cast<char*>(data.data()), file_size)) return {};
+    if (!f.read(reinterpret_cast<char*>(data.data()), file_size))
+        return {};
 
     return data;
 }
 
 // TODO(crueter): Migrate to use Common::Net
-std::vector<u8> DownloadImage(const std::string& url_path, const std::filesystem::path& cache_path) {
+std::vector<u8> DownloadImage(const std::string& url_path,
+                              const std::filesystem::path& cache_path) {
     LOG_DEBUG(Service_BCAT, "Downloading image: https://suyu.dev{}", url_path);
     try {
         httplib::Client cli("https://suyu.dev");
@@ -113,13 +118,15 @@ std::vector<u8> LoadDefaultLogo(bool large) {
     const std::string url = large ? "/news/suyu_logo_large.jpg" : "/news/suyu_logo_small.jpg";
 
     auto data = TryLoadFromDisk(path);
-    if (!data.empty()) return data;
+    if (!data.empty())
+        return data;
 
     return DownloadImage(url, path);
 }
 
 void LoadDefaultLogos() {
-    if (default_logos_loaded) return;
+    if (default_logos_loaded)
+        return;
     default_logos_loaded = true;
 
     default_logo_small = LoadDefaultLogo(false);
@@ -178,12 +185,10 @@ void PreloadNewsImages(const std::vector<u32>& news_ids) {
             continue;
         }
 
-        futures.push_back(std::async(std::launch::async, [id_str]() {
-            GetNewsImage(id_str, false);
-        }));
-        futures.push_back(std::async(std::launch::async, [id_str]() {
-            GetNewsImage(id_str, true);
-        }));
+        futures.push_back(
+            std::async(std::launch::async, [id_str]() { GetNewsImage(id_str, false); }));
+        futures.push_back(
+            std::async(std::launch::async, [id_str]() { GetNewsImage(id_str, true); }));
     }
 
     for (auto& f : futures) {
@@ -193,7 +198,8 @@ void PreloadNewsImages(const std::vector<u32>& news_ids) {
 
 std::optional<std::string> ReadCachedJson() {
     const auto path = GetCachePath();
-    if (!std::filesystem::exists(path)) return std::nullopt;
+    if (!std::filesystem::exists(path))
+        return std::nullopt;
 
     auto content = Common::FS::ReadStringFromFile(path, Common::FS::FileType::TextFile);
     return content.empty() ? std::nullopt : std::optional{std::move(content)};
@@ -261,7 +267,7 @@ std::string SanitizeMarkdown(std::string_view markdown) {
     return text;
 }
 
-std::string FormatBody(std::string body, const std::string_view &title) {
+std::string FormatBody(std::string body, const std::string_view& title) {
     if (body.empty()) {
         return std::string(title);
     }
@@ -292,7 +298,7 @@ std::string FormatBody(std::string body, const std::string_view &title) {
     return body;
 }
 
-void ImportReleases(const std::vector<Common::Net::Release> &releases) {
+void ImportReleases(const std::vector<Common::Net::Release>& releases) {
     std::vector<u32> news_ids;
     for (const auto& rel : releases) {
         const u32 news_id = u32(rel.id & 0x7FFFFFFF);
@@ -313,9 +319,8 @@ void ImportReleases(const std::vector<Common::Net::Release> &releases) {
 
         std::string author = "suyu";
 
-        auto payload = BuildMsgpack(title, FormatBody(body, title), title, published,
-                                    pickup_limit, priority, {"en"}, author, {},
-                                    html_url, news_id);
+        auto payload = BuildMsgpack(title, FormatBody(body, title), title, published, pickup_limit,
+                                    priority, {"en"}, author, {}, html_url, news_id);
 
         const std::string news_id_str = fmt::format("LA{:020}", rel.id);
 
@@ -342,13 +347,11 @@ void ImportReleases(const std::vector<Common::Net::Release> &releases) {
 } // anonymous namespace
 
 std::vector<u8> BuildMsgpack(std::string_view title, std::string_view body,
-                             std::string_view topic_name, u64 published_at,
-                             u64 pickup_limit, u32 priority,
-                             const std::vector<std::string>& languages,
+                             std::string_view topic_name, u64 published_at, u64 pickup_limit,
+                             u32 priority, const std::vector<std::string>& languages,
                              const std::string& author,
                              const std::vector<std::pair<std::string, std::string>>& /*assets*/,
-                             const std::string& html_url,
-                             std::optional<u32> override_id) {
+                             const std::string& html_url, std::optional<u32> override_id) {
     MsgPack::Writer w;
 
     const u32 news_id = override_id.value_or(HashToNewsId(title.empty() ? "suyu" : title));
@@ -384,7 +387,8 @@ std::vector<u8> BuildMsgpack(std::string_view title, std::string_view body,
     w.WriteString(languages.empty() ? "en" : languages.front());
     w.WriteKey("supported_languages");
     w.WriteFixArray(languages.size());
-    for (const auto& lang : languages) w.WriteString(lang);
+    for (const auto& lang : languages)
+        w.WriteString(lang);
 
     // Display settings
     w.WriteKey("display_type");
@@ -463,20 +467,26 @@ void EnsureBuiltinNewsLoaded() {
 
         if (const auto cached = ReadCachedJson()) {
             const std::string_view body = cached.value();
-            const auto releases = Common::Net::Release::ListFromJson(body, Common::g_build_auto_update_stable_api, Common::g_build_auto_update_stable_repo);
+            const auto releases =
+                Common::Net::Release::ListFromJson(body, Common::g_build_auto_update_stable_api,
+                                                   Common::g_build_auto_update_stable_repo);
             ImportReleases(releases);
 
-            LOG_INFO(Service_BCAT, "news: {} entries loaded from cache", NewsStorage::Instance().ListAll().size());
+            LOG_INFO(Service_BCAT, "news: {} entries loaded from cache",
+                     NewsStorage::Instance().ListAll().size());
         }
 
         std::thread([] {
             if (const auto fresh = Common::Net::GetReleasesBody()) {
                 const std::string_view body = fresh.value();
                 WriteCachedJson(body);
-                const auto releases = Common::Net::Release::ListFromJson(body, Common::g_build_auto_update_stable_api, Common::g_build_auto_update_stable_repo);
+                const auto releases =
+                    Common::Net::Release::ListFromJson(body, Common::g_build_auto_update_stable_api,
+                                                       Common::g_build_auto_update_stable_repo);
                 ImportReleases(releases);
 
-                LOG_INFO(Service_BCAT, "news: {} entries updated from Forgejo", NewsStorage::Instance().ListAll().size());
+                LOG_INFO(Service_BCAT, "news: {} entries updated from Forgejo",
+                         NewsStorage::Instance().ListAll().size());
             }
         }).detach();
     });

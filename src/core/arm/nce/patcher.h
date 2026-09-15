@@ -4,18 +4,18 @@
 #pragma once
 
 #include <span>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 #include <oaknut/code_block.hpp>
 #include <oaknut/oaknut.hpp>
 
-#include "common/logging.h"
+#include <utility>
 #include "common/common_types.h"
+#include "common/logging.h"
 #include "common/settings.h"
 #include "core/hle/kernel/code_set.h"
 #include "core/hle/kernel/k_typed_address.h"
-#include <utility>
-using ModuleID = std::array<u8, 32>;  // NSO build ID
+using ModuleID = std::array<u8, 32>; // NSO build ID
 struct PatchCacheKey {
     ModuleID module_id;
     uintptr_t offset;
@@ -43,7 +43,6 @@ enum class PatchMode : u32 {
     Split,    ///< Patch sections are inserted before .text and after .data
 };
 
-
 using ModuleTextAddress = u64;
 using PatchTextAddress = u64;
 using EntryTrampolines = ankerl::unordered_dense::map<ModuleTextAddress, PatchTextAddress>;
@@ -56,7 +55,8 @@ public:
     explicit Patcher();
     ~Patcher();
     bool PatchText(std::span<const u8> program_image, const Kernel::CodeSet::Segment& code);
-    bool RelocateAndCopy(Common::ProcessAddress load_base, const Kernel::CodeSet::Segment& code, std::vector<u8>& program_image, EntryTrampolines* out_trampolines);
+    bool RelocateAndCopy(Common::ProcessAddress load_base, const Kernel::CodeSet::Segment& code,
+                         std::vector<u8>& program_image, EntryTrampolines* out_trampolines);
     size_t GetSectionSize() const noexcept;
     size_t GetPreSectionSize() const noexcept;
 
@@ -77,20 +77,42 @@ private:
     void WriteSaveContext(oaknut::VectorCodeGenerator& code);
     void LockContext(oaknut::VectorCodeGenerator& code);
     void UnlockContext(oaknut::VectorCodeGenerator& code);
-    void WriteSvcTrampoline(ModuleDestLabel module_dest, u32 svc_id, oaknut::VectorCodeGenerator& code, oaknut::Label& save_ctx, oaknut::Label& load_ctx);
-    void WriteMrsHandler(ModuleDestLabel module_dest, oaknut::XReg dest_reg, oaknut::SystemReg src_reg, oaknut::VectorCodeGenerator& code);
-    void WriteMsrHandler(ModuleDestLabel module_dest, oaknut::XReg src_reg, oaknut::VectorCodeGenerator& code);
-    void WriteCntpctHandler(ModuleDestLabel module_dest, oaknut::XReg dest_reg, oaknut::VectorCodeGenerator& code);
+    void WriteSvcTrampoline(ModuleDestLabel module_dest, u32 svc_id,
+                            oaknut::VectorCodeGenerator& code, oaknut::Label& save_ctx,
+                            oaknut::Label& load_ctx);
+    void WriteMrsHandler(ModuleDestLabel module_dest, oaknut::XReg dest_reg,
+                         oaknut::SystemReg src_reg, oaknut::VectorCodeGenerator& code);
+    void WriteMsrHandler(ModuleDestLabel module_dest, oaknut::XReg src_reg,
+                         oaknut::VectorCodeGenerator& code);
+    void WriteCntpctHandler(ModuleDestLabel module_dest, oaknut::XReg dest_reg,
+                            oaknut::VectorCodeGenerator& code);
 
     // Convenience wrappers using default code generator
-    void WriteLoadContext() { WriteLoadContext(c); }
-    void WriteSaveContext() { WriteSaveContext(c); }
-    void LockContext() { LockContext(c); }
-    void UnlockContext() { UnlockContext(c); }
-    void WriteSvcTrampoline(ModuleDestLabel module_dest, u32 svc_id) { WriteSvcTrampoline(module_dest, svc_id, c, m_save_context, m_load_context); }
-    void WriteMrsHandler(ModuleDestLabel module_dest, oaknut::XReg dest_reg, oaknut::SystemReg src_reg) { WriteMrsHandler(module_dest, dest_reg, src_reg, c); }
-    void WriteMsrHandler(ModuleDestLabel module_dest, oaknut::XReg src_reg) { WriteMsrHandler(module_dest, src_reg, c); }
-    void WriteCntpctHandler(ModuleDestLabel module_dest, oaknut::XReg dest_reg) { WriteCntpctHandler(module_dest, dest_reg, c); }
+    void WriteLoadContext() {
+        WriteLoadContext(c);
+    }
+    void WriteSaveContext() {
+        WriteSaveContext(c);
+    }
+    void LockContext() {
+        LockContext(c);
+    }
+    void UnlockContext() {
+        UnlockContext(c);
+    }
+    void WriteSvcTrampoline(ModuleDestLabel module_dest, u32 svc_id) {
+        WriteSvcTrampoline(module_dest, svc_id, c, m_save_context, m_load_context);
+    }
+    void WriteMrsHandler(ModuleDestLabel module_dest, oaknut::XReg dest_reg,
+                         oaknut::SystemReg src_reg) {
+        WriteMrsHandler(module_dest, dest_reg, src_reg, c);
+    }
+    void WriteMsrHandler(ModuleDestLabel module_dest, oaknut::XReg src_reg) {
+        WriteMsrHandler(module_dest, src_reg, c);
+    }
+    void WriteCntpctHandler(ModuleDestLabel module_dest, oaknut::XReg dest_reg) {
+        WriteCntpctHandler(module_dest, dest_reg, c);
+    }
 
 private:
     void BranchToPatch(uintptr_t module_dest) {
@@ -99,7 +121,7 @@ private:
     }
 
     void BranchToPatchPre(uintptr_t module_dest) {
-         curr_patch->m_branch_to_pre_patch_relocations.push_back({c_pre.offset(), module_dest});
+        curr_patch->m_branch_to_pre_patch_relocations.push_back({c_pre.offset(), module_dest});
     }
 
     void BranchToModule(uintptr_t module_dest) {

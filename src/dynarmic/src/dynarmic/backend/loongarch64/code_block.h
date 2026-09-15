@@ -8,10 +8,10 @@
 #include <type_traits>
 
 #include <sys/mman.h>
-#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
 
 #include "common/assert.h"
 #include "common/common_types.h"
+#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
 
 namespace Dynarmic::Backend::LoongArch64 {
 

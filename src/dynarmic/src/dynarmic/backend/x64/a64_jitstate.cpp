@@ -8,9 +8,8 @@
 
 #include "dynarmic/backend/x64/a64_jitstate.h"
 
-#include "dynarmic/mcl/bit.hpp"
-
 #include "dynarmic/frontend/A64/a64_location_descriptor.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::Backend::X64 {
 

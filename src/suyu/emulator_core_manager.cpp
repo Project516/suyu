@@ -248,11 +248,10 @@ bool EmulatorCoreManager::ConnectTroppical(const QString& endpoint) {
     troppical_socket_->connectToHost(host, port);
 
     if (!troppical_socket_->waitForConnected(3000)) {
-        emit CoreLoadError(
-            QStringLiteral("Failed to connect to Troppical at %1:%2 - %3")
-                .arg(host)
-                .arg(port)
-                .arg(troppical_socket_->errorString()));
+        emit CoreLoadError(QStringLiteral("Failed to connect to Troppical at %1:%2 - %3")
+                               .arg(host)
+                               .arg(port)
+                               .arg(troppical_socket_->errorString()));
         troppical_socket_.reset();
         return false;
     }
@@ -301,8 +300,7 @@ void EmulatorCoreManager::DisconnectTroppical() {
             // Send disconnect message
             QJsonObject msg;
             msg[QStringLiteral("type")] = QStringLiteral("disconnect");
-            troppical_socket_->write(
-                QJsonDocument(msg).toJson(QJsonDocument::Compact) + "\n");
+            troppical_socket_->write(QJsonDocument(msg).toJson(QJsonDocument::Compact) + "\n");
             troppical_socket_->flush();
             troppical_socket_->disconnectFromHost();
         }
@@ -312,8 +310,7 @@ void EmulatorCoreManager::DisconnectTroppical() {
 }
 
 bool EmulatorCoreManager::IsTroppicalConnected() const {
-    return troppical_socket_ &&
-           troppical_socket_->state() == QAbstractSocket::ConnectedState;
+    return troppical_socket_ && troppical_socket_->state() == QAbstractSocket::ConnectedState;
 }
 
 bool EmulatorCoreManager::LaunchGame(const QString& rom_path) {
@@ -334,18 +331,16 @@ bool EmulatorCoreManager::LaunchGame(const QString& rom_path) {
         game_process_->setProgram(exe);
         game_process_->setArguments({QStringLiteral("-g"), rom_path});
 
-        connect(game_process_.get(),
-                qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this,
-                [this](int /*exitCode*/, QProcess::ExitStatus /*status*/) {
+        connect(game_process_.get(), qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
+                this, [this](int /*exitCode*/, QProcess::ExitStatus /*status*/) {
                     game_process_.reset();
                     emit GameStopped();
                 });
 
         game_process_->start();
         if (!game_process_->waitForStarted(5000)) {
-            emit CoreLoadError(
-                QStringLiteral("Failed to start native core: %1")
-                    .arg(game_process_->errorString()));
+            emit CoreLoadError(QStringLiteral("Failed to start native core: %1")
+                                   .arg(game_process_->errorString()));
             game_process_.reset();
             return false;
         }
@@ -358,28 +353,24 @@ bool EmulatorCoreManager::LaunchGame(const QString& rom_path) {
         // rather than trusting PATH - see FindRetroArchExecutable().
         const QString retroarch = FindRetroArchExecutable();
         if (retroarch.isEmpty()) {
-            emit CoreLoadError(
-                tr("RetroArch was not found. Install it, or add it to PATH, to run "
-                   "libretro cores."));
+            emit CoreLoadError(tr("RetroArch was not found. Install it, or add it to PATH, to run "
+                                  "libretro cores."));
             return false;
         }
         game_process_ = std::make_unique<QProcess>();
         game_process_->setProgram(retroarch);
-        game_process_->setArguments(
-            {QStringLiteral("-L"), core.path, rom_path});
+        game_process_->setArguments({QStringLiteral("-L"), core.path, rom_path});
 
-        connect(game_process_.get(),
-                qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this,
-                [this](int /*exitCode*/, QProcess::ExitStatus /*status*/) {
+        connect(game_process_.get(), qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
+                this, [this](int /*exitCode*/, QProcess::ExitStatus /*status*/) {
                     game_process_.reset();
                     emit GameStopped();
                 });
 
         game_process_->start();
         if (!game_process_->waitForStarted(5000)) {
-            emit CoreLoadError(
-                QStringLiteral("Failed to start RetroArch with core %1: %2")
-                    .arg(core.name, game_process_->errorString()));
+            emit CoreLoadError(QStringLiteral("Failed to start RetroArch with core %1: %2")
+                                   .arg(core.name, game_process_->errorString()));
             game_process_.reset();
             return false;
         }
@@ -400,8 +391,7 @@ bool EmulatorCoreManager::LaunchGame(const QString& rom_path) {
         launch_cmd[QStringLiteral("rom_path")] = rom_path;
         launch_cmd[QStringLiteral("core")] = QStringLiteral("switch");
 
-        const QByteArray msg =
-            QJsonDocument(launch_cmd).toJson(QJsonDocument::Compact) + "\n";
+        const QByteArray msg = QJsonDocument(launch_cmd).toJson(QJsonDocument::Compact) + "\n";
         troppical_socket_->write(msg);
         troppical_socket_->flush();
 
@@ -428,8 +418,7 @@ void EmulatorCoreManager::StopGame() {
     if (IsTroppicalConnected()) {
         QJsonObject stop_cmd;
         stop_cmd[QStringLiteral("type")] = QStringLiteral("stop");
-        troppical_socket_->write(
-            QJsonDocument(stop_cmd).toJson(QJsonDocument::Compact) + "\n");
+        troppical_socket_->write(QJsonDocument(stop_cmd).toJson(QJsonDocument::Compact) + "\n");
         troppical_socket_->flush();
     }
 }

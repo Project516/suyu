@@ -13,8 +13,8 @@
 #include "core/hle/service/acc/profile_manager.h"
 #include "play_time_manager.h"
 
-#include <fmt/format.h>
 #include <algorithm>
+#include <fmt/format.h>
 
 namespace PlayTime {
 
@@ -26,8 +26,7 @@ struct PlayTimeElement {
 };
 
 std::optional<std::filesystem::path> GetCurrentUserPlayTimePath() {
-    return Common::FS::GetSuyuPath(Common::FS::SuyuPath::PlayTimeDir) /
-           "playtime.bin";
+    return Common::FS::GetSuyuPath(Common::FS::SuyuPath::PlayTimeDir) / "playtime.bin";
 }
 
 [[nodiscard]] bool ReadPlayTimeFile(PlayTimeDatabase& out_play_time_db) {
@@ -168,7 +167,7 @@ void PlayTimeManager::ResetProgramPlayTime(u64 program_id) {
 
 std::string PlayTimeManager::GetReadablePlayTime(u64 t) {
     return t > 0 ? fmt::format("{:02}:{:02}:{:02}", t / 3600, (t / 60) % 60, t % 60)
-        : std::string{};
+                 : std::string{};
 }
 
 std::string PlayTimeManager::GetPlayTimeHours(u64 time_seconds) {

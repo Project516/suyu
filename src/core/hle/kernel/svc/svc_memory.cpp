@@ -32,7 +32,8 @@ constexpr bool IsValidAddressRange(u64 address, u64 size) {
 // Helper function that performs the common sanity checks for svcMapMemory
 // and svcUnmapMemory. This is doable, as both functions perform their sanitizing
 // in the same order.
-Result MapUnmapMemorySanityChecks(const KProcessPageTable& manager, u64 dst_addr, u64 src_addr, u64 size) {
+Result MapUnmapMemorySanityChecks(const KProcessPageTable& manager, u64 dst_addr, u64 src_addr,
+                                  u64 size) {
     if (!Common::IsAligned(dst_addr, Core::Memory::YUZU_PAGESIZE)) {
         LOG_ERROR(Kernel_SVC, "Destination address is not aligned to 4KB, 0x{:016X}", dst_addr);
         R_THROW(ResultInvalidAddress);

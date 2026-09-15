@@ -16,9 +16,7 @@
 
 namespace Kernel {
 
-GlobalSchedulerContext::GlobalSchedulerContext(KernelCore& kernel)
-    : m_scheduler_lock{kernel}
-{}
+GlobalSchedulerContext::GlobalSchedulerContext(KernelCore& kernel) : m_scheduler_lock{kernel} {}
 
 GlobalSchedulerContext::~GlobalSchedulerContext() = default;
 
@@ -64,7 +62,8 @@ void GlobalSchedulerContext::RegisterDummyThreadForWakeup(KThread* thread) noexc
 
 void GlobalSchedulerContext::UnregisterDummyThreadForWakeup(KThread* thread) noexcept {
     ASSERT(this->IsLocked());
-    if(auto it = std::ranges::find(m_woken_dummy_threads, thread); it != m_woken_dummy_threads.end()) {
+    if (auto it = std::ranges::find(m_woken_dummy_threads, thread);
+        it != m_woken_dummy_threads.end()) {
         *it = m_woken_dummy_threads.back();
         m_woken_dummy_threads.pop_back();
     }

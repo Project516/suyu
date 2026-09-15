@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "common/common_types.h"
-
 #include "dynarmic/frontend/decoder/decoder_detail.h"
 #include "dynarmic/frontend/decoder/matcher.h"
 
@@ -26,11 +25,12 @@ using VFPMatcher = Decoder::Matcher<Visitor, u32>;
 template<typename V, typename ReturnType>
 static std::optional<ReturnType> DecodeVFP(V& visitor, u32 instruction) {
     bool const i_uncond = (instruction & 0xF0000000) == 0xF0000000;
-#define INST(fn, name, bitstring) \
-    do { \
+#define INST(fn, name, bitstring)                                                                                                      \
+    do {                                                                                                                               \
         auto const [mask, expect] = DYNARMIC_DECODER_GET_MATCHER(VFPMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)); \
-        bool const m_uncond = (mask & 0xF0000000) == 0xF0000000; \
-        if ((instruction & mask) == expect && m_uncond == i_uncond) return DYNARMIC_DECODER_GET_MATCHER_FUNCTION(VFPMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)); \
+        bool const m_uncond = (mask & 0xF0000000) == 0xF0000000;                                                                       \
+        if ((instruction & mask) == expect && m_uncond == i_uncond)                                                                    \
+            return DYNARMIC_DECODER_GET_MATCHER_FUNCTION(VFPMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring));         \
     } while (0);
 #include "./vfp.inc"
 #undef INST
@@ -40,7 +40,7 @@ static std::optional<ReturnType> DecodeVFP(V& visitor, u32 instruction) {
 template<typename V>
 static std::optional<std::string_view> GetNameVFP(u32 inst) noexcept {
     std::vector<std::pair<std::string_view, VFPMatcher<V>>> list = {
-#define INST(fn, name, bitstring) { name, DYNARMIC_DECODER_GET_MATCHER(VFPMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring)) },
+#define INST(fn, name, bitstring) {name, DYNARMIC_DECODER_GET_MATCHER(VFPMatcher, fn, name, Decoder::detail::StringToArray<32>(bitstring))},
 #include "./vfp.inc"
 #undef INST
     };

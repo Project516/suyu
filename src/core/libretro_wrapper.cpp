@@ -63,7 +63,8 @@ bool EnvironmentCallback(unsigned cmd, void* data) {
     switch (cmd) {
     case kEnvGetCanDupe:
         // Cores ask this before ever passing NULL to the video callback.
-        if (data) *static_cast<bool*>(data) = true;
+        if (data)
+            *static_cast<bool*>(data) = true;
         return true;
 
     case kEnvSetPixelFormat:
@@ -88,7 +89,8 @@ bool EnvironmentCallback(unsigned cmd, void* data) {
         return false;
 
     case kEnvGetVariableUpdate:
-        if (data) *static_cast<bool*>(data) = false;
+        if (data)
+            *static_cast<bool*>(data) = false;
         return true;
 
     case kEnvSetVariables:
@@ -126,11 +128,11 @@ bool LibretroWrapper::LoadCore(const std::string& core_path) {
     }
 
     // Load libretro core functions
-#define LOAD_SYMBOL(S)                                                                          \
-    if (!core_library.GetSymbol(#S, &S)) {                                                     \
-        LOG_ERROR(Core, "Failed to load libretro symbol {} from {}", #S, core_path);           \
-        Unload();                                                                               \
-        return false;                                                                           \
+#define LOAD_SYMBOL(S)                                                                             \
+    if (!core_library.GetSymbol(#S, &S)) {                                                         \
+        LOG_ERROR(Core, "Failed to load libretro symbol {} from {}", #S, core_path);               \
+        Unload();                                                                                  \
+        return false;                                                                              \
     }
 
     LOAD_SYMBOL(retro_init)
@@ -160,8 +162,7 @@ bool LibretroWrapper::LoadCore(const std::string& core_path) {
     // Defaults to suyu's own data directory so a core that needs firmware has
     // a real, writable location rather than a null pointer.
     if (system_directory.empty()) {
-        system_directory =
-            Common::FS::GetSuyuPath(Common::FS::SuyuPath::SuyuDir).generic_string();
+        system_directory = Common::FS::GetSuyuPath(Common::FS::SuyuPath::SuyuDir).generic_string();
     }
     retro_set_environment(&EnvironmentCallback);
     retro_set_video_refresh(&VideoRefreshCallback);
@@ -175,7 +176,8 @@ bool LibretroWrapper::LoadCore(const std::string& core_path) {
     return true;
 }
 
-void LibretroWrapper::OnVideoFrame(const void* data, unsigned width, unsigned height, size_t pitch) {
+void LibretroWrapper::OnVideoFrame(const void* data, unsigned width, unsigned height,
+                                   size_t pitch) {
     last_frame.data = data;
     last_frame.width = width;
     last_frame.height = height;

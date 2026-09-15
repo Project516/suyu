@@ -32,7 +32,8 @@ enum class AtomSize : u64 {
     S64,
 };
 
-IR::U32U64 ApplyIntegerAtomOp(IR::IREmitter& ir, const IR::U32U64& offset, const IR::U32U64& op_b, AtomOp op, AtomSize size) {
+IR::U32U64 ApplyIntegerAtomOp(IR::IREmitter& ir, const IR::U32U64& offset, const IR::U32U64& op_b,
+                              AtomOp op, AtomSize size) {
     bool const is_signed = size == AtomSize::S64 || size == AtomSize::S32;
     switch (op) {
     case AtomOp::ADD:
@@ -73,7 +74,7 @@ IR::Value ApplyFpAtomOp(IR::IREmitter& ir, const IR::U64& offset, const IR::Valu
     switch (op) {
     case AtomOp::ADD:
         return size == AtomSize::F32 ? ir.GlobalAtomicF32Add(offset, op_b, f32_control)
-            : ir.GlobalAtomicF16x2Add(offset, op_b, f16_control);
+                                     : ir.GlobalAtomicF16x2Add(offset, op_b, f16_control);
     case AtomOp::MIN:
         return ir.GlobalAtomicF16x2Min(offset, op_b, f16_control);
     case AtomOp::MAX:
@@ -182,8 +183,8 @@ IR::Value ApplyAtomOp(TranslatorVisitor& v, IR::Reg operand_reg, const IR::U64& 
 void GlobalAtomic(TranslatorVisitor& v, IR::Reg dest_reg, IR::Reg operand_reg,
                   const IR::U64& offset, AtomSize size, AtomOp op, bool write_dest) {
     IR::Value result = AtomOpNotApplicable(size, op)
-        ? LoadGlobal(v.ir, offset, size)
-        : ApplyAtomOp(v, operand_reg, offset, size, op);
+                           ? LoadGlobal(v.ir, offset, size)
+                           : ApplyAtomOp(v, operand_reg, offset, size, op);
     if (write_dest)
         StoreResult(v, dest_reg, result, size);
 }

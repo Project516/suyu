@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: Copyright 2025 suyu Emulator Project
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "migration_worker.h"
 #include "common/fs/symlink.h"
+#include "migration_worker.h"
 
 #include <array>
+#include <filesystem>
 #include <QMap>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <filesystem>
 
 #include "common/fs/path_util.h"
 
@@ -17,7 +17,8 @@ std::array<Emulator, 4> BuildLegacyEmulators() {
     const auto roaming = Common::FS::GetAppDataRoamingDirectory();
     return {
         Emulator{QT_TR_NOOP("Citron"), roaming / "Citron", roaming / "Citron", roaming / "Citron"},
-        Emulator{QT_TR_NOOP("Sudachi"), roaming / "Sudachi", roaming / "Sudachi", roaming / "Sudachi"},
+        Emulator{QT_TR_NOOP("Sudachi"), roaming / "Sudachi", roaming / "Sudachi",
+                 roaming / "Sudachi"},
         Emulator{QT_TR_NOOP("Suyu"), roaming / "suyu", roaming / "suyu", roaming / "suyu"},
         Emulator{QT_TR_NOOP("Yuzu"), roaming / "yuzu", roaming / "yuzu", roaming / "yuzu"},
     };
@@ -38,16 +39,11 @@ std::array<Emulator, 4> BuildLegacyEmulators() {
 const std::array<Emulator, 4> legacy_emus = BuildLegacyEmulators();
 
 MigrationWorker::MigrationWorker(const Emulator selected_legacy_emu_,
-                                 const bool clear_shader_cache_,
-                                 const MigrationStrategy strategy_)
-    : QObject()
-    , selected_legacy_emu(selected_legacy_emu_)
-    , clear_shader_cache(clear_shader_cache_)
-    , strategy(strategy_)
-{}
+                                 const bool clear_shader_cache_, const MigrationStrategy strategy_)
+    : QObject(), selected_legacy_emu(selected_legacy_emu_), clear_shader_cache(clear_shader_cache_),
+      strategy(strategy_) {}
 
-void MigrationWorker::process()
-{
+void MigrationWorker::process() {
     namespace fs = std::filesystem;
     constexpr auto copy_options = fs::copy_options::update_existing | fs::copy_options::recursive;
 
@@ -74,7 +70,7 @@ void MigrationWorker::process()
         // Windows 11 has random permission nonsense to deal with.
         try {
             Common::FS::CreateSymlink(legacy_user_dir, suyu_dir);
-        } catch (const fs::filesystem_error &e) {
+        } catch (const fs::filesystem_error& e) {
             emit error(tr("Linking the old directory failed. You may need to re-run with "
                           "administrative privileges on Windows.\nOS gave error: %1")
                            .arg(tr(e.what())));

@@ -9,8 +9,8 @@
 #include <common/scope_exit.h>
 
 #include <ranges>
-#include "common/thread.h"
 #include "common/assert.h"
+#include "common/thread.h"
 #include "hid_core/frontend/emulated_controller.h"
 #include "hid_core/frontend/input_converter.h"
 #include "hid_core/hid_util.h"
@@ -760,7 +760,8 @@ void EmulatedController::StartMotionCalibration() {
     }
 }
 
-void EmulatedController::SetButton(const Common::Input::CallbackStatus& callback, std::size_t index, Common::UUID uuid) {
+void EmulatedController::SetButton(const Common::Input::CallbackStatus& callback, std::size_t index,
+                                   Common::UUID uuid) {
     const auto player_index = Service::HID::NpadIdTypeToIndex(npad_id_type);
     const auto& player = Settings::values.players.GetValue()[player_index];
 
@@ -1124,7 +1125,8 @@ void EmulatedController::SetColors(const Common::Input::CallbackStatus& callback
     }
 }
 
-void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callback, std::size_t index) {
+void EmulatedController::SetBattery(const Common::Input::CallbackStatus& callback,
+                                    std::size_t index) {
     if (index >= controller.battery_values.size()) {
         return;
     }
@@ -1198,7 +1200,8 @@ void EmulatedController::SetCamera(const Common::Input::CallbackStatus& callback
     controller.camera_values = TransformToCamera(callback);
     if (!is_configuring) {
         controller.camera_state.sample++;
-        controller.camera_state.format = Core::IrSensor::ImageTransferProcessorFormat(controller.camera_values.format);
+        controller.camera_state.format =
+            Core::IrSensor::ImageTransferProcessorFormat(controller.camera_values.format);
         controller.camera_state.data = controller.camera_values.data;
     }
 }
@@ -1620,7 +1623,8 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
 
     // Fallback Fullkey controllers to Pro controllers
     if (IsControllerFullkey() && supported_style_tag.fullkey) {
-        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Pro controller", npad_type.load());
+        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Pro controller",
+                    npad_type.load());
         SetNpadStyleIndex(NpadStyleIndex::Fullkey);
         Connect();
         return;
@@ -1628,7 +1632,8 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
 
     // Fallback Dual joycon controllers to Pro controllers
     if (npad_type == NpadStyleIndex::JoyconDual && supported_style_tag.fullkey) {
-        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Pro controller", npad_type.load());
+        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Pro controller",
+                    npad_type.load());
         SetNpadStyleIndex(NpadStyleIndex::Fullkey);
         Connect();
         return;
@@ -1636,16 +1641,19 @@ void EmulatedController::SetSupportedNpadStyleTag(NpadStyleTag supported_styles)
 
     // Fallback Pro controllers to Dual joycon
     if (npad_type == NpadStyleIndex::Fullkey && supported_style_tag.joycon_dual) {
-        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Dual Joycons", npad_type.load());
+        LOG_WARNING(Service_HID, "Reconnecting controller type {} as Dual Joycons",
+                    npad_type.load());
         SetNpadStyleIndex(NpadStyleIndex::JoyconDual);
         Connect();
         return;
     }
-    LOG_ERROR(Service_HID, "Controller type {} is not supported. Disconnecting controller", npad_type.load());
+    LOG_ERROR(Service_HID, "Controller type {} is not supported. Disconnecting controller",
+              npad_type.load());
 }
 
 bool EmulatedController::IsControllerFullkey(bool use_temporary_value) const {
-    const auto type = is_configuring.load() && use_temporary_value ? tmp_npad_type.load() : npad_type.load();
+    const auto type =
+        is_configuring.load() && use_temporary_value ? tmp_npad_type.load() : npad_type.load();
     switch (type) {
     case NpadStyleIndex::Fullkey:
     case NpadStyleIndex::GameCube:
@@ -1660,26 +1668,40 @@ bool EmulatedController::IsControllerFullkey(bool use_temporary_value) const {
 }
 
 bool EmulatedController::IsControllerSupported(bool use_temporary_value) const {
-    const auto type = is_configuring.load() && use_temporary_value ? tmp_npad_type.load() : npad_type.load();
+    const auto type =
+        is_configuring.load() && use_temporary_value ? tmp_npad_type.load() : npad_type.load();
     switch (type) {
-    case NpadStyleIndex::Fullkey: return supported_style_tag.fullkey != 0;
-    case NpadStyleIndex::Handheld: return supported_style_tag.handheld != 0;
-    case NpadStyleIndex::JoyconDual: return supported_style_tag.joycon_dual != 0;
-    case NpadStyleIndex::JoyconLeft: return supported_style_tag.joycon_left != 0;
-    case NpadStyleIndex::JoyconRight: return supported_style_tag.joycon_right != 0;
-    case NpadStyleIndex::GameCube: return supported_style_tag.gamecube != 0;
-    case NpadStyleIndex::Pokeball: return supported_style_tag.palma != 0;
-    case NpadStyleIndex::NES: return supported_style_tag.lark != 0;
-    case NpadStyleIndex::SNES: return supported_style_tag.lucia != 0;
-    case NpadStyleIndex::N64: return supported_style_tag.lagoon != 0;
-    case NpadStyleIndex::SegaGenesis: return supported_style_tag.lager != 0;
-    default: return false;
+    case NpadStyleIndex::Fullkey:
+        return supported_style_tag.fullkey != 0;
+    case NpadStyleIndex::Handheld:
+        return supported_style_tag.handheld != 0;
+    case NpadStyleIndex::JoyconDual:
+        return supported_style_tag.joycon_dual != 0;
+    case NpadStyleIndex::JoyconLeft:
+        return supported_style_tag.joycon_left != 0;
+    case NpadStyleIndex::JoyconRight:
+        return supported_style_tag.joycon_right != 0;
+    case NpadStyleIndex::GameCube:
+        return supported_style_tag.gamecube != 0;
+    case NpadStyleIndex::Pokeball:
+        return supported_style_tag.palma != 0;
+    case NpadStyleIndex::NES:
+        return supported_style_tag.lark != 0;
+    case NpadStyleIndex::SNES:
+        return supported_style_tag.lucia != 0;
+    case NpadStyleIndex::N64:
+        return supported_style_tag.lagoon != 0;
+    case NpadStyleIndex::SegaGenesis:
+        return supported_style_tag.lager != 0;
+    default:
+        return false;
     }
 }
 
 void EmulatedController::Connect(bool use_temporary_value) {
     if (!IsControllerSupported(use_temporary_value)) {
-        const auto type = is_configuring.load() && use_temporary_value ? tmp_npad_type.load() : npad_type.load();
+        const auto type =
+            is_configuring.load() && use_temporary_value ? tmp_npad_type.load() : npad_type.load();
         LOG_ERROR(Service_HID, "Controller type {} is not supported", type);
         return;
     }
@@ -1746,7 +1768,8 @@ void EmulatedController::SetNpadStyleIndex(NpadStyleIndex npad_type_) {
         return;
     }
     if (is_connected) {
-        LOG_WARNING(Service_HID, "Controller {} type changed while it's connected", Service::HID::NpadIdTypeToIndex(npad_id_type));
+        LOG_WARNING(Service_HID, "Controller {} type changed while it's connected",
+                    Service::HID::NpadIdTypeToIndex(npad_id_type));
     }
     npad_type = npad_type_;
 }

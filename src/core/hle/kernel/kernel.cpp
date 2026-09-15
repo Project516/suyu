@@ -10,8 +10,8 @@
 #include <functional>
 #include <memory>
 #include <thread>
-#include <ankerl/unordered_dense.h>
 #include <utility>
+#include <ankerl/unordered_dense.h>
 
 #include "common/assert.h"
 #include "common/logging.h"
@@ -111,7 +111,8 @@ struct KernelCore::Impl {
         {
             const auto& pt_heap_region = memory_layout->GetPageTableHeapRegion();
             ASSERT(pt_heap_region.GetEndAddress() != 0);
-            InitializeResourceManagers(kernel, pt_heap_region.GetAddress(), pt_heap_region.GetSize());
+            InitializeResourceManagers(kernel, pt_heap_region.GetAddress(),
+                                       pt_heap_region.GetSize());
         }
 
         InitializeHackSharedMemory(kernel);
@@ -242,26 +243,36 @@ struct KernelCore::Impl {
         const auto kernel_size{sizes.second};
 
         // If setting the default system values fails, then something seriously wrong has occurred.
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::PhysicalMemoryMax, total_size).IsSuccess());
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::ThreadCountMax, 800).IsSuccess());
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::EventCountMax, 900).IsSuccess());
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::TransferMemoryCountMax, 200).IsSuccess());
-        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::SessionCountMax, 1133).IsSuccess());
+        ASSERT(
+            system_resource_limit->SetLimitValue(LimitableResource::PhysicalMemoryMax, total_size)
+                .IsSuccess());
+        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::ThreadCountMax, 800)
+                   .IsSuccess());
+        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::EventCountMax, 900)
+                   .IsSuccess());
+        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::TransferMemoryCountMax, 200)
+                   .IsSuccess());
+        ASSERT(system_resource_limit->SetLimitValue(LimitableResource::SessionCountMax, 1133)
+                   .IsSuccess());
         system_resource_limit->Reserve(kernel, LimitableResource::PhysicalMemoryMax, kernel_size);
 
         // Reserve secure applet memory, introduced in firmware 5.0.0
         constexpr u64 secure_applet_memory_size{4_MiB};
-        ASSERT(system_resource_limit->Reserve(kernel, LimitableResource::PhysicalMemoryMax, secure_applet_memory_size));
+        ASSERT(system_resource_limit->Reserve(kernel, LimitableResource::PhysicalMemoryMax,
+                                              secure_applet_memory_size));
     }
 
     void InitializePreemption(KernelCore& kernel) {
-        preemption_event = Core::Timing::CreateEvent("PreemptionCallback", [this, &kernel](s64 time, std::chrono::nanoseconds) -> std::optional<std::chrono::nanoseconds> {
-            {
-                KScopedSchedulerLock lock(kernel);
-                global_scheduler_context->PreemptThreads(kernel);
-            }
-            return std::nullopt;
-        });
+        preemption_event = Core::Timing::CreateEvent(
+            "PreemptionCallback",
+            [this, &kernel](s64 time,
+                            std::chrono::nanoseconds) -> std::optional<std::chrono::nanoseconds> {
+                {
+                    KScopedSchedulerLock lock(kernel);
+                    global_scheduler_context->PreemptThreads(kernel);
+                }
+                return std::nullopt;
+            });
 
         const auto time_interval = std::chrono::nanoseconds{std::chrono::milliseconds(10)};
         system.CoreTiming().ScheduleLoopingEvent(time_interval, time_interval, preemption_event);
@@ -273,13 +284,15 @@ struct KernelCore::Impl {
         ASSERT(Common::IsAligned(size, PageSize));
 
         // Ensure that we have space for our reference counts.
-        const size_t rc_size = Common::AlignUp(KPageTableSlabHeap::CalculateReferenceCountSize(size), PageSize);
+        const size_t rc_size =
+            Common::AlignUp(KPageTableSlabHeap::CalculateReferenceCountSize(size), PageSize);
         ASSERT(rc_size < size);
         size -= rc_size;
 
         // Initialize the resource managers' shared page manager.
         resource_manager_page_manager.emplace();
-        resource_manager_page_manager->Initialize(address, size, std::max<size_t>(PageSize, KPageBufferSlabHeap::BufferSize));
+        resource_manager_page_manager->Initialize(
+            address, size, std::max<size_t>(PageSize, KPageBufferSlabHeap::BufferSize));
 
         // Initialize the KPageBuffer slab heap.
         page_buffer_slab_heap.Initialize(system);
@@ -288,12 +301,17 @@ struct KernelCore::Impl {
         app_memory_block_heap.emplace();
         sys_memory_block_heap.emplace();
         block_info_heap.emplace();
-        app_memory_block_heap->Initialize(std::addressof(*resource_manager_page_manager), ApplicationMemoryBlockSlabHeapSize);
-        sys_memory_block_heap->Initialize(std::addressof(*resource_manager_page_manager), SystemMemoryBlockSlabHeapSize);
-        block_info_heap->Initialize(std::addressof(*resource_manager_page_manager), BlockInfoSlabHeapSize);
+        app_memory_block_heap->Initialize(std::addressof(*resource_manager_page_manager),
+                                          ApplicationMemoryBlockSlabHeapSize);
+        sys_memory_block_heap->Initialize(std::addressof(*resource_manager_page_manager),
+                                          SystemMemoryBlockSlabHeapSize);
+        block_info_heap->Initialize(std::addressof(*resource_manager_page_manager),
+                                    BlockInfoSlabHeapSize);
 
         // Reserve all but a fixed number of remaining pages for the page table heap.
-        const size_t num_pt_pages = resource_manager_page_manager->GetCount() - resource_manager_page_manager->GetUsed() - ReservedDynamicPageCount;
+        const size_t num_pt_pages = resource_manager_page_manager->GetCount() -
+                                    resource_manager_page_manager->GetUsed() -
+                                    ReservedDynamicPageCount;
         page_table_heap.emplace();
 
         // TODO(bunnei): Pass in address once we support kernel virtual memory allocations.
@@ -305,7 +323,8 @@ struct KernelCore::Impl {
         KDynamicPageManager* const app_dynamic_page_manager = nullptr;
         KDynamicPageManager* const sys_dynamic_page_manager =
             /*KTargetSystem::IsDynamicResourceLimitsEnabled()*/ true
-            ? std::addressof(*resource_manager_page_manager) : nullptr;
+                ? std::addressof(*resource_manager_page_manager)
+                : nullptr;
         app_memory_block_manager.emplace();
         sys_memory_block_manager.emplace();
         app_block_info_manager.emplace();
@@ -313,17 +332,25 @@ struct KernelCore::Impl {
         app_page_table_manager.emplace();
         sys_page_table_manager.emplace();
 
-        app_memory_block_manager->Initialize(app_dynamic_page_manager, std::addressof(*app_memory_block_heap));
-        sys_memory_block_manager->Initialize(sys_dynamic_page_manager, std::addressof(*sys_memory_block_heap));
+        app_memory_block_manager->Initialize(app_dynamic_page_manager,
+                                             std::addressof(*app_memory_block_heap));
+        sys_memory_block_manager->Initialize(sys_dynamic_page_manager,
+                                             std::addressof(*sys_memory_block_heap));
 
-        app_block_info_manager->Initialize(app_dynamic_page_manager, std::addressof(*block_info_heap));
-        sys_block_info_manager->Initialize(sys_dynamic_page_manager, std::addressof(*block_info_heap));
+        app_block_info_manager->Initialize(app_dynamic_page_manager,
+                                           std::addressof(*block_info_heap));
+        sys_block_info_manager->Initialize(sys_dynamic_page_manager,
+                                           std::addressof(*block_info_heap));
 
-        app_page_table_manager->Initialize(app_dynamic_page_manager, std::addressof(*page_table_heap));
-        sys_page_table_manager->Initialize(sys_dynamic_page_manager, std::addressof(*page_table_heap));
+        app_page_table_manager->Initialize(app_dynamic_page_manager,
+                                           std::addressof(*page_table_heap));
+        sys_page_table_manager->Initialize(sys_dynamic_page_manager,
+                                           std::addressof(*page_table_heap));
 
         // Check that we have the correct number of dynamic pages available.
-        ASSERT(resource_manager_page_manager->GetCount() - resource_manager_page_manager->GetUsed() == ReservedDynamicPageCount);
+        ASSERT(resource_manager_page_manager->GetCount() -
+                   resource_manager_page_manager->GetUsed() ==
+               ReservedDynamicPageCount);
 
         // Create the system page table managers.
         app_system_resource.emplace(kernel);
@@ -332,15 +359,18 @@ struct KernelCore::Impl {
         KAutoObject::Create(std::addressof(*sys_system_resource));
 
         // Set the managers for the system resources.
-        app_system_resource->SetManagers(*app_memory_block_manager, *app_block_info_manager, *app_page_table_manager);
-        sys_system_resource->SetManagers(*sys_memory_block_manager, *sys_block_info_manager, *sys_page_table_manager);
+        app_system_resource->SetManagers(*app_memory_block_manager, *app_block_info_manager,
+                                         *app_page_table_manager);
+        sys_system_resource->SetManagers(*sys_memory_block_manager, *sys_block_info_manager,
+                                         *sys_page_table_manager);
     }
 
     void InitializeShutdownThreads() {
         for (u32 core_id = 0; core_id < Core::Hardware::NUM_CPU_CORES; core_id++) {
             shutdown_threads[core_id] = KThread::Create(system.Kernel());
-            ASSERT(KThread::InitializeHighPriorityThread(system, shutdown_threads[core_id], {}, {}, core_id)
-                .IsSuccess());
+            ASSERT(KThread::InitializeHighPriorityThread(system, shutdown_threads[core_id], {}, {},
+                                                         core_id)
+                       .IsSuccess());
             KThread::Register(system.Kernel(), shutdown_threads[core_id]);
         }
     }
@@ -418,7 +448,8 @@ struct KernelCore::Impl {
     }
 
     KThread* GetCurrentEmuThread(ThreadLocalData& t) {
-        return t.current_thread ? t.current_thread : (t.current_thread = GetHostDummyThread(t, nullptr));
+        return t.current_thread ? t.current_thread
+                                : (t.current_thread = GetHostDummyThread(t, nullptr));
     }
 
     void SetCurrentEmuThread(KThread* thread) {
@@ -740,20 +771,24 @@ struct KernelCore::Impl {
         time_shared_mem = KSharedMemory::Create(system.Kernel());
         hidbus_shared_mem = KSharedMemory::Create(system.Kernel());
 
-        font_shared_mem->Initialize(system.Kernel(), system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
-                                    Svc::MemoryPermission::Read, font_size);
+        font_shared_mem->Initialize(system.Kernel(), system.DeviceMemory(), nullptr,
+                                    Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
+                                    font_size);
         KSharedMemory::Register(kernel, font_shared_mem);
 
-        irs_shared_mem->Initialize(system.Kernel(), system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
-                                   Svc::MemoryPermission::Read, irs_size);
+        irs_shared_mem->Initialize(system.Kernel(), system.DeviceMemory(), nullptr,
+                                   Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
+                                   irs_size);
         KSharedMemory::Register(kernel, irs_shared_mem);
 
-        time_shared_mem->Initialize(system.Kernel(), system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
-                                    Svc::MemoryPermission::Read, time_size);
+        time_shared_mem->Initialize(system.Kernel(), system.DeviceMemory(), nullptr,
+                                    Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
+                                    time_size);
         KSharedMemory::Register(kernel, time_shared_mem);
 
-        hidbus_shared_mem->Initialize(system.Kernel(), system.DeviceMemory(), nullptr, Svc::MemoryPermission::None,
-                                      Svc::MemoryPermission::Read, hidbus_size);
+        hidbus_shared_mem->Initialize(system.Kernel(), system.DeviceMemory(), nullptr,
+                                      Svc::MemoryPermission::None, Svc::MemoryPermission::Read,
+                                      hidbus_size);
         KSharedMemory::Register(kernel, hidbus_shared_mem);
     }
 
@@ -940,7 +975,8 @@ const Kernel::PhysicalCore& KernelCore::CurrentPhysicalCore() const {
 }
 
 Kernel::KScheduler* KernelCore::CurrentScheduler() {
-    if (auto const core_id = impl->GetCurrentHostThreadID(); core_id < Core::Hardware::NUM_CPU_CORES)
+    if (auto const core_id = impl->GetCurrentHostThreadID();
+        core_id < Core::Hardware::NUM_CPU_CORES)
         return std::addressof(*impl->schedulers[core_id]);
     return {}; // This is expected when called from not a guest thread
 }
@@ -1024,9 +1060,11 @@ void KernelCore::RegisterHostThread(KThread* existing_thread) {
     }
 }
 
-static std::jthread RunHostThreadFunc(KernelCore& kernel, KProcess* process, std::string&& thread_name, std::function<void()>&& func) {
+static std::jthread RunHostThreadFunc(KernelCore& kernel, KProcess* process,
+                                      std::string&& thread_name, std::function<void()>&& func) {
     // Reserve a new thread from the process resource limit.
-    KScopedResourceReservation thread_reservation(kernel, process, LimitableResource::ThreadCountMax);
+    KScopedResourceReservation thread_reservation(kernel, process,
+                                                  LimitableResource::ThreadCountMax);
     ASSERT(thread_reservation.Succeeded());
 
     // Initialize the thread.
@@ -1039,28 +1077,29 @@ static std::jthread RunHostThreadFunc(KernelCore& kernel, KProcess* process, std
     // Register the thread.
     KThread::Register(kernel, thread);
 
-    return std::jthread([&kernel, thread, thread_name_{std::move(thread_name)}, func_{std::move(func)}] {
-        // Set the thread name.
-        Common::SetCurrentThreadName(thread_name_.c_str());
+    return std::jthread(
+        [&kernel, thread, thread_name_{std::move(thread_name)}, func_{std::move(func)}] {
+            // Set the thread name.
+            Common::SetCurrentThreadName(thread_name_.c_str());
 
-        // Set the thread as current.
-        kernel.RegisterHostThread(thread);
+            // Set the thread as current.
+            kernel.RegisterHostThread(thread);
 
-        // Run the callback.
-        func_();
+            // Run the callback.
+            func_();
 
-        // Close the thread.
-        // This will free the process if it is the last reference.
-        thread->Close(kernel);
-    });
+            // Close the thread.
+            // This will free the process if it is the last reference.
+            thread->Close(kernel);
+        });
 }
 
 std::jthread KernelCore::RunOnHostCoreProcess(std::string&& process_name,
                                               std::function<void()> func) {
     // Make a new process.
     KProcess* process = KProcess::Create(*this);
-    ASSERT(R_SUCCEEDED(
-        process->Initialize(*this, Svc::CreateProcessParameter{}, GetSystemResourceLimit(), false)));
+    ASSERT(R_SUCCEEDED(process->Initialize(*this, Svc::CreateProcessParameter{},
+                                           GetSystemResourceLimit(), false)));
 
     // Ensure that we don't hold onto any extra references.
     SCOPE_EXIT {
@@ -1089,8 +1128,8 @@ void KernelCore::RunOnGuestCoreProcess(std::string&& process_name, std::function
 
     // Make a new process.
     KProcess* process = KProcess::Create(*this);
-    ASSERT(R_SUCCEEDED(
-        process->Initialize(*this, Svc::CreateProcessParameter{}, GetSystemResourceLimit(), false)));
+    ASSERT(R_SUCCEEDED(process->Initialize(*this, Svc::CreateProcessParameter{},
+                                           GetSystemResourceLimit(), false)));
 
     // Ensure that we don't hold onto any extra references.
     SCOPE_EXIT {
@@ -1101,7 +1140,8 @@ void KernelCore::RunOnGuestCoreProcess(std::string&& process_name, std::function
     KProcess::Register(*this, process);
 
     // Reserve a new thread from the process resource limit.
-    KScopedResourceReservation thread_reservation(*this, process, LimitableResource::ThreadCountMax);
+    KScopedResourceReservation thread_reservation(*this, process,
+                                                  LimitableResource::ThreadCountMax);
     ASSERT(thread_reservation.Succeeded());
 
     // Initialize the thread.

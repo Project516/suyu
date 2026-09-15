@@ -70,7 +70,8 @@ void I2F(TranslatorVisitor& v, u64 insn, IR::U32U64 src) {
     int src_bitsize{};
     switch (i2f.int_format) {
     case IntFormat::U8:
-        src = v.ir.BitFieldExtract(src, v.ir.Imm32(u32(i2f.selector) * 8), v.ir.Imm32(8), is_signed);
+        src =
+            v.ir.BitFieldExtract(src, v.ir.Imm32(u32(i2f.selector) * 8), v.ir.Imm32(8), is_signed);
         if (i2f.abs != 0)
             src = SmallAbs(v, src, 8);
         src_bitsize = 8;
@@ -78,7 +79,8 @@ void I2F(TranslatorVisitor& v, u64 insn, IR::U32U64 src) {
     case IntFormat::U16:
         if (i2f.selector == 1 || i2f.selector == 3)
             throw NotImplementedException("Invalid U16 selector {}", i2f.selector.Value());
-        src = v.ir.BitFieldExtract(src, v.ir.Imm32(u32(i2f.selector) * 8), v.ir.Imm32(16), is_signed);
+        src =
+            v.ir.BitFieldExtract(src, v.ir.Imm32(u32(i2f.selector) * 8), v.ir.Imm32(16), is_signed);
         if (i2f.abs != 0)
             src = SmallAbs(v, src, 16);
         src_bitsize = 16;
@@ -99,7 +101,8 @@ void I2F(TranslatorVisitor& v, u64 insn, IR::U32U64 src) {
         .rounding = CastFpRounding(i2f.fp_rounding),
         .fmz_mode = IR::FmzMode::DontCare,
     };
-    auto value{v.ir.ConvertIToF(size_t(dst_bitsize), size_t(conversion_src_bitsize), is_signed, src, fp_control)};
+    auto value{v.ir.ConvertIToF(size_t(dst_bitsize), size_t(conversion_src_bitsize), is_signed, src,
+                                fp_control)};
     if (i2f.neg != 0) {
         if (i2f.abs != 0 || !is_signed) {
             // We know the value is positive

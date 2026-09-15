@@ -25,10 +25,14 @@ void LoopProcess(Core::System& system) {
     server_manager->RegisterNamedService("audout:u", std::make_shared<IAudioOutManager>(system));
     // Depends on audout:u and audin:u on ctor!
     server_manager->RegisterNamedService("audctl", std::make_shared<IAudioController>(system));
-    server_manager->RegisterNamedService("audrec:a", std::make_shared<IFinalOutputRecorderManagerForApplet>(system));
-    server_manager->RegisterNamedService("audrec:u", std::make_shared<IFinalOutputRecorderManager>(system));
-    server_manager->RegisterNamedService("audren:u", std::make_shared<IAudioRendererManager>(system));
-    server_manager->RegisterNamedService("hwopus", std::make_shared<IHardwareOpusDecoderManager>(system));
+    server_manager->RegisterNamedService(
+        "audrec:a", std::make_shared<IFinalOutputRecorderManagerForApplet>(system));
+    server_manager->RegisterNamedService("audrec:u",
+                                         std::make_shared<IFinalOutputRecorderManager>(system));
+    server_manager->RegisterNamedService("audren:u",
+                                         std::make_shared<IAudioRendererManager>(system));
+    server_manager->RegisterNamedService("hwopus",
+                                         std::make_shared<IHardwareOpusDecoderManager>(system));
     ServerManager::RunServer(std::move(server_manager));
 }
 

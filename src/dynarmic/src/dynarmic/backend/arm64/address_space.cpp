@@ -6,9 +6,8 @@
  * SPDX-License-Identifier: 0BSD
  */
 
-#include <cstdio>
-
 #include <bit>
+#include <cstdio>
 
 #include "dynarmic/backend/arm64/a64_address_space.h"
 #include "dynarmic/backend/arm64/a64_jitstate.h"
@@ -25,12 +24,11 @@
 namespace Dynarmic::Backend::Arm64 {
 
 AddressSpace::AddressSpace(std::size_t code_cache_size)
-    : ir_block{IR::LocationDescriptor{0}}
-    , code_cache_size(code_cache_size)
-    , mem(code_cache_size)
-    , code(mem.ptr(), mem.ptr())
-    , fastmem_manager(exception_handler)
-{
+        : ir_block{IR::LocationDescriptor{0}}
+        , code_cache_size(code_cache_size)
+        , mem(code_cache_size)
+        , code(mem.ptr(), mem.ptr())
+        , fastmem_manager(exception_handler) {
     ASSERT(code_cache_size <= 128 * 1024 * 1024 && "code_cache_size > 128 MiB not currently supported");
 
     exception_handler.Register(mem, code_cache_size);
@@ -344,8 +342,10 @@ FakeCall AddressSpace::FastmemCallback(u64 host_pc) {
     }
 
 fail:
-    fmt::print("dynarmic: Segfault happened within JITted code at host_pc = {:016x}\n"
-        "Segfault wasn't at a fastmem patch location!\n", host_pc);
+    fmt::print(
+        "dynarmic: Segfault happened within JITted code at host_pc = {:016x}\n"
+        "Segfault wasn't at a fastmem patch location!\n",
+        host_pc);
     UNREACHABLE();
 }
 

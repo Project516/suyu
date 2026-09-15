@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <functional>
+#include <memory>
 #include <QJsonObject>
 #include <QObject>
 #include <QString>
-#include <functional>
-#include <memory>
 
 class QTcpServer;
 class QTcpSocket;

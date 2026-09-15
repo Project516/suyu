@@ -15,8 +15,7 @@
 namespace Service::HID {
 
 NpadAbstractIrSensorHandler::NpadAbstractIrSensorHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+    : kernel{kernel_} {}
 
 NpadAbstractIrSensorHandler::~NpadAbstractIrSensorHandler() = default;
 

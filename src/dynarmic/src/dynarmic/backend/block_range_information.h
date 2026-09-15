@@ -10,9 +10,9 @@
 
 #include <set>
 
+#include <ankerl/unordered_dense.h>
 #include <boost/icl/interval_map.hpp>
 #include <boost/icl/interval_set.hpp>
-#include <ankerl/unordered_dense.h>
 
 #include "dynarmic/ir/location_descriptor.h"
 

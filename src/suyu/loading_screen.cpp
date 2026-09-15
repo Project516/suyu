@@ -7,26 +7,26 @@
 #include <unordered_map>
 #include <QBuffer>
 #include <QByteArray>
+#include <QEvent>
 #include <QFile>
 #include <QGraphicsOpacityEffect>
-#include <QEvent>
 #include <QHideEvent>
 #include <QIODevice>
-#include <QShowEvent>
 #include <QImage>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPixmap>
 #include <QPropertyAnimation>
+#include <QShowEvent>
 #include <QStyleOption>
 #include <QTimer>
 #include <QVariantAnimation>
 #include "common/logging/log.h"
 #include "common/settings.h"
-#include "suyu/uisettings.h"
 #include "core/frontend/framebuffer_layout.h"
 #include "core/loader/loader.h"
 #include "suyu/loading_screen.h"
+#include "suyu/uisettings.h"
 #include "ui_loading_screen.h"
 #include "video_core/rasterizer_interface.h"
 
@@ -55,7 +55,8 @@ constexpr qreal LOADING_MUSIC_VOLUME_SCALE = 0.25;
 constexpr qreal LOADING_MUSIC_VOLUME_CAP = 0.35;
 
 [[maybe_unused]] qreal GetLoadingMusicTargetVolume() {
-    if (Settings::values.audio_muted.GetValue() || !UISettings::values.enable_loading_music.GetValue()) {
+    if (Settings::values.audio_muted.GetValue() ||
+        !UISettings::values.enable_loading_music.GetValue()) {
         return 0.0;
     }
 
@@ -88,8 +89,8 @@ QPixmap CreateArtworkPixmap(const QPixmap& source, const QSize& target_size, qre
     painter.setClipping(false);
 
     painter.setPen(QPen(QColor(255, 255, 255, 60), 1.5));
-    painter.drawRoundedRect(QRectF(0.75, 0.75, target_size.width() - 1.5, target_size.height() - 1.5),
-                            radius, radius);
+    painter.drawRoundedRect(
+        QRectF(0.75, 0.75, target_size.width() - 1.5, target_size.height() - 1.5), radius, radius);
     painter.end();
 
     return framed;
@@ -159,8 +160,8 @@ LoadingScreen::LoadingScreen(QWidget* parent)
     ui->value->setMaximumWidth(980);
     ui->log->setMaximumWidth(980);
 
-    spinner_pixmap_ = QPixmap(QStringLiteral(":/img/suyu.svg")).scaled(120, 120,
-                             Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    spinner_pixmap_ = QPixmap(QStringLiteral(":/img/suyu.svg"))
+                          .scaled(120, 120, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     spinner_timer_ = new QTimer(this);
     spinner_timer_->setInterval(33);
     connect(spinner_timer_, &QTimer::timeout, this, [this] {
@@ -186,10 +187,11 @@ LoadingScreen::LoadingScreen(QWidget* parent)
     background_timer_->start();
 
     // Watchdog: the loading screen is normally dismissed when the render window presents its first
-    // frame (GMainWindow::OnLoadComplete via FirstFrameDisplayed). If a game stalls before its first
-    // frame, that signal never arrives and the overlay would hang forever. Once we reach the Complete
-    // stage we arm this single-shot timer to dismiss the overlay regardless, so control is handed to
-    // the game (showing its own black/boot screen) instead of leaving suyu's overlay stuck.
+    // frame (GMainWindow::OnLoadComplete via FirstFrameDisplayed). If a game stalls before its
+    // first frame, that signal never arrives and the overlay would hang forever. Once we reach the
+    // Complete stage we arm this single-shot timer to dismiss the overlay regardless, so control is
+    // handed to the game (showing its own black/boot screen) instead of leaving suyu's overlay
+    // stuck.
     complete_watchdog_ = new QTimer(this);
     complete_watchdog_->setSingleShot(true);
     complete_watchdog_->setInterval(12000);
@@ -243,7 +245,7 @@ LoadingScreen::LoadingScreen(QWidget* parent)
         const QString custom_path =
             QString::fromStdString(UISettings::values.loading_music_path.GetValue());
         QFile music_resource(!custom_path.isEmpty() ? custom_path
-                                                     : QString::fromLatin1(LOADING_MUSIC_RESOURCE));
+                                                    : QString::fromLatin1(LOADING_MUSIC_RESOURCE));
         if (music_resource.open(QIODevice::ReadOnly)) {
             loading_music_data_ = std::make_unique<QByteArray>(music_resource.readAll());
             if (!loading_music_data_->isEmpty()) {
@@ -268,7 +270,8 @@ LoadingScreen::LoadingScreen(QWidget* parent)
                         });
                 connect(loading_music_player_.get(), &QMediaPlayer::mediaStatusChanged, this,
                         [this](QMediaPlayer::MediaStatus status) {
-                            if (status == QMediaPlayer::EndOfMedia && !loading_music_stop_pending_) {
+                            if (status == QMediaPlayer::EndOfMedia &&
+                                !loading_music_stop_pending_) {
                                 ResetLoadingMusicSource();
                                 if (loading_music_player_) {
                                     loading_music_player_->play();
@@ -324,9 +327,10 @@ void LoadingScreen::Prepare(Loader::AppLoader& loader) {
 
     if (loader.ReadIcon(buffer) == Loader::ResultStatus::Success) {
         QPixmap map;
-        const int buffer_size = buffer.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())
-                                     ? std::numeric_limits<int>::max()
-                                     : static_cast<int>(buffer.size());
+        const int buffer_size =
+            buffer.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())
+                ? std::numeric_limits<int>::max()
+                : static_cast<int>(buffer.size());
         map.loadFromData(buffer.data(), buffer_size);
         if (!map.isNull()) {
             ui->banner->setPixmap(CreateArtworkPixmap(map, QSize(230, 230), 28.0));
@@ -334,9 +338,10 @@ void LoadingScreen::Prepare(Loader::AppLoader& loader) {
         }
     } else if (loader.ReadBanner(buffer) == Loader::ResultStatus::Success) {
         QPixmap map;
-        const int buffer_size = buffer.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())
-                                     ? std::numeric_limits<int>::max()
-                                     : static_cast<int>(buffer.size());
+        const int buffer_size =
+            buffer.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())
+                ? std::numeric_limits<int>::max()
+                : static_cast<int>(buffer.size());
         map.loadFromData(buffer.data(), buffer_size);
         if (!map.isNull()) {
             ui->banner->setPixmap(CreateArtworkPixmap(map, QSize(230, 230), 28.0));
@@ -473,18 +478,18 @@ void LoadingScreen::OnLoadProgress(VideoCore::LoadCallbackStage stage, std::size
 
     QString detail_text;
     if (stage == VideoCore::LoadCallbackStage::Build) {
-        detail_text = total > 0 ? tr("Compiling shaders, pipelines, and GPU state: %1 / %2")
-                                      .arg(value)
-                                      .arg(total)
-                                : tr("Preparing GPU pipelines and shader cache");
-    } else if (stage == VideoCore::LoadCallbackStage::Complete) {
         detail_text =
-            tr("Finalizing renderer, filesystem, input, audio, applets, and networking");
+            total > 0
+                ? tr("Compiling shaders, pipelines, and GPU state: %1 / %2").arg(value).arg(total)
+                : tr("Preparing GPU pipelines and shader cache");
+    } else if (stage == VideoCore::LoadCallbackStage::Complete) {
+        detail_text = tr("Finalizing renderer, filesystem, input, audio, applets, and networking");
     } else {
-        detail_text = game_title_.isEmpty()
-                          ? tr("Reading program metadata, icon, patches, firmware, keys, and cache state")
-                          : tr("Reading metadata, icon, patches, firmware, keys, and cache state for %1")
-                                .arg(game_title_);
+        detail_text =
+            game_title_.isEmpty()
+                ? tr("Reading program metadata, icon, patches, firmware, keys, and cache state")
+                : tr("Reading metadata, icon, patches, firmware, keys, and cache state for %1")
+                      .arg(game_title_);
     }
 
     QString progress_value = estimate;
@@ -561,9 +566,9 @@ void LoadingScreen::paintEvent(QPaintEvent* event) {
             const QImage scaled_mask =
                 mask.scaled(tile_size, tile_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
             static const std::array<QColor, 3> tints{
-                QColor(235, 70, 104, 130),  // red
-                QColor(170, 79, 192, 130),  // purple
-                QColor(64, 126, 255, 130),  // blue
+                QColor(235, 70, 104, 130), // red
+                QColor(170, 79, 192, 130), // purple
+                QColor(64, 126, 255, 130), // blue
             };
             QPainter painter(&pattern_pixmap_);
             painter.setRenderHint(QPainter::Antialiasing, true);

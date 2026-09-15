@@ -16,8 +16,8 @@
 #include <boost/container/flat_map.hpp>
 #include "common/common_types.h"
 #include "core/crypto/key_manager.h"
-#include "core/file_sys/vfs/vfs.h"
 #include "core/file_sys/nca_metadata.h"
+#include "core/file_sys/vfs/vfs.h"
 
 namespace FileSys {
 class ExternalContentProvider;
@@ -241,7 +241,8 @@ public:
         std::optional<u64> title_id) const override;
 
     const ExternalContentProvider* GetExternalProvider() const;
-    [[nodiscard]] inline const ContentProvider* GetSlotProvider(ContentProviderUnionSlot slot) const {
+    [[nodiscard]] inline const ContentProvider* GetSlotProvider(
+        ContentProviderUnionSlot slot) const {
         return providers[size_t(slot)];
     }
 
@@ -250,7 +251,9 @@ public:
         std::optional<TitleType> title_type = {}, std::optional<ContentRecordType> record_type = {},
         std::optional<u64> title_id = {}) const;
 
-    std::optional<ContentProviderUnionSlot> GetSlotForEntry(u64 title_id, ContentRecordType type) const;
+    std::optional<ContentProviderUnionSlot> GetSlotForEntry(u64 title_id,
+                                                            ContentRecordType type) const;
+
 private:
     std::array<ContentProvider*, size_t(ContentProviderUnionSlot::Count)> providers;
 };
@@ -312,7 +315,8 @@ private:
     void ProcessXCI(const VirtualFile& file);
 
     std::vector<VirtualDir> load_dirs;
-    ankerl::unordered_dense::map<std::tuple<u64, ContentRecordType, TitleType>, VirtualFile> entries;
+    ankerl::unordered_dense::map<std::tuple<u64, ContentRecordType, TitleType>, VirtualFile>
+        entries;
     ankerl::unordered_dense::map<u64, u32> versions;
     std::vector<ExternalUpdateEntry> multi_version_entries;
 };

@@ -20,7 +20,6 @@
 #endif
 
 #include "common/common_types.h"
-
 #include "dynarmic/tests/A32/testenv.h"
 
 namespace Unicorn::A32 {

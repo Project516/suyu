@@ -13,9 +13,7 @@ namespace Service::GPIO {
 
 class GPIO final : public ServiceFramework<GPIO> {
 public:
-    explicit GPIO(Core::System& system_)
-        : ServiceFramework{system_, "gpio"}
-    {
+    explicit GPIO(Core::System& system_) : ServiceFramework{system_, "gpio"} {
         static const FunctionInfo functions[] = {
             {0, nullptr, "Cmd0"},
         };

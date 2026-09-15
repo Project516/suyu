@@ -81,7 +81,9 @@ public:
         const GraphicsPipelineCacheKey& key, std::array<vk::ShaderModule, NUM_STAGES> stages,
         const std::array<const Shader::Info*, NUM_STAGES>& infos);
 
-    bool HasDynamicVertexInput() const noexcept { return key.state.dynamic_vertex_input; }
+    bool HasDynamicVertexInput() const noexcept {
+        return key.state.dynamic_vertex_input;
+    }
     bool SupportsAlphaToCoverage() const noexcept {
         return fragment_has_color0_output;
     }
@@ -120,7 +122,9 @@ public:
 
     template <typename Spec>
     static auto MakeConfigureSpecFunc() {
-        return [](GraphicsPipeline* pl, bool is_indexed) { return pl->ConfigureImpl<Spec>(is_indexed); };
+        return [](GraphicsPipeline* pl, bool is_indexed) {
+            return pl->ConfigureImpl<Spec>(is_indexed);
+        };
     }
 
     void SetEngine(Tegra::Engines::Maxwell3D* maxwell3d_, Tegra::MemoryManager* gpu_memory_) {

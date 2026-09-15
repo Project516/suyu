@@ -94,9 +94,8 @@ Result IApplicationDisplayService::OpenDisplay(Out<u64> out_display_id, DisplayN
     display_name[display_name.size() - 1] = '\0';
 
     // According to switchbrew, only "Default", "External", "Edid", "Internal" and "Null" are valid
-    const std::array<std::string_view, 5> valid_names = {
-        "Default", "External", "Edid", "Internal", "Null"
-    };
+    const std::array<std::string_view, 5> valid_names = {"Default", "External", "Edid", "Internal",
+                                                         "Null"};
 
     bool valid_name = false;
     for (const auto& name : valid_names) {

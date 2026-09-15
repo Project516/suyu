@@ -132,7 +132,8 @@ void AddNVNStorageBuffers(IR::Program& program) {
     }
 }
 
-using IR::IsLegacyAttribute; //rescoped to attribute.h to make it visible in load_store_attribute.cpp IPA
+using IR::IsLegacyAttribute; // rescoped to attribute.h to make it visible in
+                             // load_store_attribute.cpp IPA
 
 std::map<IR::Attribute, IR::Attribute> GenerateLegacyToGenericMappings(
     const VaryingState& state, std::queue<IR::Attribute> unused_generics,

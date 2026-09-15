@@ -9,7 +9,6 @@
 #include <utility>
 
 #include "common/assert.h"
-
 #include "dynarmic/frontend/A64/translate/impl/impl.h"
 
 namespace Dynarmic::A64 {

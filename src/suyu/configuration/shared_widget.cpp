@@ -512,8 +512,7 @@ void Widget::SetupComponent(const QString& label, std::function<void()>& load_fu
         other_setting = setting.PairedSetting();
     }
 
-    const bool require_checkbox =
-        other_setting != nullptr && other_setting->TypeId() == "bool";
+    const bool require_checkbox = other_setting != nullptr && other_setting->TypeId() == "bool";
 
     if (other_setting != nullptr && other_setting->TypeId() != "bool") {
         LOG_WARNING(
@@ -611,8 +610,10 @@ void Widget::SetupComponent(const QString& label, std::function<void()>& load_fu
             data_component = CreateCombobox(serializer, restore_func, touch);
             break;
         default:
-            LOG_WARNING(Frontend, "Unsupported integral request type {} for setting {}. Falling back to line edit.",
-                        static_cast<int>(request), setting.GetLabel());
+            LOG_WARNING(
+                Frontend,
+                "Unsupported integral request type {} for setting {}. Falling back to line edit.",
+                static_cast<int>(request), setting.GetLabel());
             data_component = CreateLineEdit(serializer, restore_func, touch);
             break;
         }
@@ -628,7 +629,9 @@ void Widget::SetupComponent(const QString& label, std::function<void()>& load_fu
                                           serializer, restore_func, touch);
             break;
         default:
-            LOG_WARNING(Frontend, "Unsupported floating point request type {} for setting {}. Falling back to line edit.",
+            LOG_WARNING(Frontend,
+                        "Unsupported floating point request type {} for setting {}. Falling back "
+                        "to line edit.",
                         static_cast<int>(request), setting.GetLabel());
             data_component = CreateDoubleSpinBox(suffix, serializer, restore_func, touch);
             break;
@@ -643,8 +646,10 @@ void Widget::SetupComponent(const QString& label, std::function<void()>& load_fu
             data_component = CreateCombobox(serializer, restore_func, touch);
             break;
         default:
-            LOG_WARNING(Frontend, "Unsupported string request type {} for setting {}. Falling back to line edit.",
-                        static_cast<int>(request), setting.GetLabel());
+            LOG_WARNING(
+                Frontend,
+                "Unsupported string request type {} for setting {}. Falling back to line edit.",
+                static_cast<int>(request), setting.GetLabel());
             data_component = CreateLineEdit(serializer, restore_func, touch);
             break;
         }

@@ -26,10 +26,10 @@
 #if defined(__linux__)
 #include <sys/random.h>
 #elif defined(__APPLE__)
-#include <sys/types.h>
-#include <sys/random.h>
-#include <mach/vm_map.h>
 #include <mach/mach.h>
+#include <mach/vm_map.h>
+#include <sys/random.h>
+#include <sys/types.h>
 #elif defined(__FreeBSD__)
 #include <sys/shm.h>
 #elif defined(__OPENORBIS__)
@@ -124,11 +124,8 @@ static void GetFuncAddress(Common::DynamicLibrary& dll, const char* name, T& pfn
 class HostMemory::Impl {
 public:
     explicit Impl(size_t backing_size_, size_t virtual_size_)
-        : backing_size{backing_size_}
-        , virtual_size{virtual_size_}
-        , process{GetCurrentProcess()}
-        , kernelbase_dll("Kernelbase")
-    {}
+        : backing_size{backing_size_}, virtual_size{virtual_size_}, process{GetCurrentProcess()},
+          kernelbase_dll("Kernelbase") {}
 
     bool Init() {
         if (!kernelbase_dll.IsOpen()) {
@@ -140,36 +137,47 @@ public:
         GetFuncAddress(kernelbase_dll, "MapViewOfFile3", pfn_MapViewOfFile3);
         GetFuncAddress(kernelbase_dll, "UnmapViewOfFile2", pfn_UnmapViewOfFile2);
 
-        if (!pfn_CreateFileMapping2 || !pfn_VirtualAlloc2 || !pfn_MapViewOfFile3 || !pfn_UnmapViewOfFile2) {
+        if (!pfn_CreateFileMapping2 || !pfn_VirtualAlloc2 || !pfn_MapViewOfFile3 ||
+            !pfn_UnmapViewOfFile2) {
             LOG_CRITICAL(HW_Memory, "Failed to find functions for virtual allocs");
             return false;
         }
 
         // Allocate backing file map
-        backing_handle = pfn_CreateFileMapping2(INVALID_HANDLE_VALUE, nullptr, FILE_MAP_WRITE | FILE_MAP_READ, PAGE_READWRITE, SEC_COMMIT, backing_size, nullptr, nullptr, 0);
+        backing_handle =
+            pfn_CreateFileMapping2(INVALID_HANDLE_VALUE, nullptr, FILE_MAP_WRITE | FILE_MAP_READ,
+                                   PAGE_READWRITE, SEC_COMMIT, backing_size, nullptr, nullptr, 0);
         if (!backing_handle) {
-            LOG_CRITICAL(HW_Memory, "Failed to allocate {} MiB of backing memory", backing_size >> 20);
+            LOG_CRITICAL(HW_Memory, "Failed to allocate {} MiB of backing memory",
+                         backing_size >> 20);
             return false;
         }
         // Allocate a virtual memory for the backing file map as placeholder
-        backing_base = static_cast<u8*>(pfn_VirtualAlloc2(process, nullptr, backing_size, MEM_RESERVE | MEM_RESERVE_PLACEHOLDER, PAGE_NOACCESS, nullptr, 0));
+        backing_base = static_cast<u8*>(pfn_VirtualAlloc2(process, nullptr, backing_size,
+                                                          MEM_RESERVE | MEM_RESERVE_PLACEHOLDER,
+                                                          PAGE_NOACCESS, nullptr, 0));
         if (!backing_base) {
             Release();
-            LOG_CRITICAL(HW_Memory, "Failed to reserve {} MiB of virtual memory", backing_size >> 20);
+            LOG_CRITICAL(HW_Memory, "Failed to reserve {} MiB of virtual memory",
+                         backing_size >> 20);
             return false;
         }
         // Map backing placeholder
-        void* const ret = pfn_MapViewOfFile3(backing_handle, process, backing_base, 0, backing_size, MEM_REPLACE_PLACEHOLDER, PAGE_READWRITE, nullptr, 0);
+        void* const ret = pfn_MapViewOfFile3(backing_handle, process, backing_base, 0, backing_size,
+                                             MEM_REPLACE_PLACEHOLDER, PAGE_READWRITE, nullptr, 0);
         if (ret != backing_base) {
             Release();
             LOG_CRITICAL(HW_Memory, "Failed to map {} MiB of virtual memory", backing_size >> 20);
             return false;
         }
         // Allocate virtual address placeholder
-        virtual_base = static_cast<u8*>(pfn_VirtualAlloc2(process, nullptr, virtual_size, MEM_RESERVE | MEM_RESERVE_PLACEHOLDER, PAGE_NOACCESS, nullptr, 0));
+        virtual_base = static_cast<u8*>(pfn_VirtualAlloc2(process, nullptr, virtual_size,
+                                                          MEM_RESERVE | MEM_RESERVE_PLACEHOLDER,
+                                                          PAGE_NOACCESS, nullptr, 0));
         if (!virtual_base) {
             Release();
-            LOG_CRITICAL(HW_Memory, "Failed to reserve {} GiB of virtual memory", virtual_size >> 30);
+            LOG_CRITICAL(HW_Memory, "Failed to reserve {} GiB of virtual memory",
+                         virtual_size >> 30);
             return false;
         }
         return true;
@@ -389,9 +397,10 @@ private:
     PFN_MapViewOfFile3 pfn_MapViewOfFile3{};
     PFN_UnmapViewOfFile2 pfn_UnmapViewOfFile2{};
 
-    std::mutex placeholder_mutex;                                 ///< Mutex for placeholders
-    boost::icl::separate_interval_set<size_t> placeholders;       ///< Mapped placeholders
-    ankerl::unordered_dense::map<size_t, size_t> placeholder_host_pointers; ///< Placeholder backing offset
+    std::mutex placeholder_mutex;                           ///< Mutex for placeholders
+    boost::icl::separate_interval_set<size_t> placeholders; ///< Mapped placeholders
+    ankerl::unordered_dense::map<size_t, size_t>
+        placeholder_host_pointers; ///< Placeholder backing offset
 };
 
 #elif defined(__OPENORBIS__) || defined(__managarm__)
@@ -442,12 +451,16 @@ static void* ChooseVirtualBase(size_t virtual_size) {
 #else
 
 static void* ChooseVirtualBase(size_t virtual_size) {
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__sun__) || defined(__HAIKU__) || defined(__managarm__) || defined(__AIX__)
-    void* virtual_base = mmap(nullptr, virtual_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_ALIGNED_SUPER, -1, 0);
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__sun__) ||  \
+    defined(__HAIKU__) || defined(__managarm__) || defined(__AIX__)
+    void* virtual_base =
+        mmap(nullptr, virtual_size, PROT_READ | PROT_WRITE,
+             MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | MAP_ALIGNED_SUPER, -1, 0);
     if (virtual_base != MAP_FAILED)
         return virtual_base;
 #endif
-    return mmap(nullptr, virtual_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+    return mmap(nullptr, virtual_size, PROT_READ | PROT_WRITE,
+                MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
 }
 
 #endif
@@ -458,14 +471,14 @@ static void* ChooseVirtualBase(size_t virtual_size) {
 /// OS support - may fail sporadically, beware!
 static int shm_open_anon(int flags, mode_t mode) {
     char name[16] = "/shm-";
-    char *const limit = name + sizeof(name) - 1;
+    char* const limit = name + sizeof(name) - 1;
     *limit = '\0';
-    char *start = name + strlen(name);
+    char* start = name + strlen(name);
     for (int tries = 0; tries < 4; tries++) {
         struct timespec tv;
         clock_gettime(CLOCK_REALTIME, &tv);
         unsigned long r = (unsigned long)tv.tv_sec + (unsigned long)tv.tv_nsec;
-        for (char *fill = start; fill < limit; r /= 8)
+        for (char* fill = start; fill < limit; r /= 8)
             *fill++ = '0' + (r % 8);
         int fd = shm_open(name, flags, mode);
         if (fd != -1) {
@@ -502,13 +515,12 @@ static int shm_open_anon(int flags, mode_t mode) {
 class HostMemory::Impl {
 public:
     explicit Impl(size_t backing_size_, size_t virtual_size_)
-        : backing_size{backing_size_}
-        , virtual_size{virtual_size_}
-    {}
+        : backing_size{backing_size_}, virtual_size{virtual_size_} {}
 
     bool Init() {
         long page_size = sysconf(_SC_PAGESIZE);
-        ASSERT_MSG(page_size == 0x1000, "page size {:#x} is incompatible with 4K paging", page_size);
+        ASSERT_MSG(page_size == 0x1000, "page size {:#x} is incompatible with 4K paging",
+                   page_size);
         // Backing memory initialization
 #if defined(__sun__) || defined(__HAIKU__) || defined(__NetBSD__) || defined(__DragonFly__)
         fd = shm_open_anon(O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW, 0600);
@@ -541,13 +553,15 @@ public:
         }
         if (use_anon) {
             LOG_WARNING(Common_Memory, "Using private mappings instead of shared ones");
-            backing_base = static_cast<u8*>(mmap(nullptr, backing_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0));
+            backing_base = static_cast<u8*>(mmap(nullptr, backing_size, PROT_READ | PROT_WRITE,
+                                                 MAP_ANONYMOUS | MAP_PRIVATE, -1, 0));
             if (fd > 0) {
                 fd = -1;
                 close(fd);
             }
         } else {
-            backing_base = static_cast<u8*>(mmap(nullptr, backing_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+            backing_base = static_cast<u8*>(
+                mmap(nullptr, backing_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
         }
         if (backing_base == MAP_FAILED) {
             LOG_CRITICAL(HW_Memory, "mmap failed: {}", strerror(errno));
@@ -604,7 +618,8 @@ public:
         auto [merged_pointer, merged_size] =
             free_manager.FreeBlock(virtual_base + virtual_offset, length);
 
-        void* ret = mmap(merged_pointer, merged_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+        void* ret = mmap(merged_pointer, merged_size, PROT_NONE,
+                         MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
         ASSERT_MSG(ret != MAP_FAILED, "mmap: {}", strerror(errno));
     }
 
@@ -686,9 +701,7 @@ private:
 #endif // ^^^ POSIX ^^^
 
 HostMemory::HostMemory(size_t backing_size_, size_t virtual_size_)
-    : backing_size(backing_size_)
-    , virtual_size(virtual_size_)
-{
+    : backing_size(backing_size_), virtual_size(virtual_size_) {
 #if defined(__OPENORBIS__) || defined(__managarm__)
     LOG_WARNING(HW_Memory, "Platform doesn't support fastmem");
     fallback_buffer.emplace(backing_size);
@@ -697,13 +710,15 @@ HostMemory::HostMemory(size_t backing_size_, size_t virtual_size_)
 #else
     // Try to allocate a fastmem arena.
     // The implementation will fail with std::bad_alloc on errors.
-    impl = std::make_unique<HostMemory::Impl>(AlignUp(backing_size, PageAlignment), AlignUp(virtual_size, PageAlignment) + HugePageSize);
+    impl = std::make_unique<HostMemory::Impl>(AlignUp(backing_size, PageAlignment),
+                                              AlignUp(virtual_size, PageAlignment) + HugePageSize);
     if (impl->Init()) {
         backing_base = impl->backing_base;
         virtual_base = impl->virtual_base;
         if (virtual_base) {
             // Ensure the virtual base is aligned to the L2 block size.
-            virtual_base = reinterpret_cast<u8*>(Common::AlignUp(uintptr_t(virtual_base), HugePageSize));
+            virtual_base =
+                reinterpret_cast<u8*>(Common::AlignUp(uintptr_t(virtual_base), HugePageSize));
             virtual_base_offset = virtual_base - impl->virtual_base;
         }
     } else {
@@ -722,7 +737,8 @@ HostMemory::HostMemory(HostMemory&&) noexcept = default;
 
 HostMemory& HostMemory::operator=(HostMemory&&) noexcept = default;
 
-void HostMemory::Map(size_t virtual_offset, size_t host_offset, size_t length, MemoryPermission perms, bool separate_heap) {
+void HostMemory::Map(size_t virtual_offset, size_t host_offset, size_t length,
+                     MemoryPermission perms, bool separate_heap) {
 #if !(defined(__OPENORBIS__) || defined(__managarm__))
     ASSERT(virtual_offset % PageAlignment == 0);
     ASSERT(host_offset % PageAlignment == 0);

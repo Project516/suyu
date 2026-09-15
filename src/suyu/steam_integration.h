@@ -3,10 +3,10 @@
 
 #pragma once
 
+#include <vector>
 #include <QObject>
 #include <QString>
 #include <QStringList>
-#include <vector>
 
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -86,7 +86,8 @@ private:
     [[nodiscard]] std::vector<SteamShortcut> ParseShortcutsVdf(const QByteArray& data) const;
 
     /// Serialize a list of shortcuts back into binary VDF format.
-    [[nodiscard]] QByteArray SerializeShortcutsVdf(const std::vector<SteamShortcut>& shortcuts) const;
+    [[nodiscard]] QByteArray SerializeShortcutsVdf(
+        const std::vector<SteamShortcut>& shortcuts) const;
 
     /// Write VDF byte helpers.
     void VdfWriteString(QByteArray& buf, quint8 type, const QByteArray& key,

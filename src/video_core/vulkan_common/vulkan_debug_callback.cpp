@@ -4,8 +4,8 @@
 #include <string_view>
 #include "common/logging.h"
 #include "common/settings.h"
-#include "video_core/vulkan_common/vulkan_debug_callback.h"
 #include "video_core/gpu_logging/gpu_logging.h"
+#include "video_core/vulkan_common/vulkan_debug_callback.h"
 
 namespace Vulkan {
 namespace {
@@ -76,8 +76,7 @@ VkBool32 DebugUtilCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
     }
 
     // Route to GPU logger for tracking Vulkan validation messages
-    if (GPU::Logging::IsActive() &&
-        Settings::values.gpu_log_vulkan_calls.GetValue()) {
+    if (GPU::Logging::IsActive() && Settings::values.gpu_log_vulkan_calls.GetValue()) {
         // Convert severity to result code for logging (negative = error)
         int result_code = 0;
         if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
@@ -90,10 +89,8 @@ VkBool32 DebugUtilCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
         const char* call_name = data->pMessageIdName ? data->pMessageIdName : "VulkanDebug";
 
         GPU::Logging::GPULogger::GetInstance().LogVulkanCall(
-            call_name,
-            std::string(GetMessageTypeName(type)) + ": " + std::string(message),
-            result_code
-        );
+            call_name, std::string(GetMessageTypeName(type)) + ": " + std::string(message),
+            result_code);
     }
 
     return VK_FALSE;

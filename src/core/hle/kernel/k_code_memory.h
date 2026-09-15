@@ -34,12 +34,14 @@ class KCodeMemory final
 public:
     explicit KCodeMemory(KernelCore& kernel);
 
-    Result Initialize(KernelCore& kernel, Core::DeviceMemory& device_memory, KProcessAddress address, size_t size);
+    Result Initialize(KernelCore& kernel, Core::DeviceMemory& device_memory,
+                      KProcessAddress address, size_t size);
     void Finalize(KernelCore& kernel) override;
 
     Result Map(KernelCore& kernel, KProcessAddress address, size_t size);
     Result Unmap(KernelCore& kernel, KProcessAddress address, size_t size);
-    Result MapToOwner(KernelCore& kernel, KProcessAddress address, size_t size, Svc::MemoryPermission perm);
+    Result MapToOwner(KernelCore& kernel, KProcessAddress address, size_t size,
+                      Svc::MemoryPermission perm);
     Result UnmapFromOwner(KernelCore& kernel, KProcessAddress address, size_t size);
 
     bool IsInitialized() const override {

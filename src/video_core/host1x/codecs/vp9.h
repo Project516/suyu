@@ -13,8 +13,8 @@
 #include "common/common_types.h"
 #include "common/scratch_buffer.h"
 #include "common/stream.h"
-#include "video_core/host1x/codecs/decoder.h"
 #include "video_core/host1x/codec_types.h"
+#include "video_core/host1x/codecs/decoder.h"
 #include "video_core/host1x/nvdec_common.h"
 
 namespace Tegra {

@@ -85,13 +85,14 @@ FrontendAppletSet::FrontendAppletSet(CabinetApplet cabinet_applet,
                                      MiiEdit mii_edit_,
                                      ParentalControlsApplet parental_controls_applet,
                                      PhotoViewer photo_viewer_, ProfileSelect profile_select_,
-                                     SoftwareKeyboard software_keyboard_, WebBrowser web_browser_, NetConnect net_connect_)
+                                     SoftwareKeyboard software_keyboard_, WebBrowser web_browser_,
+                                     NetConnect net_connect_)
     : cabinet{std::move(cabinet_applet)}, controller{std::move(controller_applet)},
       error{std::move(error_applet)}, mii_edit{std::move(mii_edit_)},
-      parental_controls{std::move(parental_controls_applet)},
-      photo_viewer{std::move(photo_viewer_)}, profile_select{std::move(profile_select_)},
-      software_keyboard{std::move(software_keyboard_)}, web_browser{std::move(web_browser_)},
-      net_connect{std::move(net_connect_)} {}
+      parental_controls{std::move(parental_controls_applet)}, photo_viewer{std::move(
+                                                                  photo_viewer_)},
+      profile_select{std::move(profile_select_)}, software_keyboard{std::move(software_keyboard_)},
+      web_browser{std::move(web_browser_)}, net_connect{std::move(net_connect_)} {}
 
 FrontendAppletSet::~FrontendAppletSet() = default;
 
@@ -229,7 +230,8 @@ std::shared_ptr<FrontendApplet> FrontendAppletHolder::GetApplet(std::shared_ptr<
     case AppletId::ProfileSelect:
         return std::make_shared<ProfileSelect>(system, applet, mode, *frontend.profile_select);
     case AppletId::SoftwareKeyboard:
-        return std::make_shared<SoftwareKeyboard>(system, applet, mode, *frontend.software_keyboard);
+        return std::make_shared<SoftwareKeyboard>(system, applet, mode,
+                                                  *frontend.software_keyboard);
     case AppletId::MiiEdit:
         return std::make_shared<MiiEdit>(system, applet, mode, *frontend.mii_edit);
     case AppletId::Web:
@@ -244,8 +246,10 @@ std::shared_ptr<FrontendApplet> FrontendAppletHolder::GetApplet(std::shared_ptr<
     case AppletId::NetConnect:
         return std::make_shared<NetConnect>(system, applet, mode, *frontend.net_connect);
     default:
-        LOG_ERROR(Service_AM, "No backend implementation exists for applet_id={:02X} program_id={:016X}"
-                              "Falling back to stub applet", static_cast<u8>(id), applet->program_id);
+        LOG_ERROR(Service_AM,
+                  "No backend implementation exists for applet_id={:02X} program_id={:016X}"
+                  "Falling back to stub applet",
+                  static_cast<u8>(id), applet->program_id);
         return std::make_shared<StubApplet>(system, applet, id, mode);
     }
 }

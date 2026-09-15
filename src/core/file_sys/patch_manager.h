@@ -49,7 +49,6 @@ void RecordUnappliedUpdate(u64 title_id, u32 version);
 /// Every update recorded since the last call, clearing the list.
 std::vector<UnappliedUpdate> ConsumeUnappliedUpdates();
 
-
 enum class PatchSource {
     Unknown,
     NAND,

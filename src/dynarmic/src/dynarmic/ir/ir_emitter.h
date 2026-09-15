@@ -10,16 +10,15 @@
 
 #include <vector>
 
-#include "common/common_types.h"
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
-
-#include "dynarmic/ir/opcodes.h"
+#include "common/common_types.h"
 #include "dynarmic/ir/acc_type.h"
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/location_descriptor.h"
+#include "dynarmic/ir/opcodes.h"
 #include "dynarmic/ir/terminal.h"
 #include "dynarmic/ir/value.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::FP {
 enum class RoundingMode;
@@ -70,7 +69,8 @@ enum class MemOp {
 /// The user of this class updates `current_location` as appropriate.
 class IREmitter {
 public:
-    explicit IREmitter(Block& block) : block(block), insertion_point(block.instructions.end()) {}
+    explicit IREmitter(Block& block)
+            : block(block), insertion_point(block.instructions.end()) {}
 
     Block& block;
 

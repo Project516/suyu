@@ -58,7 +58,7 @@ public:
 
     void InvalidateCacheRanges(const boost::icl::interval_set<u32>& ranges);
 
-//protected:
+    // protected:
     void EmitCondPrelude(const A32EmitContext& ctx);
 
     struct FastDispatchEntry {
@@ -122,7 +122,7 @@ public:
     void EmitPatchMovRcx(CodePtr target_code_ptr = nullptr) override;
 
     const A32::UserConfig conf;
-    RegAlloc reg_alloc; //reusable reg alloc
+    RegAlloc reg_alloc;  // reusable reg alloc
     BlockRangeInformation<u32> block_ranges;
     std::array<FastDispatchEntry, fast_dispatch_table_size> fast_dispatch_table;
     ankerl::unordered_dense::map<u64, FastmemPatchInfo> fastmem_patch_info;

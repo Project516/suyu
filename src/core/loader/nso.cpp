@@ -66,7 +66,12 @@ FileType AppLoader_NSO::IdentifyType(const FileSys::VirtualFile& in_file) {
     return FileType::NSO;
 }
 
-std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::System& system, const FileSys::VfsFile& nso_file, VAddr load_base, bool should_pass_arguments, bool load_into_process, std::optional<FileSys::PatchManager> pm, std::vector<Core::NCE::Patcher>* patches, s32 patch_index) {
+std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::System& system,
+                                               const FileSys::VfsFile& nso_file, VAddr load_base,
+                                               bool should_pass_arguments, bool load_into_process,
+                                               std::optional<FileSys::PatchManager> pm,
+                                               std::vector<Core::NCE::Patcher>* patches,
+                                               s32 patch_index) {
     if (nso_file.GetSize() < sizeof(NSOHeader))
         return std::nullopt;
     NSOHeader nso_header{};
@@ -97,18 +102,25 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::
     Kernel::CodeSet codeset;
     codeset.memory.resize(module_start + last_segment_it->location + last_segment_it->size);
     {
-        std::vector<u8> compressed_data(*std::ranges::max_element(nso_header.segments_compressed_size));
-        std::vector<u8> decompressed_size(std::ranges::max_element(nso_header.segments, [](auto const& a, auto const& b) {
-            return a.size < b.size;
-        })->size);
+        std::vector<u8> compressed_data(
+            *std::ranges::max_element(nso_header.segments_compressed_size));
+        std::vector<u8> decompressed_size(
+            std::ranges::max_element(nso_header.segments, [](auto const& a, auto const& b) {
+                return a.size < b.size;
+            })->size);
         for (std::size_t i = 0; i < nso_header.segments.size(); ++i) {
-            nso_file.Read(compressed_data.data(), nso_header.segments_compressed_size[i], nso_header.segments[i].offset);
+            nso_file.Read(compressed_data.data(), nso_header.segments_compressed_size[i],
+                          nso_header.segments[i].offset);
             if (nso_header.IsSegmentCompressed(i)) {
-                int r = Common::Compression::DecompressDataLZ4(decompressed_size.data(), nso_header.segments[i].size, compressed_data.data(), nso_header.segments_compressed_size[i]);
+                int r = Common::Compression::DecompressDataLZ4(
+                    decompressed_size.data(), nso_header.segments[i].size, compressed_data.data(),
+                    nso_header.segments_compressed_size[i]);
                 ASSERT(r == int(nso_header.segments[i].size));
-                std::memcpy(codeset.memory.data() + module_start + nso_header.segments[i].location, decompressed_size.data(), nso_header.segments[i].size);
+                std::memcpy(codeset.memory.data() + module_start + nso_header.segments[i].location,
+                            decompressed_size.data(), nso_header.segments[i].size);
             } else {
-                std::memcpy(codeset.memory.data() + module_start + nso_header.segments[i].location, compressed_data.data(), nso_header.segments[i].size);
+                std::memcpy(codeset.memory.data() + module_start + nso_header.segments[i].location,
+                            compressed_data.data(), nso_header.segments[i].size);
             }
             codeset.segments[i].addr = module_start + nso_header.segments[i].location;
             codeset.segments[i].offset = module_start + nso_header.segments[i].location;
@@ -120,11 +132,13 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::
         const auto arg_data{Settings::values.program_args.GetValue()};
 
         codeset.DataSegment().size += NSO_ARGUMENT_DATA_ALLOCATION_SIZE;
-        NSOArgumentHeader args_header{NSO_ARGUMENT_DATA_ALLOCATION_SIZE, static_cast<u32_le>(arg_data.size()), {}};
+        NSOArgumentHeader args_header{
+            NSO_ARGUMENT_DATA_ALLOCATION_SIZE, static_cast<u32_le>(arg_data.size()), {}};
         const auto end_offset = codeset.memory.size();
         codeset.memory.resize(u32(codeset.memory.size()) + NSO_ARGUMENT_DATA_ALLOCATION_SIZE);
         std::memcpy(codeset.memory.data() + end_offset, &args_header, sizeof(NSOArgumentHeader));
-        std::memcpy(codeset.memory.data() + end_offset + sizeof(NSOArgumentHeader), arg_data.data(), arg_data.size());
+        std::memcpy(codeset.memory.data() + end_offset + sizeof(NSOArgumentHeader), arg_data.data(),
+                    arg_data.size());
     }
 
     codeset.DataSegment().size += nso_header.segments[2].bss_size;
@@ -138,7 +152,8 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::
     // Apply patches if necessary
     const auto name = nso_file.GetName();
     if (pm && (pm->HasNSOPatch(nso_header.build_id, name) || Settings::values.dump_nso)) {
-        std::span<u8> patchable_section(codeset.memory.data() + module_start, codeset.memory.size() - module_start);
+        std::span<u8> patchable_section(codeset.memory.data() + module_start,
+                                        codeset.memory.size() - module_start);
         std::vector<u8> pi_header(sizeof(NSOHeader) + patchable_section.size());
         std::memcpy(pi_header.data(), &nso_header, sizeof(NSOHeader));
         std::memcpy(pi_header.data() + sizeof(NSOHeader), patchable_section.data(),
@@ -154,12 +169,14 @@ std::optional<VAddr> AppLoader_NSO::LoadModule(Kernel::KProcess& process, Core::
     const auto& code = codeset.CodeSegment();
     auto* patch = patches ? &patches->operator[](patch_index) : nullptr;
     if (patch && !load_into_process) {
-        //Set module ID using build_id from the NSO header
+        // Set module ID using build_id from the NSO header
         patch->SetModuleID(nso_header.build_id);
         // Patch SVCs and MRS calls in the guest code
         while (!patch->PatchText(codeset.memory, code)) {
             patch = &patches->emplace_back();
-            patch->SetModuleID(nso_header.build_id);  // In case the patcher is changed for big modules, the new patcher should also have the build_id
+            patch->SetModuleID(
+                nso_header.build_id); // In case the patcher is changed for big modules, the new
+                                      // patcher should also have the build_id
         }
     } else if (patch) {
         // Relocate code patch and copy to the program image.

@@ -228,7 +228,9 @@ HaltReason ArmNce::RunThread(Kernel::KThread* thread) {
     if (auto it = post_handlers.find(m_guest_ctx.pc); it != post_handlers.end()) {
         hr = ReturnToRunCodeByTrampoline(thread_params, &m_guest_ctx, it->second);
     } else {
-        hr = ReturnToRunCodeByExceptionLevelChange(m_thread_id, thread_params);  // Android: Use "process handle SIGUSR2 -n true -p true -s false" (and SIGURG) in LLDB when debugging
+        hr = ReturnToRunCodeByExceptionLevelChange(
+            m_thread_id, thread_params); // Android: Use "process handle SIGUSR2 -n true -p true -s
+                                         // false" (and SIGURG) in LLDB when debugging
     }
 
     // Critical section for thread cleanup
@@ -395,7 +397,8 @@ void ArmNce::ClearInstructionCache() {
     // Ensure all previous memory operations complete
     asm volatile("dsb ish\n"
                  "dsb ish\n"
-                 "isb" ::: "memory");
+                 "isb" ::
+                     : "memory");
 #endif
 }
 

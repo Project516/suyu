@@ -34,9 +34,9 @@
 //     unavailable rather than offering them and failing later.
 
 #include <cstring>
+#include <filesystem>
 #include <memory>
 #include <string>
-#include <filesystem>
 #include <vector>
 #include "audio_core/sink/libretro_sink.h"
 #include "common/fs/fs.h"
@@ -54,9 +54,9 @@
 #include "hid_core/hid_core.h"
 #include "input_common/drivers/virtual_gamepad.h"
 #include "input_common/main.h"
-#include "network/network.h"
 #include "libretro_core/libretro.h"
 #include "libretro_core/retro_emu_window.h"
+#include "network/network.h"
 #include "video_core/renderer_base.h"
 
 namespace {
@@ -96,7 +96,8 @@ RETRO_API void retro_set_environment(retro_environment_t cb) {
     static const struct retro_variable vars[] = {
         {"suyu_renderer", "Renderer; Vulkan|OpenGL|Software"},
         {"suyu_resolution", "Internal Resolution; 1x|2x|3x|4x"},
-        {"suyu_scaling_filter", "Window Adapting Filter; Bilinear|Bicubic|Lanczos|ScaleForce|FSR|NearestNeighbor"},
+        {"suyu_scaling_filter",
+         "Window Adapting Filter; Bilinear|Bicubic|Lanczos|ScaleForce|FSR|NearestNeighbor"},
         {"suyu_anti_aliasing", "Anti-Aliasing; None|FXAA|SMAA"},
         {"suyu_cpu_accuracy", "CPU Accuracy; Auto|Accurate|Unsafe"},
         {"suyu_use_docked", "Docked Mode; Yes|No"},
@@ -171,7 +172,8 @@ RETRO_API void retro_init() {
     Settings::values.cpuopt_fastmem.SetValue(true);
     Settings::values.cpuopt_fastmem_exclusives.SetValue(true);
     Settings::values.log_flush_line.SetValue(true);
-    Settings::values.log_filter.SetValue("*:Info Service.VI:Debug Service.AM:Debug Service.Nvnflinger:Debug");
+    Settings::values.log_filter.SetValue(
+        "*:Info Service.VI:Debug Service.AM:Debug Service.Nvnflinger:Debug");
     g_system->ApplySettings();
     g_system->SetContentProvider(std::make_unique<FileSys::ContentProviderUnion>());
     g_system->SetFilesystem(std::make_shared<FileSys::RealVfsFilesystem>());
@@ -226,7 +228,8 @@ RETRO_API void retro_init() {
                         std::error_code ec;
                         std::filesystem::copy_file(src, dst, ec);
                         if (!ec) {
-                            LOG_INFO(Frontend, "libretro: copied {} from RetroArch system dir", name);
+                            LOG_INFO(Frontend, "libretro: copied {} from RetroArch system dir",
+                                     name);
                         }
                     }
                 }
@@ -254,7 +257,10 @@ RETRO_API void retro_deinit() {
     Network::Shutdown();
     g_emu_window.reset();
     g_system.reset();
-    if (g_input_subsystem) { g_input_subsystem->Shutdown(); g_input_subsystem.reset(); }
+    if (g_input_subsystem) {
+        g_input_subsystem->Shutdown();
+        g_input_subsystem.reset();
+    }
     Common::Log::Stop();
 }
 
@@ -279,7 +285,8 @@ RETRO_API void retro_get_system_av_info(struct retro_system_av_info* info) {
     // from max_*, and a core may deliver anything up to it.
     info->geometry.max_width = kFrameWidth * 4;
     info->geometry.max_height = kFrameHeight * 4;
-    info->geometry.aspect_ratio = static_cast<float>(kFrameWidth) / static_cast<float>(kFrameHeight);
+    info->geometry.aspect_ratio =
+        static_cast<float>(kFrameWidth) / static_cast<float>(kFrameHeight);
     info->timing.fps = 60.0;
     info->timing.sample_rate = 48000.0;
 }
@@ -336,12 +343,24 @@ RETRO_API void retro_run() {
                 }
             }
             // Left analog stick
-            const float lx = g_input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_X) / 32768.0f;
-            const float ly = g_input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y) / -32768.0f;
+            const float lx =
+                g_input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,
+                                 RETRO_DEVICE_ID_ANALOG_X) /
+                32768.0f;
+            const float ly =
+                g_input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT,
+                                 RETRO_DEVICE_ID_ANALOG_Y) /
+                -32768.0f;
             vgp->SetStickPosition(0, InputCommon::VirtualGamepad::VirtualStick::Left, lx, ly);
             // Right analog stick
-            const float rx = g_input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X) / 32768.0f;
-            const float ry = g_input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y) / -32768.0f;
+            const float rx =
+                g_input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT,
+                                 RETRO_DEVICE_ID_ANALOG_X) /
+                32768.0f;
+            const float ry =
+                g_input_state_cb(0, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT,
+                                 RETRO_DEVICE_ID_ANALOG_Y) /
+                -32768.0f;
             vgp->SetStickPosition(0, InputCommon::VirtualGamepad::VirtualStick::Right, rx, ry);
         }
     }
@@ -350,8 +369,10 @@ RETRO_API void retro_run() {
     ++frame_counter;
 
     if (frame_counter <= 3 || (frame_counter % 600) == 0) {
-        LOG_INFO(Frontend, "libretro: retro_run frame {}, game_loaded={}", frame_counter, g_game_loaded);
-        fprintf(stderr, "[suyu-libretro] retro_run frame %u, game_loaded=%d\n", frame_counter, g_game_loaded);
+        LOG_INFO(Frontend, "libretro: retro_run frame {}, game_loaded={}", frame_counter,
+                 g_game_loaded);
+        fprintf(stderr, "[suyu-libretro] retro_run frame %u, game_loaded=%d\n", frame_counter,
+                g_game_loaded);
         fflush(stderr);
     }
 
@@ -364,10 +385,10 @@ RETRO_API void retro_run() {
     // made the output screech. Anything beyond a small backlog is dropped so
     // latency can't creep up instead.
     if (g_use_frontend_audio && g_audio_batch_cb && g_game_loaded) {
-        constexpr size_t kFramesPerCall = 48000 / 60;   // stereo frames
+        constexpr size_t kFramesPerCall = 48000 / 60; // stereo frames
         constexpr size_t kMaxBacklogFrames = kFramesPerCall * 6;
 
-        static std::vector<s16> pending;   // interleaved L,R awaiting delivery
+        static std::vector<s16> pending; // interleaved L,R awaiting delivery
         std::vector<s16> drained;
         AudioCore::Sink::LibretroSampleQueue::Instance().Drain(drained);
         if (!drained.empty()) {
@@ -399,8 +420,7 @@ RETRO_API void retro_run() {
                 // little-endian host is that same B,G,R,X byte order. Passing
                 // the buffer straight through is correct; an earlier R<->B
                 // swap here was the cause of red rendering as blue.
-                g_video_cb(frame.data(), renderer.GetHeadlessWidth(),
-                           renderer.GetHeadlessHeight(),
+                g_video_cb(frame.data(), renderer.GetHeadlessWidth(), renderer.GetHeadlessHeight(),
                            renderer.GetHeadlessWidth() * 4);
                 return;
             }
@@ -409,8 +429,8 @@ RETRO_API void retro_run() {
             LOG_WARNING(Frontend, "libretro: frame {} - no rendered frame available, sending black",
                         frame_counter);
         }
-        static const std::vector<u32> black_frame(
-            static_cast<size_t>(kFrameWidth) * kFrameHeight, 0xFF000000);
+        static const std::vector<u32> black_frame(static_cast<size_t>(kFrameWidth) * kFrameHeight,
+                                                  0xFF000000);
         g_video_cb(black_frame.data(), kFrameWidth, kFrameHeight, kFrameWidth * sizeof(u32));
     }
 }
@@ -445,8 +465,9 @@ RETRO_API void retro_cheat_set(unsigned /*index*/, bool /*enabled*/, const char*
 
 RETRO_API bool retro_load_game(const struct retro_game_info* game) {
     if (!g_system || !g_emu_window || !game || !game->path) {
-        LOG_CRITICAL(Frontend, "libretro core: retro_load_game null check failed "
-                               "(system={} window={} game={} path={})",
+        LOG_CRITICAL(Frontend,
+                     "libretro core: retro_load_game null check failed "
+                     "(system={} window={} game={} path={})",
                      !!g_system, !!g_emu_window, !!game, game ? !!game->path : false);
         return false;
     }
@@ -460,9 +481,9 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game) {
         var.key = "suyu_use_docked";
         var.value = nullptr;
         if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
-            Settings::values.use_docked_mode.SetValue(
-                std::string(var.value) == "Yes" ? Settings::ConsoleMode::Docked
-                                                : Settings::ConsoleMode::Handheld);
+            Settings::values.use_docked_mode.SetValue(std::string(var.value) == "Yes"
+                                                          ? Settings::ConsoleMode::Docked
+                                                          : Settings::ConsoleMode::Handheld);
         }
         var.key = "suyu_cpu_accuracy";
         var.value = nullptr;
@@ -480,9 +501,12 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game) {
         if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
             const std::string v(var.value);
             auto res = Settings::ResolutionSetup::Res1X;
-            if (v == "2x") res = Settings::ResolutionSetup::Res2X;
-            else if (v == "3x") res = Settings::ResolutionSetup::Res3X;
-            else if (v == "4x") res = Settings::ResolutionSetup::Res4X;
+            if (v == "2x")
+                res = Settings::ResolutionSetup::Res2X;
+            else if (v == "3x")
+                res = Settings::ResolutionSetup::Res3X;
+            else if (v == "4x")
+                res = Settings::ResolutionSetup::Res4X;
             Settings::values.resolution_setup.SetValue(res);
         }
         var.key = "suyu_scaling_filter";
@@ -490,11 +514,16 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game) {
         if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
             const std::string v(var.value);
             auto f = Settings::ScalingFilter::Bilinear;
-            if (v == "Bicubic") f = Settings::ScalingFilter::Bicubic;
-            else if (v == "Lanczos") f = Settings::ScalingFilter::Lanczos;
-            else if (v == "ScaleForce") f = Settings::ScalingFilter::ScaleForce;
-            else if (v == "FSR") f = Settings::ScalingFilter::Fsr;
-            else if (v == "NearestNeighbor") f = Settings::ScalingFilter::NearestNeighbor;
+            if (v == "Bicubic")
+                f = Settings::ScalingFilter::Bicubic;
+            else if (v == "Lanczos")
+                f = Settings::ScalingFilter::Lanczos;
+            else if (v == "ScaleForce")
+                f = Settings::ScalingFilter::ScaleForce;
+            else if (v == "FSR")
+                f = Settings::ScalingFilter::Fsr;
+            else if (v == "NearestNeighbor")
+                f = Settings::ScalingFilter::NearestNeighbor;
             Settings::values.scaling_filter.SetValue(f);
         }
         var.key = "suyu_anti_aliasing";
@@ -502,17 +531,18 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game) {
         if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
             const std::string v(var.value);
             auto aa = Settings::AntiAliasing::None;
-            if (v == "FXAA") aa = Settings::AntiAliasing::Fxaa;
-            else if (v == "SMAA") aa = Settings::AntiAliasing::Smaa;
+            if (v == "FXAA")
+                aa = Settings::AntiAliasing::Fxaa;
+            else if (v == "SMAA")
+                aa = Settings::AntiAliasing::Smaa;
             Settings::values.anti_aliasing.SetValue(aa);
         }
         var.key = "suyu_audio_output";
         var.value = nullptr;
         if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
             g_use_frontend_audio = std::string(var.value).rfind("Frontend", 0) == 0;
-            Settings::values.sink_id.SetValue(g_use_frontend_audio
-                                                  ? Settings::AudioEngine::Libretro
-                                                  : Settings::AudioEngine::Auto);
+            Settings::values.sink_id.SetValue(g_use_frontend_audio ? Settings::AudioEngine::Libretro
+                                                                   : Settings::AudioEngine::Auto);
             LOG_INFO(Frontend, "libretro: audio output = {}",
                      g_use_frontend_audio ? "frontend" : "host");
         }
@@ -539,15 +569,16 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game) {
         const bool frontend_netplay =
             g_environ_cb(RETRO_ENVIRONMENT_GET_NETPLAY_CLIENT_INDEX, &netplay_index);
         if (frontend_netplay) {
-            LOG_INFO(Frontend, "libretro: frontend netplay active (client index {}); "
-                               "bringing up suyu online play", netplay_index);
+            LOG_INFO(Frontend,
+                     "libretro: frontend netplay active (client index {}); "
+                     "bringing up suyu online play",
+                     netplay_index);
         }
 
         var.key = "suyu_online_enable";
         var.value = nullptr;
-        const bool option_enabled =
-            g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value &&
-            std::string(var.value) == "Enabled";
+        const bool option_enabled = g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) &&
+                                    var.value && std::string(var.value) == "Enabled";
         if (option_enabled || frontend_netplay) {
             std::string server = "127.0.0.1";
             std::string nickname = "Player";
@@ -612,7 +643,8 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game) {
     return true;
 }
 
-RETRO_API bool retro_load_game_special(unsigned /*game_type*/, const struct retro_game_info* /*info*/,
+RETRO_API bool retro_load_game_special(unsigned /*game_type*/,
+                                       const struct retro_game_info* /*info*/,
                                        size_t /*num_info*/) {
     return false;
 }

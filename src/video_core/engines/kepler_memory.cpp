@@ -15,8 +15,7 @@
 namespace Tegra::Engines {
 
 KeplerMemory::KeplerMemory(MemoryManager& memory_manager)
-    : upload_state{memory_manager, regs.upload}
-{}
+    : upload_state{memory_manager, regs.upload} {}
 
 KeplerMemory::~KeplerMemory() = default;
 
@@ -35,8 +34,10 @@ void KeplerMemory::ConsumeSinkImpl(Core::System& system) {
     method_sink.clear();
 }
 
-void KeplerMemory::CallMethod(Core::System& system, u32 method, u32 method_argument, bool is_last_call) {
-    ASSERT_MSG(method < Regs::NUM_REGS, "Invalid KeplerMemory register, increase the size of the Regs structure");
+void KeplerMemory::CallMethod(Core::System& system, u32 method, u32 method_argument,
+                              bool is_last_call) {
+    ASSERT_MSG(method < Regs::NUM_REGS,
+               "Invalid KeplerMemory register, increase the size of the Regs structure");
 
     regs.reg_array[method] = method_argument;
 
@@ -52,7 +53,8 @@ void KeplerMemory::CallMethod(Core::System& system, u32 method, u32 method_argum
     }
 }
 
-void KeplerMemory::CallMultiMethod(Core::System& system, u32 method, const u32* base_start, u32 amount, u32 methods_pending) {
+void KeplerMemory::CallMultiMethod(Core::System& system, u32 method, const u32* base_start,
+                                   u32 amount, u32 methods_pending) {
     switch (method) {
     case KEPLERMEMORY_REG_INDEX(data):
         upload_state.ProcessData(base_start, amount);

@@ -16,12 +16,12 @@
 #elif defined(__linux__) && !defined(__ANDROID__)
 #include <iwlib.h>
 #elif defined(__FreeBSD__)
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/socket.h>
-#include <net/if.h>
 #include <net/ethernet.h>
+#include <net/if.h>
 #include <net80211/ieee80211_ioctl.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
 #endif
 
 #include "common/logging.h"
@@ -112,19 +112,22 @@ std::vector<Network::ScanData> ScanWifiNetworks(std::chrono::milliseconds deadli
     }
 
     char ifname[IFNAMSIZ] = {0};
-    char *args[1] = {ifname};
+    char* args[1] = {ifname};
 
-    iw_enum_devices(sock, [](int skfd, char* ifname, char* args[], int count) -> int {
-        iwrange range;
-        int res = iw_get_range_info(skfd, ifname, &range);
-        LOG_INFO(Network, "ifname {} returned {} on iw_get_range_info", ifname, res);
-        if (res >= 0) {
-            strncpy(args[0], ifname, IFNAMSIZ - 1);
-            args[0][IFNAMSIZ - 1] = 0;
-            return 1;
-        }
-        return 0;
-    }, args, 0);
+    iw_enum_devices(
+        sock,
+        [](int skfd, char* ifname, char* args[], int count) -> int {
+            iwrange range;
+            int res = iw_get_range_info(skfd, ifname, &range);
+            LOG_INFO(Network, "ifname {} returned {} on iw_get_range_info", ifname, res);
+            if (res >= 0) {
+                strncpy(args[0], ifname, IFNAMSIZ - 1);
+                args[0][IFNAMSIZ - 1] = 0;
+                return 1;
+            }
+            return 0;
+        },
+        args, 0);
 
     if (strlen(ifname) == 0) {
         LOG_WARNING(Network, "No wireless interface found");

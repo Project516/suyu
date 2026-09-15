@@ -35,7 +35,8 @@ Result ResetSignal(Core::System& system, Handle handle) {
 
     // Try to reset as readable event.
     {
-        KScopedAutoObject readable_event = handle_table.GetObject<KReadableEvent>(system.Kernel(), handle);
+        KScopedAutoObject readable_event =
+            handle_table.GetObject<KReadableEvent>(system.Kernel(), handle);
         if (readable_event.IsNotNull()) {
             R_RETURN(readable_event->Reset(system.Kernel()));
         }
@@ -69,10 +70,14 @@ Result WaitSynchronization(Core::System& system, int32_t* out_index, u64 user_ha
     // Copy user handles.
     if (num_handles > 0) {
         // Get the handles.
-        R_UNLESS(GetCurrentMemory(system.Kernel()).ReadBlock(user_handles, handles.data(), sizeof(Handle) * num_handles), ResultInvalidPointer);
+        R_UNLESS(GetCurrentMemory(system.Kernel())
+                     .ReadBlock(user_handles, handles.data(), sizeof(Handle) * num_handles),
+                 ResultInvalidPointer);
 
         // Convert the handles to objects.
-        R_UNLESS(handle_table.GetMultipleObjects<KSynchronizationObject>(system.Kernel(), objs.data(), handles.data(), num_handles), ResultInvalidHandle);
+        R_UNLESS(handle_table.GetMultipleObjects<KSynchronizationObject>(
+                     system.Kernel(), objs.data(), handles.data(), num_handles),
+                 ResultInvalidHandle);
     }
 
     // Ensure handles are closed when we're done.
@@ -95,7 +100,8 @@ Result WaitSynchronization(Core::System& system, int32_t* out_index, u64 user_ha
     }
 
     // Wait on the objects.
-    Result res = KSynchronizationObject::Wait(system.Kernel(), out_index, objs.data(), num_handles, timeout);
+    Result res =
+        KSynchronizationObject::Wait(system.Kernel(), out_index, objs.data(), num_handles, timeout);
 
     R_SUCCEED_IF(res == ResultSessionClosed);
     R_RETURN(res);
@@ -106,7 +112,9 @@ Result CancelSynchronization(Core::System& system, Handle handle) {
     LOG_TRACE(Kernel_SVC, "called handle={:#X}", handle);
 
     // Get the thread from its handle.
-    KScopedAutoObject thread = GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KThread>(system.Kernel(), handle);
+    KScopedAutoObject thread = GetCurrentProcess(system.Kernel())
+                                   .GetHandleTable()
+                                   .GetObject<KThread>(system.Kernel(), handle);
     R_UNLESS(thread.IsNotNull(), ResultInvalidHandle);
 
     // Cancel the thread's wait.

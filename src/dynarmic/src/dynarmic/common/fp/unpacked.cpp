@@ -10,14 +10,13 @@
 
 #include <algorithm>
 
-#include "dynarmic/mcl/bit.hpp"
-
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/info.h"
 #include "dynarmic/common/fp/mantissa_util.h"
 #include "dynarmic/common/fp/process_exception.h"
 #include "dynarmic/common/fp/rounding_mode.h"
 #include "dynarmic/common/safe_ops.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::FP {
 

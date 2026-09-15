@@ -11,9 +11,9 @@
 #include <string>
 
 #include <fmt/format.h>
+
 #include "common/assert.h"
 #include "common/common_types.h"
-
 #include "dynarmic/ir/cond.h"
 
 namespace Dynarmic::A64 {

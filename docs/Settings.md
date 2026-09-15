@@ -286,7 +286,7 @@ void SomeFunction() {
         LOG_DEBUG(Common, "Debug feature 0 is enabled");
         // Additional debug code here
     }
-    
+
     if (Settings::getDebugKnobAt(1)) {
         LOG_DEBUG(Common, "Debug feature 1 is enabled");
         // Different debug behavior
@@ -308,13 +308,13 @@ bool UseOptimizedPath() {
 ```cpp
 void ExperimentalFeature() {
     static constexpr u8 EXPERIMENTAL_FEATURE_BIT = 3;
-    
+
     if (!Settings::getDebugKnobAt(EXPERIMENTAL_FEATURE_BIT)) {
         // Fallback to stable implementation
         StableImplementation();
         return;
     }
-    
+
     // Experimental implementation
     ExperimentalImplementation();
 }

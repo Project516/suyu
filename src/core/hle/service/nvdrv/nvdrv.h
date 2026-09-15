@@ -103,7 +103,8 @@ private:
     /// Id to use for the next open file descriptor.
     DeviceFD next_fd = 1;
 
-    using FilesContainerType = ankerl::unordered_dense::map<DeviceFD, std::shared_ptr<Devices::nvdevice>>;
+    using FilesContainerType =
+        ankerl::unordered_dense::map<DeviceFD, std::shared_ptr<Devices::nvdevice>>;
     /// Mapping of file descriptors to the devices they reference.
     FilesContainerType open_files;
 
@@ -111,7 +112,8 @@ private:
 
     EventInterface events_interface;
 
-    ankerl::unordered_dense::map<std::string, std::function<FilesContainerType::iterator(DeviceFD)>> builders;
+    ankerl::unordered_dense::map<std::string, std::function<FilesContainerType::iterator(DeviceFD)>>
+        builders;
 };
 
 void LoopProcess(Core::System& system);

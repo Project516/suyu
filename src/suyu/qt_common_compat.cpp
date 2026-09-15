@@ -53,8 +53,8 @@ void ExportDataDir(FrontendCommon::DataManager::DataDir dir, const std::string& 
     const fs::path src_path = source_dir.toStdString();
     const fs::path dst_path = fs::path(base_export_dir.toStdString()) / name.toStdString();
     fs::create_directories(dst_path, ec);
-    fs::copy(src_path, dst_path,
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing, ec);
+    fs::copy(src_path, dst_path, fs::copy_options::recursive | fs::copy_options::overwrite_existing,
+             ec);
 
     if (callback) {
         callback();
@@ -76,8 +76,8 @@ void ImportDataDir(FrontendCommon::DataManager::DataDir dir, const std::string& 
     const fs::path src_path = import_dir.toStdString();
     const fs::path dst_path = target_dir.toStdString();
     fs::create_directories(dst_path, ec);
-    fs::copy(src_path, dst_path,
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing, ec);
+    fs::copy(src_path, dst_path, fs::copy_options::recursive | fs::copy_options::overwrite_existing,
+             ec);
 
     if (callback) {
         callback();

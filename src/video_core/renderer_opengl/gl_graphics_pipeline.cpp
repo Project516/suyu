@@ -6,10 +6,10 @@
 
 #include <algorithm>
 #include <array>
-#include <string>
-#include <vector>
 #include <bit>
 #include <numeric>
+#include <string>
+#include <vector>
 #include "common/settings.h"
 #include "common/thread_worker.h"
 #include "shader_recompiler/shader_info.h"
@@ -246,7 +246,8 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, TextureCache& texture_c
                 break;
             case Settings::RendererBackend::OpenGL_GLASM:
                 if (!sources_[stage].empty())
-                    assembly_programs[stage] = CompileProgram(sources_[stage], AssemblyStage(stage));
+                    assembly_programs[stage] =
+                        CompileProgram(sources_[stage], AssemblyStage(stage));
                 break;
             case Settings::RendererBackend::OpenGL_SPIRV:
                 if (!sources_spirv_[stage].empty())

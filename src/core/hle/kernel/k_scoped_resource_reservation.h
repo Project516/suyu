@@ -14,12 +14,9 @@ namespace Kernel {
 
 class KScopedResourceReservation {
 public:
-    explicit KScopedResourceReservation(KernelCore& kernel, KResourceLimit* l, LimitableResource r, s64 v, s64 timeout)
-        : m_kernel{kernel}
-        , m_limit(l)
-        , m_value(v)
-        , m_resource(r)
-    {
+    explicit KScopedResourceReservation(KernelCore& kernel, KResourceLimit* l, LimitableResource r,
+                                        s64 v, s64 timeout)
+        : m_kernel{kernel}, m_limit(l), m_value(v), m_resource(r) {
         if (m_limit && m_value) {
             m_succeeded = m_limit->Reserve(kernel, m_resource, m_value, timeout);
         } else {
@@ -27,12 +24,9 @@ public:
         }
     }
 
-    explicit KScopedResourceReservation(KernelCore& kernel, KResourceLimit* l, LimitableResource r, s64 v = 1)
-        : m_kernel{kernel}
-        , m_limit(l)
-        , m_value(v)
-        , m_resource(r)
-    {
+    explicit KScopedResourceReservation(KernelCore& kernel, KResourceLimit* l, LimitableResource r,
+                                        s64 v = 1)
+        : m_kernel{kernel}, m_limit(l), m_value(v), m_resource(r) {
         if (m_limit && m_value) {
             m_succeeded = m_limit->Reserve(kernel, m_resource, m_value);
         } else {
@@ -40,10 +34,12 @@ public:
         }
     }
 
-    explicit KScopedResourceReservation(KernelCore& kernel, const KProcess* p, LimitableResource r, s64 v, s64 t)
+    explicit KScopedResourceReservation(KernelCore& kernel, const KProcess* p, LimitableResource r,
+                                        s64 v, s64 t)
         : KScopedResourceReservation(kernel, p->GetResourceLimit(), r, v, t) {}
 
-    explicit KScopedResourceReservation(KernelCore& kernel, const KProcess* p, LimitableResource r, s64 v = 1)
+    explicit KScopedResourceReservation(KernelCore& kernel, const KProcess* p, LimitableResource r,
+                                        s64 v = 1)
         : KScopedResourceReservation(kernel, p->GetResourceLimit(), r, v) {}
 
     ~KScopedResourceReservation() noexcept {

@@ -14,18 +14,10 @@ namespace Service::HID {
 
 AbstractPad::AbstractPad(Kernel::KernelCore& kernel_)
     //: abstract_pad_holder{kernel_}
-    : properties_handler{kernel_}
-    , led_handler{kernel_}
-    , ir_sensor_handler{kernel_}
-    , nfc_handler{kernel_}
-    , mcu_handler{kernel_}
-    , vibration_handler{kernel_}
-    , sixaxis_handler{kernel_}
-    , button_handler{kernel_}
-    , battery_handler{kernel_}
-    , palma_handler{kernel_}
-    , kernel{kernel_}
-{}
+    : properties_handler{kernel_}, led_handler{kernel_}, ir_sensor_handler{kernel_},
+      nfc_handler{kernel_}, mcu_handler{kernel_}, vibration_handler{kernel_},
+      sixaxis_handler{kernel_}, button_handler{kernel_}, battery_handler{kernel_},
+      palma_handler{kernel_}, kernel{kernel_} {}
 
 AbstractPad::~AbstractPad() = default;
 

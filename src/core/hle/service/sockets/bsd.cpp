@@ -11,6 +11,7 @@
 
 #include <fmt/ranges.h>
 
+#include <common/settings.h>
 #include "common/logging.h"
 #include "common/socket_types.h"
 #include "core/core.h"
@@ -22,7 +23,6 @@
 #include "core/internal_network/socket_proxy.h"
 #include "core/internal_network/sockets.h"
 #include "network/network.h"
-#include <common/settings.h>
 
 namespace Service::Sockets {
 
@@ -1052,8 +1052,7 @@ void BSD::OnProxyPacketReceived(const Network::ProxyPacket& packet) {
     }
 }
 
-BSD::BSD(Core::System& system_, const char* name)
-    : ServiceFramework{system_, name} {
+BSD::BSD(Core::System& system_, const char* name) : ServiceFramework{system_, name} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &BSD::RegisterClient, "RegisterClient"},

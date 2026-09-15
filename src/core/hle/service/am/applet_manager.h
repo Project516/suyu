@@ -49,7 +49,9 @@ public:
 
 public:
     void SetWindowSystem(WindowSystem* window_system);
-    [[nodiscard]] WindowSystem* GetWindowSystem() const { return m_window_system; }
+    [[nodiscard]] WindowSystem* GetWindowSystem() const {
+        return m_window_system;
+    }
 
 private:
     Core::System& m_system;

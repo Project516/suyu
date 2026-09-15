@@ -13,8 +13,8 @@
 #include "common/assert.h"
 #include "common/bit_util.h"
 #include "common/common_types.h"
-#include "common/tiny_mt.h"
 #include "common/random.h"
+#include "common/tiny_mt.h"
 #include "core/hle/kernel/k_system_control.h"
 
 namespace Kernel {

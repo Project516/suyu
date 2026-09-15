@@ -56,7 +56,7 @@ alignas(64) static const Meta opcode_info[] = {
 };
 
 // Be aware of trailing commas, they can cause PP_NARG to return 2!
-static_assert(PP_EXPAND(PP_NARGS(u8,)) == 2);
+static_assert(PP_EXPAND(PP_NARGS(u8, )) == 2);
 static_assert(PP_EXPAND(PP_NARGS(u8)) == 1);
 static_assert(PP_EXPAND(PP_NARGS(u8, u16)) == 2);
 static_assert(PP_EXPAND(PP_NARGS(u8, u16, u32)) == 3);

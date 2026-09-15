@@ -14,8 +14,7 @@
 namespace Service::AM {
 
 AppletStorageChannel::AppletStorageChannel(KernelHelpers::ServiceContext& context)
-    : m_event(context)
-{}
+    : m_event(context) {}
 AppletStorageChannel::~AppletStorageChannel() = default;
 
 void AppletStorageChannel::Push(Kernel::KernelCore& kernel, std::shared_ptr<IStorage> storage) {
@@ -32,7 +31,8 @@ void AppletStorageChannel::Unpop(Kernel::KernelCore& kernel, std::shared_ptr<ISt
     m_event.Signal(kernel);
 }
 
-Result AppletStorageChannel::Pop(Kernel::KernelCore& kernel, std::shared_ptr<IStorage>* out_storage) {
+Result AppletStorageChannel::Pop(Kernel::KernelCore& kernel,
+                                 std::shared_ptr<IStorage>* out_storage) {
     std::scoped_lock lk{m_lock};
 
     SCOPE_EXIT {

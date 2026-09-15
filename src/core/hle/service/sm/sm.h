@@ -7,11 +7,11 @@
 #pragma once
 
 #include <chrono>
+#include <concepts>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <ankerl/unordered_dense.h>
-#include <concepts>
 
 #include "core/hle/kernel/k_port.h"
 #include "core/hle/kernel/svc.h"

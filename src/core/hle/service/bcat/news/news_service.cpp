@@ -70,7 +70,8 @@ Result INewsService::SetPassphrase(InBuffer<BufferAttr_HipcPointer> buffer_data)
     R_SUCCEED();
 }
 
-Result INewsService::GetTopicList(Out<s32> out_count, OutBuffer<BufferAttr_HipcMapAlias> out_topics, s32 filter) {
+Result INewsService::GetTopicList(Out<s32> out_count, OutBuffer<BufferAttr_HipcMapAlias> out_topics,
+                                  s32 filter) {
     constexpr size_t TopicIdSize = 32;
     constexpr auto EdenTopicId = "suyu";
 

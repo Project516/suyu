@@ -168,8 +168,7 @@ void TranslatorVisitor::IPA(u64 insn) {
                              : ir.GetAttribute(attribute)};
     const bool is_legacy{IR::IsLegacyAttribute(attribute)};
     if (IR::IsGeneric(attribute) || is_legacy) {
-        bool is_perspective{is_legacy &&
-                            ipa.interpolation_mode != InterpolationMode::Sc};
+        bool is_perspective{is_legacy && ipa.interpolation_mode != InterpolationMode::Sc};
         if (!is_legacy) {
             const ProgramHeader& sph{env.SPH()};
             const u32 attr_index{IR::GenericAttributeIndex(attribute)};

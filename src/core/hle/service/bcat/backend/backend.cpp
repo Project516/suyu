@@ -13,9 +13,9 @@
 namespace Service::BCAT {
 
 ProgressServiceBackend::ProgressServiceBackend(Core::System& system, std::string_view event_name)
-    : service_context{system, "ProgressServiceBackend"}
-{
-    update_event = service_context.CreateEvent("ProgressServiceBackend:UpdateEvent:" + std::string(event_name));
+    : service_context{system, "ProgressServiceBackend"} {
+    update_event = service_context.CreateEvent("ProgressServiceBackend:UpdateEvent:" +
+                                               std::string(event_name));
 }
 
 ProgressServiceBackend::~ProgressServiceBackend() {
@@ -45,12 +45,16 @@ void ProgressServiceBackend::StartProcessingDataList(Kernel::KernelCore& kernel)
     SignalUpdate(kernel);
 }
 
-void ProgressServiceBackend::StartDownloadingFile(Kernel::KernelCore& kernel, std::string_view dir_name, std::string_view file_name, u64 file_size) {
+void ProgressServiceBackend::StartDownloadingFile(Kernel::KernelCore& kernel,
+                                                  std::string_view dir_name,
+                                                  std::string_view file_name, u64 file_size) {
     impl.status = DeliveryCacheProgressStatus::Downloading;
     impl.current_downloaded_bytes = 0;
     impl.current_total_bytes = file_size;
-    std::memcpy(impl.current_directory.data(), dir_name.data(), std::min<u64>(dir_name.size(), 0x31ull));
-    std::memcpy(impl.current_file.data(), file_name.data(), std::min<u64>(file_name.size(), 0x31ull));
+    std::memcpy(impl.current_directory.data(), dir_name.data(),
+                std::min<u64>(dir_name.size(), 0x31ull));
+    std::memcpy(impl.current_file.data(), file_name.data(),
+                std::min<u64>(file_name.size(), 0x31ull));
     SignalUpdate(kernel);
 }
 
@@ -64,12 +68,14 @@ void ProgressServiceBackend::FinishDownloadingFile(Kernel::KernelCore& kernel) {
     SignalUpdate(kernel);
 }
 
-void ProgressServiceBackend::CommitDirectory(Kernel::KernelCore& kernel, std::string_view dir_name) {
+void ProgressServiceBackend::CommitDirectory(Kernel::KernelCore& kernel,
+                                             std::string_view dir_name) {
     impl.status = DeliveryCacheProgressStatus::Committing;
     impl.current_file.fill(0);
     impl.current_downloaded_bytes = 0;
     impl.current_total_bytes = 0;
-    std::memcpy(impl.current_directory.data(), dir_name.data(), std::min<u64>(dir_name.size(), 0x31ull));
+    std::memcpy(impl.current_directory.data(), dir_name.data(),
+                std::min<u64>(dir_name.size(), 0x31ull));
     SignalUpdate(kernel);
 }
 
@@ -90,14 +96,18 @@ BcatBackend::~BcatBackend() = default;
 NullBcatBackend::NullBcatBackend(DirectoryGetter getter) : BcatBackend(std::move(getter)) {}
 NullBcatBackend::~NullBcatBackend() = default;
 
-bool NullBcatBackend::Synchronize(Kernel::KernelCore& kernel, TitleIDVersion title, ProgressServiceBackend& progress) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, build_id={:016X}", title.title_id, title.build_id);
+bool NullBcatBackend::Synchronize(Kernel::KernelCore& kernel, TitleIDVersion title,
+                                  ProgressServiceBackend& progress) {
+    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, build_id={:016X}", title.title_id,
+              title.build_id);
     progress.FinishDownload(kernel, ResultSuccess);
     return true;
 }
 
-bool NullBcatBackend::SynchronizeDirectory(Kernel::KernelCore& kernel, TitleIDVersion title, std::string name, ProgressServiceBackend& progress) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, build_id={:016X}, name={}", title.title_id, title.build_id, name);
+bool NullBcatBackend::SynchronizeDirectory(Kernel::KernelCore& kernel, TitleIDVersion title,
+                                           std::string name, ProgressServiceBackend& progress) {
+    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, build_id={:016X}, name={}", title.title_id,
+              title.build_id, name);
     progress.FinishDownload(kernel, ResultSuccess);
     return true;
 }
@@ -108,12 +118,16 @@ bool NullBcatBackend::Clear(Kernel::KernelCore& kernel, u64 title_id) {
     return true;
 }
 
-void NullBcatBackend::SetPassphrase(Kernel::KernelCore& kernel, u64 title_id, const Passphrase& passphrase) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, passphrase={}", title_id, Common::HexToString(passphrase));
+void NullBcatBackend::SetPassphrase(Kernel::KernelCore& kernel, u64 title_id,
+                                    const Passphrase& passphrase) {
+    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, passphrase={}", title_id,
+              Common::HexToString(passphrase));
 }
 
-std::optional<std::vector<u8>> NullBcatBackend::GetLaunchParameter(Kernel::KernelCore& kernel, TitleIDVersion title) {
-    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, build_id={:016X}", title.title_id, title.build_id);
+std::optional<std::vector<u8>> NullBcatBackend::GetLaunchParameter(Kernel::KernelCore& kernel,
+                                                                   TitleIDVersion title) {
+    LOG_DEBUG(Service_BCAT, "called, title_id={:016X}, build_id={:016X}", title.title_id,
+              title.build_id);
     return std::nullopt;
 }
 

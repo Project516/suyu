@@ -5,14 +5,14 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
-#include <QSettings>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <QPointer>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QTcpServer>
-#include <QPointer>
 #include <QTcpSocket>
 
 #include "common/fs/path_util.h"
@@ -20,8 +20,7 @@
 
 namespace {
 
-QJsonObject MakeSchema(const QJsonObject& properties,
-                       const QJsonArray& required = QJsonArray()) {
+QJsonObject MakeSchema(const QJsonObject& properties, const QJsonArray& required = QJsonArray()) {
     QJsonObject schema;
     schema[QStringLiteral("type")] = QStringLiteral("object");
     schema[QStringLiteral("properties")] = properties;
@@ -55,8 +54,7 @@ bool McpServer::Start(quint16 port) {
     }
 
     if (server_->listen(QHostAddress::LocalHost, port) ||
-        server_->listen(QHostAddress::AnyIPv4, port) ||
-        server_->listen(QHostAddress::Any, port)) {
+        server_->listen(QHostAddress::AnyIPv4, port) || server_->listen(QHostAddress::Any, port)) {
         port_ = server_->serverPort();
         return true;
     }
@@ -108,15 +106,14 @@ void McpServer::RegisterBuiltinTools() {
             };
         });
 
-    RegisterTool(
-        QStringLiteral("get_ui_state"),
-        QStringLiteral("Get the current UI state and active view for the front-end."),
-        MakeSchema({}), [this](const QJsonObject& /*params*/) -> QJsonObject {
-            if (state_provider_) {
-                return state_provider_();
-            }
-            return QJsonObject{};
-        });
+    RegisterTool(QStringLiteral("get_ui_state"),
+                 QStringLiteral("Get the current UI state and active view for the front-end."),
+                 MakeSchema({}), [this](const QJsonObject& /*params*/) -> QJsonObject {
+                     if (state_provider_) {
+                         return state_provider_();
+                     }
+                     return QJsonObject{};
+                 });
 
     // 2) get_rom_info — returns metadata about a ROM file
     RegisterTool(
@@ -156,8 +153,7 @@ void McpServer::RegisterBuiltinTools() {
                 {QStringLiteral("size_human"),
                  QStringLiteral("%1 MB").arg(info.size() / (1024.0 * 1024.0), 0, 'f', 2)},
                 {QStringLiteral("format"), format},
-                {QStringLiteral("last_modified"),
-                 info.lastModified().toString(Qt::ISODate)},
+                {QStringLiteral("last_modified"), info.lastModified().toString(Qt::ISODate)},
             };
         });
 
@@ -165,11 +161,10 @@ void McpServer::RegisterBuiltinTools() {
     RegisterTool(
         QStringLiteral("list_save_states"),
         QStringLiteral("List all save state files available for a given title ID."),
-        MakeSchema(
-            {{QStringLiteral("title_id"),
-              MakeProp(QStringLiteral("string"),
-                       QStringLiteral("Title ID to search save states for (hex string)"))}},
-            {QStringLiteral("title_id")}),
+        MakeSchema({{QStringLiteral("title_id"),
+                     MakeProp(QStringLiteral("string"),
+                              QStringLiteral("Title ID to search save states for (hex string)"))}},
+                   {QStringLiteral("title_id")}),
         [](const QJsonObject& params) -> QJsonObject {
             const QString title_id = params[QStringLiteral("title_id")].toString();
             // Look in standard suyu save directory
@@ -214,70 +209,64 @@ void McpServer::RegisterBuiltinTools() {
     // 5) get_system_info — report emulator and host system information
     RegisterTool(
         QStringLiteral("get_system_info"),
-        QStringLiteral("Get information about the host system and emulator build."),
-        MakeSchema({}),
+        QStringLiteral("Get information about the host system and emulator build."), MakeSchema({}),
         [](const QJsonObject& /*params*/) -> QJsonObject {
             return QJsonObject{
                 {QStringLiteral("emulator"), QStringLiteral("suyu")},
                 {QStringLiteral("qt_version"), QString::fromLatin1(qVersion())},
-                {QStringLiteral("compile_qt_version"),
-                 QString::fromLatin1(QT_VERSION_STR)},
+                {QStringLiteral("compile_qt_version"), QString::fromLatin1(QT_VERSION_STR)},
                 {QStringLiteral("os"), QSysInfo::prettyProductName()},
                 {QStringLiteral("kernel"), QSysInfo::kernelVersion()},
                 {QStringLiteral("architecture"), QSysInfo::currentCpuArchitecture()},
-                {QStringLiteral("app_dir"),
-                 QCoreApplication::applicationDirPath()},
+                {QStringLiteral("app_dir"), QCoreApplication::applicationDirPath()},
             };
         });
 
     // 6) list_game_directories — list configured ROM scan paths
-    RegisterTool(
-        QStringLiteral("list_game_directories"),
-        QStringLiteral("List the configured directories where suyu scans for games."),
-        MakeSchema({}),
-        [](const QJsonObject& /*params*/) -> QJsonObject {
-            const QString data_dir =
-                QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
-            const QDir suyu_dir(data_dir + QStringLiteral("/suyu/"));
+    RegisterTool(QStringLiteral("list_game_directories"),
+                 QStringLiteral("List the configured directories where suyu scans for games."),
+                 MakeSchema({}), [](const QJsonObject& /*params*/) -> QJsonObject {
+                     const QString data_dir =
+                         QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+                     const QDir suyu_dir(data_dir + QStringLiteral("/suyu/"));
 
-            QJsonArray dirs;
-            // Check for a gamedirs config (common location)
-            const QString config_path = suyu_dir.filePath(QStringLiteral("config/qt-config.ini"));
-            QFileInfo config_info(config_path);
-            if (config_info.exists()) {
-                QJsonObject entry;
-                entry[QStringLiteral("config_file")] = config_info.absoluteFilePath();
-                entry[QStringLiteral("exists")] = true;
-                dirs.append(entry);
-            }
+                     QJsonArray dirs;
+                     // Check for a gamedirs config (common location)
+                     const QString config_path =
+                         suyu_dir.filePath(QStringLiteral("config/qt-config.ini"));
+                     QFileInfo config_info(config_path);
+                     if (config_info.exists()) {
+                         QJsonObject entry;
+                         entry[QStringLiteral("config_file")] = config_info.absoluteFilePath();
+                         entry[QStringLiteral("exists")] = true;
+                         dirs.append(entry);
+                     }
 
-            // Also report the NAND/SDMC paths
-            const QStringList known_paths = {
-                suyu_dir.filePath(QStringLiteral("nand/")),
-                suyu_dir.filePath(QStringLiteral("sdmc/")),
-                suyu_dir.filePath(QStringLiteral("load/")),
-            };
-            for (const auto& p : known_paths) {
-                QJsonObject entry;
-                entry[QStringLiteral("path")] = p;
-                entry[QStringLiteral("exists")] = QDir(p).exists();
-                dirs.append(entry);
-            }
+                     // Also report the NAND/SDMC paths
+                     const QStringList known_paths = {
+                         suyu_dir.filePath(QStringLiteral("nand/")),
+                         suyu_dir.filePath(QStringLiteral("sdmc/")),
+                         suyu_dir.filePath(QStringLiteral("load/")),
+                     };
+                     for (const auto& p : known_paths) {
+                         QJsonObject entry;
+                         entry[QStringLiteral("path")] = p;
+                         entry[QStringLiteral("exists")] = QDir(p).exists();
+                         dirs.append(entry);
+                     }
 
-            return QJsonObject{
-                {QStringLiteral("data_directory"), suyu_dir.absolutePath()},
-                {QStringLiteral("directories"), dirs},
-            };
-        });
+                     return QJsonObject{
+                         {QStringLiteral("data_directory"), suyu_dir.absolutePath()},
+                         {QStringLiteral("directories"), dirs},
+                     };
+                 });
 
     // 7) get_keys_status — check if prod.keys/title.keys exist, and external tool status
     RegisterTool(
         QStringLiteral("get_keys_status"),
-        QStringLiteral(
-            "Check whether decryption keys (prod.keys, title.keys) are installed, "
-            "and whether an external decryption tool is configured."),
-        MakeSchema({}),
-        [](const QJsonObject& /*params*/) -> QJsonObject {
+        QStringLiteral("Check whether decryption keys (prod.keys, title.keys) are installed, "
+                       "and whether an external decryption tool is configured."),
+        MakeSchema({}), [](const QJsonObject& /*params*/) -> QJsonObject {
             const QDir keys_dir(QString::fromStdString(
                 Common::FS::GetSuyuPathString(Common::FS::SuyuPath::KeysDir)));
 
@@ -303,9 +292,10 @@ void McpServer::RegisterBuiltinTools() {
                 result[QStringLiteral("external_tool_id")] = ext_tool_id;
                 result[QStringLiteral("external_tool_path")] = ext_tool_path;
                 result[QStringLiteral("external_tool_configured")] = ext_tool_exists;
-                result[QStringLiteral("note")] = QStringLiteral(
-                    "Built-in key loading is supported. You can install prod.keys/title.keys locally, "
-                    "or configure an external decryption tool if you prefer.");
+                result[QStringLiteral("note")] =
+                    QStringLiteral("Built-in key loading is supported. You can install "
+                                   "prod.keys/title.keys locally, "
+                                   "or configure an external decryption tool if you prefer.");
                 return result;
             }
         });
@@ -314,20 +304,23 @@ void McpServer::RegisterBuiltinTools() {
         QStringLiteral("get_nintendo_account_state"),
         QStringLiteral(
             "Inspect the stored Nintendo Account link state and cached digital library metadata."),
-        MakeSchema({}),
-        [](const QJsonObject& /*params*/) -> QJsonObject {
+        MakeSchema({}), [](const QJsonObject& /*params*/) -> QJsonObject {
             QSettings current(QStringLiteral("suyu"), QStringLiteral("suyu"));
             QSettings legacy(QStringLiteral("suyu"), QStringLiteral("SuyuEclipse"));
 
             auto read_group = [](QSettings& settings) {
                 settings.beginGroup(QStringLiteral("NintendoAccount"));
                 QJsonObject result{
-                    {QStringLiteral("linked"), settings.value(QStringLiteral("linked"), false).toBool()},
-                    {QStringLiteral("nickname"), settings.value(QStringLiteral("nickname")).toString()},
-                    {QStringLiteral("user_id"), settings.value(QStringLiteral("user_id")).toString()},
+                    {QStringLiteral("linked"),
+                     settings.value(QStringLiteral("linked"), false).toBool()},
+                    {QStringLiteral("nickname"),
+                     settings.value(QStringLiteral("nickname")).toString()},
+                    {QStringLiteral("user_id"),
+                     settings.value(QStringLiteral("user_id")).toString()},
                     {QStringLiteral("session_token_present"),
                      !settings.value(QStringLiteral("session_token")).toByteArray().isEmpty()},
-                    {QStringLiteral("library_json"), settings.value(QStringLiteral("library")).toString()},
+                    {QStringLiteral("library_json"),
+                     settings.value(QStringLiteral("library")).toString()},
                 };
                 settings.endGroup();
                 return result;
@@ -344,8 +337,8 @@ void McpServer::RegisterBuiltinTools() {
                 active[QStringLiteral("using_legacy_settings")] = false;
             }
 
-            const QJsonDocument library_doc =
-                QJsonDocument::fromJson(active.value(QStringLiteral("library_json")).toString().toUtf8());
+            const QJsonDocument library_doc = QJsonDocument::fromJson(
+                active.value(QStringLiteral("library_json")).toString().toUtf8());
             active[QStringLiteral("owned_title_count")] =
                 library_doc.isArray() ? library_doc.array().size() : 0;
             active.remove(QStringLiteral("library_json"));
@@ -366,14 +359,12 @@ void McpServer::RegisterBuiltinTools() {
             const int clamped = qBound(1, max_lines, 500);
 
             const QString log_path = QString::fromStdString(
-                (Common::FS::GetSuyuPath(Common::FS::SuyuPath::LogDir) / "suyu_log.txt")
-                    .string());
+                (Common::FS::GetSuyuPath(Common::FS::SuyuPath::LogDir) / "suyu_log.txt").string());
 
             QFile file(log_path);
             if (!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 return QJsonObject{
-                    {QStringLiteral("error"),
-                     QStringLiteral("Log file not found or unreadable")},
+                    {QStringLiteral("error"), QStringLiteral("Log file not found or unreadable")},
                     {QStringLiteral("path"), log_path},
                 };
             }
@@ -525,8 +516,7 @@ void McpServer::HandleRequest(const QByteArray& data, QTcpSocket* socket) {
             if (!found) {
                 response[QStringLiteral("error")] = QJsonObject{
                     {QStringLiteral("code"), -32602},
-                    {QStringLiteral("message"),
-                     QStringLiteral("Unknown tool: %1").arg(tool_name)},
+                    {QStringLiteral("message"), QStringLiteral("Unknown tool: %1").arg(tool_name)},
                 };
             } else {
                 const QJsonObject tool_result = found->handler(arguments);
@@ -536,8 +526,7 @@ void McpServer::HandleRequest(const QByteArray& data, QTcpSocket* socket) {
                 QJsonObject text_content;
                 text_content[QStringLiteral("type")] = QStringLiteral("text");
                 text_content[QStringLiteral("text")] =
-                    QString::fromUtf8(
-                        QJsonDocument(tool_result).toJson(QJsonDocument::Indented));
+                    QString::fromUtf8(QJsonDocument(tool_result).toJson(QJsonDocument::Indented));
                 content.append(text_content);
 
                 QJsonObject result;

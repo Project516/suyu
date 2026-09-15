@@ -4,7 +4,6 @@
 #include "dynarmic/backend/loongarch64/a32_address_space.h"
 
 #include "common/assert.h"
-
 #include "dynarmic/backend/loongarch64/a32_jitstate.h"
 #include "dynarmic/backend/loongarch64/abi.h"
 #include "dynarmic/backend/loongarch64/emit_loongarch64.h"

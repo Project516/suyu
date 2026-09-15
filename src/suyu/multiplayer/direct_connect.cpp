@@ -46,8 +46,8 @@ DirectConnectWindow::DirectConnectWindow(Core::System& system_, QWidget* parent)
     ui->port->setValidator(validation.GetPort());
     ui->port->setText(QString::number(UISettings::values.multiplayer_port.GetValue()));
 
-    connect(ui->server_list, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &DirectConnectWindow::OnServerSelected);
+    connect(ui->server_list, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &DirectConnectWindow::OnServerSelected);
     connect(ui->add_server, &QPushButton::clicked, this, &DirectConnectWindow::OnAddServer);
     connect(ui->remove_server, &QPushButton::clicked, this, &DirectConnectWindow::OnRemoveServer);
     connect(ui->connect, &QPushButton::clicked, this, &DirectConnectWindow::Connect);
@@ -62,7 +62,8 @@ void DirectConnectWindow::RetranslateUi() {
 }
 
 void DirectConnectWindow::LoadSavedServers() {
-    const QString saved = QString::fromStdString(UISettings::values.multiplayer_saved_servers.GetValue());
+    const QString saved =
+        QString::fromStdString(UISettings::values.multiplayer_saved_servers.GetValue());
     const QStringList entries = saved.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
     ui->server_list->clear();
     ui->server_list->addItem(tr("Custom Server"), QString());
@@ -96,7 +97,8 @@ void DirectConnectWindow::UpdateSavedServerList() {
     LoadSavedServers();
 }
 
-bool DirectConnectWindow::ParseSavedServerEntry(const QString& entry, QString& host, QString& port) const {
+bool DirectConnectWindow::ParseSavedServerEntry(const QString& entry, QString& host,
+                                                QString& port) const {
     const int separator = entry.indexOf(QLatin1String("||"));
     if (separator < 0)
         return false;
@@ -125,15 +127,13 @@ void DirectConnectWindow::OnServerSelected(int index) {
 
 void DirectConnectWindow::OnAddServer() {
     bool ok;
-    const QString label = QInputDialog::getText(this, tr("Add Custom Server"),
-                                                tr("Server Name:"), QLineEdit::Normal,
-                                                QString(), &ok);
+    const QString label = QInputDialog::getText(this, tr("Add Custom Server"), tr("Server Name:"),
+                                                QLineEdit::Normal, QString(), &ok);
     if (!ok || label.trimmed().isEmpty()) {
         return;
     }
-    const QString address = QInputDialog::getText(this, tr("Add Custom Server"),
-                                                  tr("Host:Port:"), QLineEdit::Normal,
-                                                  QString(), &ok);
+    const QString address = QInputDialog::getText(this, tr("Add Custom Server"), tr("Host:Port:"),
+                                                  QLineEdit::Normal, QString(), &ok);
     if (!ok || address.trimmed().isEmpty()) {
         return;
     }

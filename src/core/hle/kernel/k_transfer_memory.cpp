@@ -17,7 +17,8 @@ KTransferMemory::KTransferMemory(KernelCore& kernel)
 
 KTransferMemory::~KTransferMemory() = default;
 
-Result KTransferMemory::Initialize(KernelCore& kernel, KProcessAddress addr, std::size_t size, Svc::MemoryPermission own_perm) {
+Result KTransferMemory::Initialize(KernelCore& kernel, KProcessAddress addr, std::size_t size,
+                                   Svc::MemoryPermission own_perm) {
     // Set members.
     m_owner = GetCurrentProcessPointer(kernel);
 
@@ -65,7 +66,8 @@ void KTransferMemory::PostDestroy(KernelCore& kernel, uintptr_t arg) {
     owner->Close(kernel);
 }
 
-Result KTransferMemory::Map(KernelCore& kernel, KProcessAddress address, size_t size, Svc::MemoryPermission map_perm) {
+Result KTransferMemory::Map(KernelCore& kernel, KProcessAddress address, size_t size,
+                            Svc::MemoryPermission map_perm) {
     // Validate the size.
     R_UNLESS(m_page_group->GetNumPages() == Common::DivideUp(size, PageSize), ResultInvalidSize);
 
@@ -82,8 +84,8 @@ Result KTransferMemory::Map(KernelCore& kernel, KProcessAddress address, size_t 
     const KMemoryState state = (m_owner_perm == Svc::MemoryPermission::None)
                                    ? KMemoryState::Transferred
                                    : KMemoryState::SharedTransferred;
-    R_TRY(GetCurrentProcess(kernel).GetPageTable().MapPageGroup(
-        address, *m_page_group, state, KMemoryPermission::UserReadWrite));
+    R_TRY(GetCurrentProcess(kernel).GetPageTable().MapPageGroup(address, *m_page_group, state,
+                                                                KMemoryPermission::UserReadWrite));
 
     // Mark ourselves as mapped.
     m_is_mapped = true;

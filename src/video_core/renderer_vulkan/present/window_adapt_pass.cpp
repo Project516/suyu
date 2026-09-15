@@ -18,10 +18,9 @@
 
 namespace Vulkan {
 
-WindowAdaptPass::WindowAdaptPass(const Device& device, VkFormat frame_format, vk::Sampler&& sampler_, vk::ShaderModule&& fragment_shader_)
-    : sampler(std::move(sampler_))
-    , fragment_shader(std::move(fragment_shader_))
-{
+WindowAdaptPass::WindowAdaptPass(const Device& device, VkFormat frame_format,
+                                 vk::Sampler&& sampler_, vk::ShaderModule&& fragment_shader_)
+    : sampler(std::move(sampler_)), fragment_shader(std::move(fragment_shader_)) {
     CreateDescriptorSetLayout(device);
     CreatePipelineLayout(device);
     CreateVertexShader(device);
@@ -31,8 +30,8 @@ WindowAdaptPass::WindowAdaptPass(const Device& device, VkFormat frame_format, vk
 
 WindowAdaptPass::~WindowAdaptPass() = default;
 
-void WindowAdaptPass::Draw(const Device& device, RasterizerVulkan& rasterizer, Scheduler& scheduler, size_t image_index,
-                           std::list<Layer>& layers,
+void WindowAdaptPass::Draw(const Device& device, RasterizerVulkan& rasterizer, Scheduler& scheduler,
+                           size_t image_index, std::list<Layer>& layers,
                            std::span<const Tegra::FramebufferConfig> configs,
                            const Layout::FramebufferLayout& layout, Frame* dst) {
 
@@ -64,8 +63,8 @@ void WindowAdaptPass::Draw(const Device& device, RasterizerVulkan& rasterizer, S
             break;
         }
 
-        layer_it->ConfigureDraw(device, &push_constants[i], &descriptor_sets[i], rasterizer, *sampler,
-                                image_index, configs[i], layout);
+        layer_it->ConfigureDraw(device, &push_constants[i], &descriptor_sets[i], rasterizer,
+                                *sampler, image_index, configs[i], layout);
         layer_it++;
     }
 

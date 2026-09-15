@@ -8,17 +8,16 @@
 #include <utility>
 #include <vector>
 
-#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
 #include <ankerl/unordered_dense.h>
 
 #include "common/assert.h"
 #include "common/common_types.h"
-#include "dynarmic/mcl/is_instance_of_template.hpp"
-
+#include "dynarmic/backend/loongarch64/lagoon_cpp.h"
 #include "dynarmic/backend/loongarch64/stack_layout.h"
 #include "dynarmic/ir/cond.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/value.h"
+#include "dynarmic/mcl/is_instance_of_template.hpp"
 
 namespace Dynarmic::Backend::LoongArch64 {
 
@@ -28,21 +27,24 @@ class RegAlloc;
 struct GPR {
     la_gpr_t index = LA_ZERO;
     GPR() = default;
-    explicit GPR(u32 i) : index{static_cast<la_gpr_t>(i)} {}
+    explicit GPR(u32 i)
+            : index{static_cast<la_gpr_t>(i)} {}
     uint32_t Index() const { return static_cast<uint32_t>(index); }
 };
 
 struct FPR {
     la_fpr_t index = LA_F0;
     FPR() = default;
-    explicit FPR(u32 i) : index{static_cast<la_fpr_t>(i)} {}
+    explicit FPR(u32 i)
+            : index{static_cast<la_fpr_t>(i)} {}
     uint32_t Index() const { return static_cast<uint32_t>(index); }
 };
 
 struct VPR {
     la_vpr_t index;
     VPR() = default;
-    explicit VPR(u32 i) : index{static_cast<la_vpr_t>(i)} {}
+    explicit VPR(u32 i)
+            : index{static_cast<la_vpr_t>(i)} {}
     uint32_t Index() const { return static_cast<uint32_t>(index); }
 };
 

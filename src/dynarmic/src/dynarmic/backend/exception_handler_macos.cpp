@@ -9,6 +9,7 @@
 #include <mach/mach.h>
 #include <mach/message.h>
 
+#include <bit>
 #include <cstring>
 #include <functional>
 #include <memory>
@@ -16,12 +17,11 @@
 #include <optional>
 #include <thread>
 #include <vector>
-#include <bit>
 
 #include <fmt/format.h>
+
 #include "common/assert.h"
 #include "common/common_types.h"
-
 #include "dynarmic/backend/exception_handler.h"
 
 #if defined(ARCHITECTURE_x86_64)

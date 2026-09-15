@@ -18,16 +18,12 @@
 
 namespace Vulkan {
 
-BlitScreen::BlitScreen(Tegra::MaxwellDeviceMemoryManager& device_memory_, const Device& device_, MemoryAllocator& memory_allocator_, PresentManager& present_manager_, Scheduler& scheduler_, const PresentFilters& filters_)
-    : device_memory{device_memory_}
-    , memory_allocator{memory_allocator_}
-    , present_manager{present_manager_}
-    , scheduler{scheduler_}
-    , filters{filters_}
-    , image_count{1}
-    , image_index{0}
-    , swapchain_view_format{VK_FORMAT_B8G8R8A8_UNORM}
-{}
+BlitScreen::BlitScreen(Tegra::MaxwellDeviceMemoryManager& device_memory_, const Device& device_,
+                       MemoryAllocator& memory_allocator_, PresentManager& present_manager_,
+                       Scheduler& scheduler_, const PresentFilters& filters_)
+    : device_memory{device_memory_}, memory_allocator{memory_allocator_},
+      present_manager{present_manager_}, scheduler{scheduler_}, filters{filters_}, image_count{1},
+      image_index{0}, swapchain_view_format{VK_FORMAT_B8G8R8A8_UNORM} {}
 
 BlitScreen::~BlitScreen() = default;
 
@@ -46,16 +42,20 @@ void BlitScreen::SetWindowAdaptPass(const Device& device) {
         window_adapt = MakeNearestNeighbor(device, swapchain_view_format);
         break;
     case Settings::ScalingFilter::Bicubic:
-        window_adapt = MakeBicubic(device, swapchain_view_format, VK_CUBIC_FILTER_WEIGHTS_CATMULL_ROM_QCOM);
+        window_adapt =
+            MakeBicubic(device, swapchain_view_format, VK_CUBIC_FILTER_WEIGHTS_CATMULL_ROM_QCOM);
         break;
     case Settings::ScalingFilter::ZeroTangent:
-        window_adapt = MakeBicubic(device, swapchain_view_format, VK_CUBIC_FILTER_WEIGHTS_ZERO_TANGENT_CARDINAL_QCOM);
+        window_adapt = MakeBicubic(device, swapchain_view_format,
+                                   VK_CUBIC_FILTER_WEIGHTS_ZERO_TANGENT_CARDINAL_QCOM);
         break;
     case Settings::ScalingFilter::BSpline:
-        window_adapt = MakeBicubic(device, swapchain_view_format, VK_CUBIC_FILTER_WEIGHTS_B_SPLINE_QCOM);
+        window_adapt =
+            MakeBicubic(device, swapchain_view_format, VK_CUBIC_FILTER_WEIGHTS_B_SPLINE_QCOM);
         break;
     case Settings::ScalingFilter::Mitchell:
-        window_adapt = MakeBicubic(device, swapchain_view_format, VK_CUBIC_FILTER_WEIGHTS_MITCHELL_NETRAVALI_QCOM);
+        window_adapt = MakeBicubic(device, swapchain_view_format,
+                                   VK_CUBIC_FILTER_WEIGHTS_MITCHELL_NETRAVALI_QCOM);
         break;
     case Settings::ScalingFilter::Spline1:
         window_adapt = MakeSpline1(device, swapchain_view_format);
@@ -102,8 +102,8 @@ void BlitScreen::DrawToFrame(const Device& device, RasterizerVulkan& rasterizer,
         image_count = current_swapchain_image_count;
     }
 
-    if (swapchain_view_format != current_swapchain_view_format ||
-        layout.width != frame->width || layout.height != frame->height) {
+    if (swapchain_view_format != current_swapchain_view_format || layout.width != frame->width ||
+        layout.height != frame->height) {
         resource_update_required = true;
         presentation_recreate_required = true;
         swapchain_view_format = current_swapchain_view_format;
@@ -134,14 +134,16 @@ void BlitScreen::DrawToFrame(const Device& device, RasterizerVulkan& rasterizer,
         }
     }
 
-    window_adapt->Draw(device, rasterizer, scheduler, image_index, layers, framebuffers, layout, frame);
+    window_adapt->Draw(device, rasterizer, scheduler, image_index, layers, framebuffers, layout,
+                       frame);
 
     if (++image_index >= image_count) {
         image_index = 0;
     }
 }
 
-vk::Framebuffer BlitScreen::CreateFramebuffer(const Device& device, const Layout::FramebufferLayout& layout,
+vk::Framebuffer BlitScreen::CreateFramebuffer(const Device& device,
+                                              const Layout::FramebufferLayout& layout,
                                               VkImageView image_view,
                                               VkFormat current_view_format) {
     bool format_updated = swapchain_view_format != current_view_format;
@@ -161,8 +163,8 @@ vk::Framebuffer BlitScreen::CreateFramebuffer(const Device& device, const Layout
     return CreateFramebuffer(device, image_view, extent, window_adapt->GetRenderPass());
 }
 
-vk::Framebuffer BlitScreen::CreateFramebuffer(const Device& device, const VkImageView& image_view, VkExtent2D extent,
-                                              VkRenderPass render_pass) {
+vk::Framebuffer BlitScreen::CreateFramebuffer(const Device& device, const VkImageView& image_view,
+                                              VkExtent2D extent, VkRenderPass render_pass) {
     return device.GetLogical().CreateFramebuffer(VkFramebufferCreateInfo{
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .pNext = nullptr,

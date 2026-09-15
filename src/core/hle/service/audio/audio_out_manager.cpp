@@ -14,9 +14,7 @@ namespace Service::Audio {
 using namespace AudioCore::AudioOut;
 
 IAudioOutManager::IAudioOutManager(Core::System& system_)
-    : ServiceFramework{system_, "audout:u"}
-    , impl(system_)
-{
+    : ServiceFramework{system_, "audout:u"}, impl(system_) {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, D<&IAudioOutManager::ListAudioOuts>, "ListAudioOuts"},

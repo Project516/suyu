@@ -14,14 +14,15 @@
 #include "core/hle/service/am/service/application_creator.h"
 #include "core/hle/service/am/window_system.h"
 #include "core/hle/service/cmif_serialization.h"
-#include "core/loader/loader.h"
 #include "core/launch_timestamp_cache.h"
+#include "core/loader/loader.h"
 
 namespace Service::AM {
 
 namespace {
 
-Result CreateGuestApplication(SharedPointer<IApplicationAccessor>* out_application_accessor, Core::System& system, WindowSystem& window_system, u64 program_id) {
+Result CreateGuestApplication(SharedPointer<IApplicationAccessor>* out_application_accessor,
+                              Core::System& system, WindowSystem& window_system, u64 program_id) {
     FileSys::VirtualFile nca_raw{};
 
     // Get the program NCA from storage.
@@ -34,7 +35,8 @@ Result CreateGuestApplication(SharedPointer<IApplicationAccessor>* out_applicati
     std::vector<u8> control;
     std::unique_ptr<Loader::AppLoader> loader;
     Loader::ResultStatus result;
-    auto process = CreateApplicationProcess(control, loader, result, system, nca_raw, program_id, 0);
+    auto process =
+        CreateApplicationProcess(control, loader, result, system, nca_raw, program_id, 0);
     R_UNLESS(process != nullptr, ResultUnknown);
 
     const auto applet = std::make_shared<Applet>(system, std::move(process), true);
@@ -45,7 +47,8 @@ Result CreateGuestApplication(SharedPointer<IApplicationAccessor>* out_applicati
 
     window_system.TrackApplet(applet, true);
 
-    *out_application_accessor = std::make_shared<IApplicationAccessor>(system, applet, window_system);
+    *out_application_accessor =
+        std::make_shared<IApplicationAccessor>(system, applet, window_system);
     R_SUCCEED();
 }
 
@@ -98,7 +101,8 @@ Result IApplicationCreator::CreateSystemApplication(
 
     m_window_system.TrackApplet(applet, true);
 
-    *out_application_accessor = std::make_shared<IApplicationAccessor>(system, applet, m_window_system);
+    *out_application_accessor =
+        std::make_shared<IApplicationAccessor>(system, applet, m_window_system);
     Core::LaunchTimestampCache::SaveLaunchTimestamp(application_id);
     R_SUCCEED();
 }

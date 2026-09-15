@@ -11,11 +11,11 @@
 #include <cstddef>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <new>
 #include <span>
 #include <type_traits>
 #include <vector>
-#include <mutex>
 
 namespace Common {
 
@@ -32,6 +32,7 @@ class RingBuffer {
     static_assert((capacity & (capacity - 1)) == 0, "capacity must be a power of two");
     // Ensure lock-free.
     static_assert(std::atomic_size_t::is_always_lock_free);
+
 public:
     /// Pushes slots into the ring buffer
     /// @param new_slots   Pointer to the slots to push

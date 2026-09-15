@@ -23,14 +23,14 @@ jobs:
 
     steps:
       - name: Checkout repository and submodules
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
           path: SuyuEclipse
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -49,7 +49,7 @@ jobs:
         shell: pwsh
 
       - name: Cache Conan packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.CONAN_HOME }}
           key: conan-${{ runner.os }}-${{ hashFiles('SuyuEclipse/conanfile.txt') }}
@@ -166,15 +166,15 @@ jobs:
       - name: Configure CMake
         shell: pwsh
         run: |
-          cmake -B ${{ steps.strings.outputs.build-output-dir }} `
+          cmake -B "${{ steps.strings.outputs.build-output-dir }}" `
             -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_C_COMPILER=cl `
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-            -DCMAKE_TOOLCHAIN_FILE=${{ steps.strings.outputs.build-output-dir }}/conan_toolchain.cmake `
-            -DGLSLANG_VALIDATOR="${{ steps.vulkan.outputs.glslang_path }}" `
+            "-DCMAKE_TOOLCHAIN_FILE=${{ steps.strings.outputs.build-output-dir }}/conan_toolchain.cmake" `
+            "-DGLSLANG_VALIDATOR=${{ steps.vulkan.outputs.glslang_path }}" `
             -DBOOST_USE_DEBUG_LIBS=OFF `
             -DBOOST_USE_STATIC_LIBS=ON `
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 `
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" `
             -DENABLE_QT=OFF `
             -DENABLE_QT_TRANSLATION=OFF `
             -A x64 -T v143 `
@@ -185,7 +185,7 @@ jobs:
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: suyu-windows-${{ env.BUILD_TYPE }}
           path: |
@@ -204,14 +204,14 @@ jobs:
 
     steps:
       - name: Checkout repository and submodules
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
           path: SuyuEclipse
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -254,7 +254,7 @@ jobs:
           conan profile show
 
       - name: Cache Conan packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.CONAN_HOME }}
           key: conan-${{ runner.os }}-${{ hashFiles('SuyuEclipse/conanfile.txt') }}
@@ -302,7 +302,7 @@ jobs:
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: suyu-linux-${{ env.BUILD_TYPE }}
           path: |
@@ -321,14 +321,14 @@ jobs:
 
     steps:
       - name: Checkout repository and submodules
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
           path: SuyuEclipse
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -349,7 +349,7 @@ jobs:
           conan profile show
 
       - name: Cache Conan packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.CONAN_HOME }}
           key: conan-${{ runner.os }}-${{ hashFiles('SuyuEclipse/conanfile.txt') }}
@@ -393,6 +393,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=${{ steps.strings.outputs.build-output-dir }}/conan_toolchain.cmake \
             -DGLSLANG_VALIDATOR="${{ steps.vulkan.outputs.glslang_path }}" \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -DVulkanHeaders_FORCE_BUNDLED=ON \
             -DENABLE_QT=OFF \
             -DENABLE_QT_TRANSLATION=OFF \
             -G Ninja \
@@ -403,7 +404,7 @@ jobs:
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: suyu-macos-${{ env.BUILD_TYPE }}
           path: |
@@ -417,26 +418,30 @@ jobs:
     name: Build (FreeBSD / Clang)
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    # Non-blocking, same as release.yml: the 14.0 VM toolchain cannot compile
+    # this tree (no std::stop_token in its libc++). Keep running so a future
+    # VM bump or polyfill can flip this back.
+    continue-on-error: true
     env:
       BUILD_TYPE: Release
 
     steps:
       - name: Checkout repository and submodules
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
           path: SuyuEclipse
 
       - name: Build on FreeBSD
-        uses: vmactions/freebsd-vm@v1
+        uses: vmactions/freebsd-vm@v1.5.6
         with:
           release: '14.0'
           usesh: true
           prepare: |
-            pkg install -y cmake ninja git python3 py311-pip \
+            pkg install -y cmake ninja git \
               glslang vulkan-headers vulkan-loader vulkan-tools \
-              boost-all libfmt nlohmann-json lz4 libzstd opus \
+              boost-all libfmt nlohmann-json liblz4 zstd opus \
               sdl2 libzip ffmpeg catch2 pkgconf \
               libX11 libXext libXrandr libxcb libxkbcommon \
               alsa-lib pulseaudio mesa-libs wayland
@@ -451,12 +456,13 @@ jobs:
               -DENABLE_QT=OFF \
               -DENABLE_QT_TRANSLATION=OFF \
               -DSUYU_USE_BUNDLED_VCPKG=OFF \
+              -DVulkanHeaders_FORCE_BUNDLED=ON \
               -G Ninja
             cmake --build . --config Release --parallel $(sysctl -n hw.ncpu)
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: suyu-freebsd-${{ env.BUILD_TYPE }}
           path: |
@@ -474,20 +480,24 @@ jobs:
 
     steps:
       - name: Checkout repository and submodules
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
           path: SuyuEclipse
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '17'
           distribution: 'temurin'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          # The obsolete "tools" package was removed from Google's repo and
+          # makes sdkmanager exit 1; platform-tools is all this job needs.
+          packages: platform-tools
 
       - name: Install NDK
         run: |
@@ -498,7 +508,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends ninja-build
+          sudo apt-get install -y --no-install-recommends ninja-build glslang-tools
 
       - name: Initialize submodules
         run: |
@@ -518,7 +528,7 @@ jobs:
 
       - name: Upload APK
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: suyu-android-${{ env.BUILD_TYPE }}
           path: |
@@ -531,19 +541,23 @@ jobs:
     name: Build (iOS / Xcode)
     runs-on: macos-latest
     timeout-minutes: 120
+    # Experimental: the CMake tree has no iOS port yet (macOS-only frameworks,
+    # no iOS toolchain file), so this job is allowed to fail without blocking
+    # pushes. Remove continue-on-error once an iOS build actually lands.
+    continue-on-error: true
     env:
       BUILD_TYPE: Release
 
     steps:
       - name: Checkout repository and submodules
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
           path: SuyuEclipse
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -586,7 +600,7 @@ jobs:
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: suyu-ios-${{ env.BUILD_TYPE }}
           path: |

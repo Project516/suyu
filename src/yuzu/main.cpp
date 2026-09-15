@@ -188,6 +188,7 @@ int main(int argc, char* argv[]) {
     // After settings have been loaded by GMainWindow, apply the filter
     main_window.show();
 
-    app.connect(&app, &QGuiApplication::applicationStateChanged, &main_window, &MainWindow::OnAppFocusStateChanged);
+    app.connect(&app, &QGuiApplication::applicationStateChanged, &main_window,
+                &MainWindow::OnAppFocusStateChanged);
     return app.exec();
 }

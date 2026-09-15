@@ -13,18 +13,18 @@
 #include <QJsonObject>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <QTimer>
 #include <QNetworkRequest>
 #include <QProgressBar>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QTimer>
 #include <QUrlQuery>
 #include <QVBoxLayout>
 
 #ifdef SUYU_USE_QT_WEB_ENGINE
 #include <QWebEngineCookieStore>
-#include <QWebEngineProfile>
 #include <QWebEnginePage>
+#include <QWebEngineProfile>
 #include <QWebEngineView>
 #endif
 
@@ -43,13 +43,15 @@ QString GeneratePkceVerifier() {
     for (int i = 0; i < bytes.size(); ++i) {
         bytes[i] = static_cast<char>(QRandomGenerator::global()->bounded(256));
     }
-    return QString::fromLatin1(bytes.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals));
+    return QString::fromLatin1(
+        bytes.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals));
 }
 
 QString PkceChallengeFromVerifier(const QString& verifier) {
     const QByteArray hash =
         QCryptographicHash::hash(verifier.toLatin1(), QCryptographicHash::Sha256);
-    return QString::fromLatin1(hash.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals));
+    return QString::fromLatin1(
+        hash.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals));
 }
 // Real Nintendo login redirects to a custom npf<client_id>://auth URI scheme
 // (meant for a console's embedded webview to intercept, not a normal
@@ -59,12 +61,12 @@ QString PkceChallengeFromVerifier(const QString& verifier) {
 // observe it.
 class NintendoLoginPage : public QWebEnginePage {
 public:
-    NintendoLoginPage(QWebEngineProfile* profile, QObject* parent) : QWebEnginePage(profile, parent) {}
+    NintendoLoginPage(QWebEngineProfile* profile, QObject* parent)
+        : QWebEnginePage(profile, parent) {}
     std::function<void(const QUrl&)> on_redirect;
 
 protected:
-    bool acceptNavigationRequest(const QUrl& url, QWebEnginePage::NavigationType,
-                                 bool) override {
+    bool acceptNavigationRequest(const QUrl& url, QWebEnginePage::NavigationType, bool) override {
         if (url.scheme().startsWith(QStringLiteral("npf")) && on_redirect) {
             on_redirect(url);
             return false;
@@ -130,7 +132,8 @@ static QString ExtractSessionToken(const QString& input) {
 
     const auto cleanup = [](QString token) {
         token = token.trimmed();
-        if (token.startsWith(QLatin1Char('"')) && token.endsWith(QLatin1Char('"')) && token.size() >= 2) {
+        if (token.startsWith(QLatin1Char('"')) && token.endsWith(QLatin1Char('"')) &&
+            token.size() >= 2) {
             token = token.mid(1, token.size() - 2);
         }
         token = token.trimmed();
@@ -275,8 +278,8 @@ void NintendoAccountDialog::SetupUi() {
     browser_login_button = new QPushButton(tr("One-Click Sign In"), this);
     browser_login_button->setStyleSheet(
         QStringLiteral("QPushButton { background-color: #e60012; color: white; font-size: 14px; "
-                        "font-weight: bold; padding: 10px 20px; border-radius: 6px; } "
-                        "QPushButton:hover { background-color: #ff1a2d; }"));
+                       "font-weight: bold; padding: 10px 20px; border-radius: 6px; } "
+                       "QPushButton:hover { background-color: #ff1a2d; }"));
     layout->addWidget(browser_login_button);
     connect(browser_login_button, &QPushButton::clicked, this,
             &NintendoAccountDialog::OpenBrowserLogin);
@@ -290,14 +293,13 @@ void NintendoAccountDialog::SetupUi() {
     external_browser_button = new QPushButton(tr("Sign In via Your Browser"), this);
     external_browser_button->setStyleSheet(
         QStringLiteral("QPushButton { background-color: #333; color: white; font-size: 12px; "
-                        "padding: 8px 16px; border-radius: 6px; } "
-                        "QPushButton:hover { background-color: #444; }"));
+                       "padding: 8px 16px; border-radius: 6px; } "
+                       "QPushButton:hover { background-color: #444; }"));
     layout->addWidget(external_browser_button);
     connect(external_browser_button, &QPushButton::clicked, this, [this]() {
         QDesktopServices::openUrl(QUrl(QStringLiteral("https://accounts.nintendo.com")));
-        status_label->setText(
-            tr("Browser opened - after signing in, copy the session_token cookie "
-               "and paste it below, then click 'Link Saved Session'"));
+        status_label->setText(tr("Browser opened - after signing in, copy the session_token cookie "
+                                 "and paste it below, then click 'Link Saved Session'"));
         status_label->setStyleSheet(
             QStringLiteral("font-size: 16px; font-weight: bold; color: #ff9800;"));
         token_input->setFocus();
@@ -306,20 +308,20 @@ void NintendoAccountDialog::SetupUi() {
     layout->addSpacing(6);
 
     // Instructions
-    instructions_label = new QLabel(
-        tr("Click 'One-Click Sign In' to log in directly.\n\n"
-           "This is the fastest path: sign in once and suyu will try to refresh\n"
-           "your Nintendo web purchase history automatically.\n\n"
-           "If the embedded browser is unavailable, you can manually\n"
-           "paste a session token instead (raw token, full cookie string,\n"
-           "or a URL/query containing session_token=...):\n"
-           "1. Log in to accounts.nintendo.com in your browser\n"
-           "2. Open Developer Tools (F12) > Application > Cookies\n"
-           "3. Copy the 'session_token' cookie value\n"
-           "4. Paste it below and click 'Link Saved Session'\n\n"
-           "Your token is stored locally with obfuscation. It is never sent\n"
-           "to any third-party server."),
-        this);
+    instructions_label =
+        new QLabel(tr("Click 'One-Click Sign In' to log in directly.\n\n"
+                      "This is the fastest path: sign in once and suyu will try to refresh\n"
+                      "your Nintendo web purchase history automatically.\n\n"
+                      "If the embedded browser is unavailable, you can manually\n"
+                      "paste a session token instead (raw token, full cookie string,\n"
+                      "or a URL/query containing session_token=...):\n"
+                      "1. Log in to accounts.nintendo.com in your browser\n"
+                      "2. Open Developer Tools (F12) > Application > Cookies\n"
+                      "3. Copy the 'session_token' cookie value\n"
+                      "4. Paste it below and click 'Link Saved Session'\n\n"
+                      "Your token is stored locally with obfuscation. It is never sent\n"
+                      "to any third-party server."),
+                   this);
     instructions_label->setWordWrap(true);
     instructions_label->setStyleSheet(QStringLiteral("color: #999; font-size: 11px;"));
     layout->addWidget(instructions_label);
@@ -361,8 +363,7 @@ void NintendoAccountDialog::SetupUi() {
     connect(link_button, &QPushButton::clicked, this, &NintendoAccountDialog::OnLinkClicked);
     connect(unlink_button, &QPushButton::clicked, this, &NintendoAccountDialog::OnUnlinkClicked);
     connect(verify_button, &QPushButton::clicked, this, &NintendoAccountDialog::OnVerifyClicked);
-    connect(token_input, &QLineEdit::returnPressed, this,
-            &NintendoAccountDialog::OnTokenSubmitted);
+    connect(token_input, &QLineEdit::returnPressed, this, &NintendoAccountDialog::OnTokenSubmitted);
 }
 
 void NintendoAccountDialog::RefreshStatus() {
@@ -384,7 +385,7 @@ void NintendoAccountDialog::RefreshStatus() {
 
         if (!owned_library_.empty()) {
             library_summary_label->setText(tr("Nintendo library contains %n title(s)", "",
-                                            static_cast<int>(owned_library_.size())));
+                                              static_cast<int>(owned_library_.size())));
             library_summary_label->setVisible(true);
         } else {
             library_summary_label->setText(
@@ -437,12 +438,12 @@ QByteArray NintendoAccountDialog::Obfuscate(const QByteArray& data) {
     return result;
 }
 
-void NintendoAccountDialog::StoreCredentials(const QString& session_token,
-                                              const QString& nickname, const QString& user_id) {
+void NintendoAccountDialog::StoreCredentials(const QString& session_token, const QString& nickname,
+                                             const QString& user_id) {
     QSettings settings = OpenNintendoSettings();
     settings.beginGroup(QStringLiteral("NintendoAccount"));
     settings.setValue(QStringLiteral("session_token"),
-                     Obfuscate(session_token.toUtf8()).toBase64());
+                      Obfuscate(session_token.toUtf8()).toBase64());
     settings.setValue(QStringLiteral("nickname"), nickname);
     settings.setValue(QStringLiteral("user_id"), user_id);
     settings.setValue(QStringLiteral("linked"), true);
@@ -479,7 +480,8 @@ void NintendoAccountDialog::ClearCredentials() {
 void NintendoAccountDialog::ExchangeSessionTokenCode(const QString& session_token_code) {
     progress_bar->setVisible(true);
     status_label->setText(tr("Finishing sign-in..."));
-    status_label->setStyleSheet(QStringLiteral("font-size: 16px; font-weight: bold; color: #ff9800;"));
+    status_label->setStyleSheet(
+        QStringLiteral("font-size: 16px; font-weight: bold; color: #ff9800;"));
 
     // Second leg of the real PKCE flow: session_token_code + the verifier
     // that produced its challenge -> the actual long-lived session_token,
@@ -537,8 +539,7 @@ void NintendoAccountDialog::VerifySessionToken(const QString& token) {
     // Nintendo's accounts API endpoint to get user info from session token
     // POST https://accounts.nintendo.com/connect/1.0.0/api/token
     // with grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer-session-token
-    const QUrl token_url(
-        QStringLiteral("https://accounts.nintendo.com/connect/1.0.0/api/token"));
+    const QUrl token_url(QStringLiteral("https://accounts.nintendo.com/connect/1.0.0/api/token"));
     QNetworkRequest request(token_url);
     request.setHeader(QNetworkRequest::ContentTypeHeader,
                       QStringLiteral("application/json; charset=utf-8"));
@@ -659,10 +660,10 @@ void NintendoAccountDialog::StartVgcSync() {
     vgc_dialog_->setAttribute(Qt::WA_DeleteOnClose);
 
     auto* layout = new QVBoxLayout(vgc_dialog_);
-    auto* hint = new QLabel(
-        tr("Sign in if prompted. Your Virtual Game Cards will be imported automatically "
-           "once the page loads - this window closes by itself when it's done."),
-        vgc_dialog_);
+    auto* hint =
+        new QLabel(tr("Sign in if prompted. Your Virtual Game Cards will be imported automatically "
+                      "once the page loads - this window closes by itself when it's done."),
+                   vgc_dialog_);
     hint->setWordWrap(true);
     hint->setStyleSheet(QStringLiteral("color: #999; font-size: 11px; padding: 4px;"));
     layout->addWidget(hint);
@@ -707,8 +708,7 @@ void NintendoAccountDialog::StartVgcSync() {
   } catch (e) { return JSON.stringify({error: String(e)}); }
 })()
 )JS";
-        vgc_view_->page()->runJavaScript(QString::fromUtf8(kReadConfig),
-                                         [this](const QVariant& v) {
+        vgc_view_->page()->runJavaScript(QString::fromUtf8(kReadConfig), [this](const QVariant& v) {
             FetchVgcsNatively(v.toString());
         });
         library_summary_label->setText(tr("Reading your Virtual Game Cards..."));
@@ -730,20 +730,20 @@ void NintendoAccountDialog::StartVgcSync() {
 
 void NintendoAccountDialog::FetchVgcsNatively(const QString& config_json) {
     if (config_json.trimmed().isEmpty()) {
-        ApplyVgcJson(QStringLiteral(
-            "{\"error\":\"the Virtual Game Card page returned no configuration\"}"));
+        ApplyVgcJson(
+            QStringLiteral("{\"error\":\"the Virtual Game Card page returned no configuration\"}"));
         return;
     }
     const QJsonObject d = QJsonDocument::fromJson(config_json.toUtf8()).object();
     if (d.contains(QStringLiteral("error"))) {
-        ApplyVgcJson(config_json);   // already shaped as an error payload
+        ApplyVgcJson(config_json); // already shaped as an error payload
         return;
     }
     if (d.value(QStringLiteral("idToken")).toString().isEmpty() ||
         d.value(QStringLiteral("shopGraphQLApiUrl")).toString().isEmpty()) {
-        ApplyVgcJson(QStringLiteral(
-            "{\"error\":\"not signed in to Nintendo - complete the sign-in in this "
-            "window, then sync again\"}"));
+        ApplyVgcJson(
+            QStringLiteral("{\"error\":\"not signed in to Nintendo - complete the sign-in in this "
+                           "window, then sync again\"}"));
         return;
     }
     vgc_accum_ = QJsonArray();
@@ -780,14 +780,10 @@ void NintendoAccountDialog::FetchVgcPage(const QJsonObject& config, int offset) 
     body[QStringLiteral("query")] = QString::fromLatin1(kQuery);
     body[QStringLiteral("variables")] = vars;
 
-    QNetworkRequest request{
-        QUrl(config.value(QStringLiteral("shopGraphQLApiUrl")).toString())};
-    request.setHeader(QNetworkRequest::ContentTypeHeader,
-                      QStringLiteral("application/json"));
+    QNetworkRequest request{QUrl(config.value(QStringLiteral("shopGraphQLApiUrl")).toString())};
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
     request.setRawHeader("x-nintendo-savanna-client-id",
-                         config.value(QStringLiteral("savannaClientId"))
-                             .toString()
-                             .toUtf8());
+                         config.value(QStringLiteral("savannaClientId")).toString().toUtf8());
 
     if (!network_manager_) {
         network_manager_ = new QNetworkAccessManager(this);
@@ -799,12 +795,10 @@ void NintendoAccountDialog::FetchVgcPage(const QJsonObject& config, int offset) 
         if (reply->error() != QNetworkReply::NoError) {
             QJsonObject err;
             err[QStringLiteral("error")] = reply->errorString();
-            ApplyVgcJson(QString::fromUtf8(
-                QJsonDocument(err).toJson(QJsonDocument::Compact)));
+            ApplyVgcJson(QString::fromUtf8(QJsonDocument(err).toJson(QJsonDocument::Compact)));
             return;
         }
-        const QJsonObject root =
-            QJsonDocument::fromJson(reply->readAll()).object();
+        const QJsonObject root = QJsonDocument::fromJson(reply->readAll()).object();
         const QJsonObject views = root.value(QStringLiteral("data"))
                                       .toObject()
                                       .value(QStringLiteral("account"))
@@ -820,12 +814,8 @@ void NintendoAccountDialog::FetchVgcPage(const QJsonObject& config, int offset) 
             err[QStringLiteral("error")] =
                 errors.isEmpty()
                     ? QStringLiteral("Nintendo returned an unexpected response")
-                    : errors.first()
-                          .toObject()
-                          .value(QStringLiteral("message"))
-                          .toString();
-            ApplyVgcJson(QString::fromUtf8(
-                QJsonDocument(err).toJson(QJsonDocument::Compact)));
+                    : errors.first().toObject().value(QStringLiteral("message")).toString();
+            ApplyVgcJson(QString::fromUtf8(QJsonDocument(err).toJson(QJsonDocument::Compact)));
             return;
         }
         for (const auto& v : views.value(QStringLiteral("views")).toArray()) {
@@ -842,15 +832,15 @@ void NintendoAccountDialog::FetchVgcPage(const QJsonObject& config, int offset) 
         }
         QJsonObject done;
         done[QStringLiteral("games")] = vgc_accum_;
-        ApplyVgcJson(
-            QString::fromUtf8(QJsonDocument(done).toJson(QJsonDocument::Compact)));
+        ApplyVgcJson(QString::fromUtf8(QJsonDocument(done).toJson(QJsonDocument::Compact)));
     });
 }
 
 void NintendoAccountDialog::PollVgcResult() {
 #ifdef SUYU_USE_QT_WEB_ENGINE
     if (!vgc_view_ || !vgc_view_->page()) {
-        if (vgc_poll_timer_) vgc_poll_timer_->stop();
+        if (vgc_poll_timer_)
+            vgc_poll_timer_->stop();
         return;
     }
     // ~60s ceiling; a very large library still finishes well inside this.
@@ -859,18 +849,20 @@ void NintendoAccountDialog::PollVgcResult() {
         library_summary_label->setText(
             tr("Timed out reading your Virtual Game Cards. Please try again."));
         sync_library_button->setEnabled(true);
-        if (vgc_dialog_) vgc_dialog_->close();
+        if (vgc_dialog_)
+            vgc_dialog_->close();
         return;
     }
-    vgc_view_->page()->runJavaScript(
-        QStringLiteral("window.__suyu_vgc_result"), [this](const QVariant& v) {
-            const QString json = v.toString();
-            if (json.isEmpty() || json == QStringLiteral("null")) {
-                return; // not finished yet
-            }
-            if (vgc_poll_timer_) vgc_poll_timer_->stop();
-            ApplyVgcJson(json);
-        });
+    vgc_view_->page()->runJavaScript(QStringLiteral("window.__suyu_vgc_result"),
+                                     [this](const QVariant& v) {
+                                         const QString json = v.toString();
+                                         if (json.isEmpty() || json == QStringLiteral("null")) {
+                                             return; // not finished yet
+                                         }
+                                         if (vgc_poll_timer_)
+                                             vgc_poll_timer_->stop();
+                                         ApplyVgcJson(json);
+                                     });
 #endif
 }
 
@@ -878,12 +870,12 @@ void NintendoAccountDialog::ApplyVgcJson(const QString& json) {
     const QJsonObject root = QJsonDocument::fromJson(json.toUtf8()).object();
 
     if (root.contains(QStringLiteral("error"))) {
-        library_summary_label->setText(
-            tr("Could not read your Virtual Game Cards: %1")
-                .arg(root.value(QStringLiteral("error")).toString()));
+        library_summary_label->setText(tr("Could not read your Virtual Game Cards: %1")
+                                           .arg(root.value(QStringLiteral("error")).toString()));
         library_summary_label->setVisible(true);
         sync_library_button->setEnabled(true);
-        if (vgc_dialog_) vgc_dialog_->close();
+        if (vgc_dialog_)
+            vgc_dialog_->close();
         return;
     }
 
@@ -895,10 +887,8 @@ void NintendoAccountDialog::ApplyVgcJson(const QString& json) {
         game.title_id = view.value(QStringLiteral("applicationId")).toString();
         game.platform = QStringLiteral("Nintendo Switch");
         game.is_digital = true;
-        game.icon_url = view.value(QStringLiteral("icon"))
-                            .toObject()
-                            .value(QStringLiteral("url"))
-                            .toString();
+        game.icon_url =
+            view.value(QStringLiteral("icon")).toObject().value(QStringLiteral("url")).toString();
         // Nintendo returns a template ending in a literal "${size}" that the
         // client is meant to substitute, e.g.
         //   https://atum-img-lp1.cdn.nintendo.net/i/c/<hash>_${size}
@@ -916,10 +906,9 @@ void NintendoAccountDialog::ApplyVgcJson(const QString& json) {
         }
         // The same title can hold several cards (e.g. lent copies); one entry
         // per game is what the library wants.
-        const bool dup = std::any_of(collected.begin(), collected.end(),
-                                     [&](const NintendoOwnedGame& g) {
-                                         return g.title_id == game.title_id;
-                                     });
+        const bool dup =
+            std::any_of(collected.begin(), collected.end(),
+                        [&](const NintendoOwnedGame& g) { return g.title_id == game.title_id; });
         if (!dup) {
             collected.push_back(std::move(game));
         }
@@ -945,8 +934,6 @@ void NintendoAccountDialog::ApplyVgcJson(const QString& json) {
         vgc_view_ = nullptr;
     }
 }
-
-
 
 void NintendoAccountDialog::OnLinkClicked() {
     OnTokenSubmitted();
@@ -974,78 +961,79 @@ void NintendoAccountDialog::OpenBrowserLogin() {
     // event finish unwinding first, which is the standard fix for this
     // class of QtWebEngine re-entrancy crash.
     QTimer::singleShot(0, this, [this]() {
-    auto* dialog = new QDialog(this);
-    dialog->setWindowTitle(tr("Nintendo Account Sign-In"));
-    dialog->resize(900, 700);
-    dialog->setAttribute(Qt::WA_DeleteOnClose);
-    // Neither this dialog nor its parent NintendoAccountDialog should be
-    // Qt::ApplicationModal here - both are now shown via show(), not
-    // exec(), and stacking two ApplicationModal top-levels (even
-    // sequentially, one per QTimer::singleShot(0) tick) reproduced the same
-    // silent-disappearance bug that a genuinely non-modal child under an
-    // exec()-driven application-modal parent did in an earlier version of
-    // this code. Leaving both non-modal (or window-modal at most) avoids
-    // Qt's application-modal stack entirely.
+        auto* dialog = new QDialog(this);
+        dialog->setWindowTitle(tr("Nintendo Account Sign-In"));
+        dialog->resize(900, 700);
+        dialog->setAttribute(Qt::WA_DeleteOnClose);
+        // Neither this dialog nor its parent NintendoAccountDialog should be
+        // Qt::ApplicationModal here - both are now shown via show(), not
+        // exec(), and stacking two ApplicationModal top-levels (even
+        // sequentially, one per QTimer::singleShot(0) tick) reproduced the same
+        // silent-disappearance bug that a genuinely non-modal child under an
+        // exec()-driven application-modal parent did in an earlier version of
+        // this code. Leaving both non-modal (or window-modal at most) avoids
+        // Qt's application-modal stack entirely.
 
-    auto* layout = new QVBoxLayout(dialog);
+        auto* layout = new QVBoxLayout(dialog);
 
-    auto* hint = new QLabel(
-        tr("Sign in to your Nintendo Account below. The window will close automatically "
-           "once your session token is captured and your library sync begins."),
-        dialog);
-    hint->setWordWrap(true);
-    hint->setStyleSheet(QStringLiteral("color: #999; font-size: 11px; padding: 4px;"));
-    layout->addWidget(hint);
+        auto* hint = new QLabel(
+            tr("Sign in to your Nintendo Account below. The window will close automatically "
+               "once your session token is captured and your library sync begins."),
+            dialog);
+        hint->setWordWrap(true);
+        hint->setStyleSheet(QStringLiteral("color: #999; font-size: 11px; padding: 4px;"));
+        layout->addWidget(hint);
 
-    auto* profile = new QWebEngineProfile(QStringLiteral("NintendoLogin"), dialog);
-    auto* web_view = new QWebEngineView(dialog);
-    layout->addWidget(web_view, 1);
+        auto* profile = new QWebEngineProfile(QStringLiteral("NintendoLogin"), dialog);
+        auto* web_view = new QWebEngineView(dialog);
+        layout->addWidget(web_view, 1);
 
-    // Real Nintendo login is OAuth/PKCE, not a "session_token" cookie on
-    // accounts.nintendo.com (that cookie never gets set by the real login
-    // flow - confirmed this was the actual reason sign-in silently never
-    // completed even after the earlier crash/dialog-lifetime fixes). Build
-    // the real authorize URL and intercept the npf<client_id>://auth
-    // redirect it produces on success.
-    pending_code_verifier_ = GeneratePkceVerifier();
-    pending_state_ = GeneratePkceVerifier();
-    const QString challenge = PkceChallengeFromVerifier(pending_code_verifier_);
+        // Real Nintendo login is OAuth/PKCE, not a "session_token" cookie on
+        // accounts.nintendo.com (that cookie never gets set by the real login
+        // flow - confirmed this was the actual reason sign-in silently never
+        // completed even after the earlier crash/dialog-lifetime fixes). Build
+        // the real authorize URL and intercept the npf<client_id>://auth
+        // redirect it produces on success.
+        pending_code_verifier_ = GeneratePkceVerifier();
+        pending_state_ = GeneratePkceVerifier();
+        const QString challenge = PkceChallengeFromVerifier(pending_code_verifier_);
 
-    QUrl authorize_url(QStringLiteral("https://accounts.nintendo.com/connect/1.0.0/authorize"));
-    QUrlQuery query;
-    query.addQueryItem(QStringLiteral("state"), pending_state_);
-    query.addQueryItem(QStringLiteral("redirect_uri"),
-                        QStringLiteral("npf%1://auth").arg(QLatin1String(kNintendoClientId)));
-    query.addQueryItem(QStringLiteral("client_id"), QLatin1String(kNintendoClientId));
-    query.addQueryItem(QStringLiteral("scope"), QStringLiteral("openid user user.mii"));
-    query.addQueryItem(QStringLiteral("response_type"), QStringLiteral("session_token_code"));
-    query.addQueryItem(QStringLiteral("session_token_code_challenge"), challenge);
-    query.addQueryItem(QStringLiteral("session_token_code_challenge_method"), QStringLiteral("S256"));
-    query.addQueryItem(QStringLiteral("theme"), QStringLiteral("login_form"));
-    authorize_url.setQuery(query);
+        QUrl authorize_url(QStringLiteral("https://accounts.nintendo.com/connect/1.0.0/authorize"));
+        QUrlQuery query;
+        query.addQueryItem(QStringLiteral("state"), pending_state_);
+        query.addQueryItem(QStringLiteral("redirect_uri"),
+                           QStringLiteral("npf%1://auth").arg(QLatin1String(kNintendoClientId)));
+        query.addQueryItem(QStringLiteral("client_id"), QLatin1String(kNintendoClientId));
+        query.addQueryItem(QStringLiteral("scope"), QStringLiteral("openid user user.mii"));
+        query.addQueryItem(QStringLiteral("response_type"), QStringLiteral("session_token_code"));
+        query.addQueryItem(QStringLiteral("session_token_code_challenge"), challenge);
+        query.addQueryItem(QStringLiteral("session_token_code_challenge_method"),
+                           QStringLiteral("S256"));
+        query.addQueryItem(QStringLiteral("theme"), QStringLiteral("login_form"));
+        authorize_url.setQuery(query);
 
-    auto* login_page = new NintendoLoginPage(profile, web_view);
-    web_view->setPage(login_page);
-    login_page->on_redirect = [this, dialog](const QUrl& redirect_url) {
-        // Fragment, not query - session_token_code arrives after the '#'.
-        QUrlQuery fragment(redirect_url.fragment());
-        const QString state = fragment.queryItemValue(QStringLiteral("state"));
-        const QString session_token_code =
-            fragment.queryItemValue(QStringLiteral("session_token_code"));
-        dialog->close();
-        if (state != pending_state_ || session_token_code.isEmpty()) {
-            status_label->setText(tr("Sign-in failed: invalid response from Nintendo"));
-            status_label->setStyleSheet(
-                QStringLiteral("font-size: 16px; font-weight: bold; color: #ff9800;"));
-            return;
-        }
-        ExchangeSessionTokenCode(session_token_code);
-    };
+        auto* login_page = new NintendoLoginPage(profile, web_view);
+        web_view->setPage(login_page);
+        login_page->on_redirect = [this, dialog](const QUrl& redirect_url) {
+            // Fragment, not query - session_token_code arrives after the '#'.
+            QUrlQuery fragment(redirect_url.fragment());
+            const QString state = fragment.queryItemValue(QStringLiteral("state"));
+            const QString session_token_code =
+                fragment.queryItemValue(QStringLiteral("session_token_code"));
+            dialog->close();
+            if (state != pending_state_ || session_token_code.isEmpty()) {
+                status_label->setText(tr("Sign-in failed: invalid response from Nintendo"));
+                status_label->setStyleSheet(
+                    QStringLiteral("font-size: 16px; font-weight: bold; color: #ff9800;"));
+                return;
+            }
+            ExchangeSessionTokenCode(session_token_code);
+        };
 
-    web_view->setUrl(authorize_url);
-    dialog->show();
-    dialog->raise();
-    dialog->activateWindow();
+        web_view->setUrl(authorize_url);
+        dialog->show();
+        dialog->raise();
+        dialog->activateWindow();
     });
 #else
     // No WebEngine — open external browser and let user paste token manually

@@ -45,11 +45,14 @@ public:
 
     template <typename Source, typename Dest>
         requires std::is_trivially_copyable_v<Source> && std::is_trivially_copyable_v<Dest>
-    void XTSTranscode(const Source* src, std::size_t size, Dest* dest, std::size_t sector_id, std::size_t sector_size, Op op) {
-        XTSTranscode(reinterpret_cast<const u8*>(src), size, reinterpret_cast<u8*>(dest), sector_id, sector_size, op);
+    void XTSTranscode(const Source* src, std::size_t size, Dest* dest, std::size_t sector_id,
+                      std::size_t sector_size, Op op) {
+        XTSTranscode(reinterpret_cast<const u8*>(src), size, reinterpret_cast<u8*>(dest), sector_id,
+                     sector_size, op);
     }
 
-    void XTSTranscode(const u8* src, std::size_t size, u8* dest, std::size_t sector_id, std::size_t sector_size, Op op);
+    void XTSTranscode(const u8* src, std::size_t size, u8* dest, std::size_t sector_id,
+                      std::size_t sector_size, Op op);
 
 private:
     std::unique_ptr<CipherContext> ctx;

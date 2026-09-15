@@ -12,9 +12,7 @@
 
 namespace Service::HID {
 
-NpadAbstractMcuHandler::NpadAbstractMcuHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+NpadAbstractMcuHandler::NpadAbstractMcuHandler(Kernel::KernelCore& kernel_) : kernel{kernel_} {}
 
 NpadAbstractMcuHandler::~NpadAbstractMcuHandler() = default;
 

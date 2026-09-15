@@ -10,10 +10,9 @@
 #include <memory>
 #include <span>
 #include <type_traits>
-#include <ankerl/unordered_dense.h>
 #include <utility>
 #include <vector>
-#include "video_core/renderer_vulkan/vk_texture_cache.h"
+#include <ankerl/unordered_dense.h>
 #include "common/bit_util.h"
 #include "common/common_types.h"
 #include "video_core/engines/maxwell_3d.h"
@@ -26,6 +25,7 @@
 #include "video_core/renderer_vulkan/vk_resource_pool.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
+#include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
 #include "video_core/vulkan_common/vulkan_device.h"
 #include "video_core/vulkan_common/vulkan_memory_allocator.h"
@@ -134,24 +134,28 @@ struct HostSyncValues {
 class SamplesStreamer : public BaseStreamer {
 public:
     explicit SamplesStreamer(size_t id_, QueryCacheRuntime& runtime_,
-                             VideoCore::RasterizerInterface* rasterizer_, TextureCache& texture_cache_, const Device& device_,
+                             VideoCore::RasterizerInterface* rasterizer_,
+                             TextureCache& texture_cache_, const Device& device_,
                              Scheduler& scheduler_, const MemoryAllocator& memory_allocator_,
                              ComputePassDescriptorQueue& compute_pass_descriptor_queue,
                              DescriptorPool& descriptor_pool)
-        : BaseStreamer(id_), texture_cache{texture_cache_}, runtime{runtime_}, rasterizer{rasterizer_}, device{device_},
-          scheduler{scheduler_}, memory_allocator{memory_allocator_} {
+        : BaseStreamer(id_), texture_cache{texture_cache_}, runtime{runtime_},
+          rasterizer{rasterizer_}, device{device_}, scheduler{scheduler_}, memory_allocator{
+                                                                               memory_allocator_} {
         current_bank = nullptr;
         current_query = nullptr;
         amend_value = 0;
         accumulation_value = 0;
-        queries_prefix_scan_pass.emplace(device, scheduler, descriptor_pool, compute_pass_descriptor_queue);
+        queries_prefix_scan_pass.emplace(device, scheduler, descriptor_pool,
+                                         compute_pass_descriptor_queue);
 
         const VkBufferCreateInfo buffer_ci = {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
             .size = 8,
-            .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .queueFamilyIndexCount = 0,
             .pQueueFamilyIndices = nullptr,
@@ -173,7 +177,7 @@ public:
         ReserveHostQuery();
 
         scheduler.Record([query_pool = current_query_pool,
-                                 query_index = current_bank_slot](vk::CommandBuffer cmdbuf) {
+                          query_index = current_bank_slot](vk::CommandBuffer cmdbuf) {
             const bool use_precise = Settings::IsGPULevelHigh();
             cmdbuf.BeginQuery(query_pool, static_cast<u32>(query_index),
                               use_precise ? VK_QUERY_CONTROL_PRECISE_BIT : 0);
@@ -181,7 +185,6 @@ public:
 
         has_started = true;
     }
-
 
     void PauseCounter() override {
         if (!has_started) {
@@ -814,7 +817,7 @@ public:
             new_query->flags |= VideoCommon::QueryFlagBits::IsFinalValueSynced;
             return index;
         }
-        
+
         scheduler.RequestOutsideRenderPassOperationContext();
         CloseCounter();
         auto [bank_slot, data_slot] = ProduceCounterBuffer(slot);
@@ -870,8 +873,8 @@ public:
         };
         scheduler.RequestOutsideRenderPassOperationContext();
         scheduler.Record([](vk::CommandBuffer cmdbuf) {
-            cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                   vk::PIPELINE_STAGE_HOST, 0, WRITE_BARRIER);
+            cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, vk::PIPELINE_STAGE_HOST, 0,
+                                   WRITE_BARRIER);
         });
 
         std::scoped_lock lk(flush_guard);
@@ -952,15 +955,19 @@ private:
         }
         has_flushed_end_pending = false;
 
-        // Refresh buffer state before ending transform feedback to ensure counters_count is up-to-date.
+        // Refresh buffer state before ending transform feedback to ensure counters_count is
+        // up-to-date.
         UpdateBuffers();
         if (buffers_count == 0) {
-            LOG_DEBUG(Render_Vulkan, "EndTransformFeedbackEXT called with no counters (buffers_count=0)");
+            LOG_DEBUG(Render_Vulkan,
+                      "EndTransformFeedbackEXT called with no counters (buffers_count=0)");
             scheduler.Record([](vk::CommandBuffer cmdbuf) {
                 cmdbuf.EndTransformFeedbackEXT(0, 0, nullptr, nullptr);
             });
         } else {
-            LOG_DEBUG(Render_Vulkan, "EndTransformFeedbackEXT called with counters (buffers_count={})", buffers_count);
+            LOG_DEBUG(Render_Vulkan,
+                      "EndTransformFeedbackEXT called with counters (buffers_count={})",
+                      buffers_count);
             scheduler.Record([this,
                               total = static_cast<u32>(buffers_count)](vk::CommandBuffer cmdbuf) {
                 cmdbuf.EndTransformFeedbackEXT(0, total, counter_buffers.data(), offsets.data());
@@ -1039,8 +1046,7 @@ private:
         scheduler.RequestOutsideRenderPassOperationContext();
         scheduler.Record([dst_buffer = current_bank->GetBuffer(),
                           src_buffer = counter_buffers[slot_index],
-                          src_offset = offsets[slot_index],
-                          slot](vk::CommandBuffer cmdbuf) {
+                          src_offset = offsets[slot_index], slot](vk::CommandBuffer cmdbuf) {
             cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT,
                                    VK_PIPELINE_STAGE_TRANSFER_BIT, 0, READ_BARRIER);
             std::array<VkBufferCopy, 1> copy{VkBufferCopy{
@@ -1219,7 +1225,10 @@ public:
             // Protect against stride == 0 (avoid divide-by-zero). Use fallback stride=1 and warn.
             u64 safe_stride = query->stride == 0 ? 1 : query->stride;
             if (query->stride == 0) {
-                LOG_WARNING(Render_Vulkan, "TransformFeedback query has stride 0; using 1 to avoid div-by-zero (addr=0x{:x})", query->dependant_address);
+                LOG_WARNING(Render_Vulkan,
+                            "TransformFeedback query has stride 0; using 1 to avoid div-by-zero "
+                            "(addr=0x{:x})",
+                            query->dependant_address);
             }
             if (query->dependant_manage) {
                 auto* dependant_query = tfb_streamer.GetQuery(query->dependant_index);
@@ -1291,23 +1300,37 @@ private:
 } // namespace
 
 struct QueryCacheRuntimeImpl {
-    QueryCacheRuntimeImpl(QueryCacheRuntime& runtime, VideoCore::RasterizerInterface* rasterizer_, Tegra::MaxwellDeviceMemoryManager& device_memory_, Vulkan::BufferCache& buffer_cache_, const Device& device_, const MemoryAllocator& memory_allocator_, Scheduler& scheduler_, StagingBufferPool& staging_pool_, ComputePassDescriptorQueue& compute_pass_descriptor_queue, DescriptorPool& descriptor_pool, TextureCache& texture_cache_)
-        : rasterizer{rasterizer_}, device_memory{device_memory_}, buffer_cache{buffer_cache_}
-        , device{device_}, memory_allocator{memory_allocator_}, scheduler{scheduler_}
-        , staging_pool{staging_pool_}, guest_streamer(0, runtime)
-        , sample_streamer(size_t(QueryType::ZPassPixelCount64), runtime, rasterizer, texture_cache_, device, scheduler, memory_allocator, compute_pass_descriptor_queue, descriptor_pool)
-        , tfb_streamer(size_t(QueryType::StreamingByteCount), runtime, device, scheduler, memory_allocator, staging_pool)
-        , primitives_succeeded_streamer(size_t(QueryType::StreamingPrimitivesSucceeded), runtime, tfb_streamer, device_memory_)
-        , primitives_needed_minus_succeeded_streamer(size_t(QueryType::StreamingPrimitivesNeededMinusSucceeded), runtime, 0u)
-        , hcr_setup{}, hcr_is_set{}, is_hcr_running{}, maxwell3d{} {
+    QueryCacheRuntimeImpl(QueryCacheRuntime& runtime, VideoCore::RasterizerInterface* rasterizer_,
+                          Tegra::MaxwellDeviceMemoryManager& device_memory_,
+                          Vulkan::BufferCache& buffer_cache_, const Device& device_,
+                          const MemoryAllocator& memory_allocator_, Scheduler& scheduler_,
+                          StagingBufferPool& staging_pool_,
+                          ComputePassDescriptorQueue& compute_pass_descriptor_queue,
+                          DescriptorPool& descriptor_pool, TextureCache& texture_cache_)
+        : rasterizer{rasterizer_}, device_memory{device_memory_},
+          buffer_cache{buffer_cache_}, device{device_},
+          memory_allocator{memory_allocator_}, scheduler{scheduler_}, staging_pool{staging_pool_},
+          guest_streamer(0, runtime),
+          sample_streamer(size_t(QueryType::ZPassPixelCount64), runtime, rasterizer, texture_cache_,
+                          device, scheduler, memory_allocator, compute_pass_descriptor_queue,
+                          descriptor_pool),
+          tfb_streamer(size_t(QueryType::StreamingByteCount), runtime, device, scheduler,
+                       memory_allocator, staging_pool),
+          primitives_succeeded_streamer(size_t(QueryType::StreamingPrimitivesSucceeded), runtime,
+                                        tfb_streamer, device_memory_),
+          primitives_needed_minus_succeeded_streamer(
+              size_t(QueryType::StreamingPrimitivesNeededMinusSucceeded), runtime, 0u),
+          hcr_setup{}, hcr_is_set{}, is_hcr_running{}, maxwell3d{} {
 
         hcr_setup.sType = VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_EXT;
         hcr_setup.pNext = nullptr;
         hcr_setup.flags = 0;
 
-        VkBufferUsageFlags hcr_buffer_usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VkBufferUsageFlags hcr_buffer_usage =
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         if (device.IsExtConditionalRendering()) {
-            conditional_resolve_pass.emplace(device, scheduler, descriptor_pool, compute_pass_descriptor_queue);
+            conditional_resolve_pass.emplace(device, scheduler, descriptor_pool,
+                                             compute_pass_descriptor_queue);
             hcr_buffer_usage |= VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
         }
 
@@ -1358,7 +1381,14 @@ struct QueryCacheRuntimeImpl {
     Maxwell3D* maxwell3d;
 };
 
-QueryCacheRuntime::QueryCacheRuntime(VideoCore::RasterizerInterface* rasterizer, Tegra::MaxwellDeviceMemoryManager& device_memory_, Vulkan::BufferCache& buffer_cache_, const Device& device_, const MemoryAllocator& memory_allocator_, Scheduler& scheduler_, StagingBufferPool& staging_pool_, ComputePassDescriptorQueue& compute_pass_descriptor_queue, DescriptorPool& descriptor_pool, TextureCache& texture_cache_) {
+QueryCacheRuntime::QueryCacheRuntime(VideoCore::RasterizerInterface* rasterizer,
+                                     Tegra::MaxwellDeviceMemoryManager& device_memory_,
+                                     Vulkan::BufferCache& buffer_cache_, const Device& device_,
+                                     const MemoryAllocator& memory_allocator_,
+                                     Scheduler& scheduler_, StagingBufferPool& staging_pool_,
+                                     ComputePassDescriptorQueue& compute_pass_descriptor_queue,
+                                     DescriptorPool& descriptor_pool,
+                                     TextureCache& texture_cache_) {
     impl = std::make_unique<QueryCacheRuntimeImpl>(
         *this, rasterizer, device_memory_, buffer_cache_, device_, memory_allocator_, scheduler_,
         staging_pool_, compute_pass_descriptor_queue, descriptor_pool, texture_cache_);
@@ -1521,7 +1551,9 @@ bool QueryCacheRuntime::HostConditionalRenderingCompareValues(VideoCommon::Looku
     auto driver_id = impl->device.GetDriverID();
     const bool is_gpu_high = Settings::IsGPULevelHigh();
 
-    if ((!is_gpu_high && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) || driver_id == VK_DRIVER_ID_QUALCOMM_PROPRIETARY || driver_id == VK_DRIVER_ID_ARM_PROPRIETARY || driver_id == VK_DRIVER_ID_MESA_TURNIP) {
+    if ((!is_gpu_high && driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) ||
+        driver_id == VK_DRIVER_ID_QUALCOMM_PROPRIETARY ||
+        driver_id == VK_DRIVER_ID_ARM_PROPRIETARY || driver_id == VK_DRIVER_ID_MESA_TURNIP) {
         EndHostConditionalRendering();
         return true;
     }
@@ -1594,7 +1626,8 @@ void QueryCacheRuntime::Barriers(bool is_prebarrier) {
     } else {
         impl->scheduler.Record([](vk::CommandBuffer cmdbuf) {
             cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                   vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER_HOST, 0, WRITE_BARRIER);
+                                   vk::PIPELINE_STAGE_GRAPHICS_COMPUTE_TRANSFER_HOST, 0,
+                                   WRITE_BARRIER);
         });
     }
 }
@@ -1687,7 +1720,8 @@ void QueryCacheRuntime::SyncValues(std::span<SyncValuesType> values, VkBuffer ba
     }
 
     impl->scheduler.RequestOutsideRenderPassOperationContext();
-    impl->scheduler.Record([src_buffer, dst_buffers = std::move(impl->buffers_to_upload_to), vk_copies = std::move(impl->copies_setup)](vk::CommandBuffer cmdbuf) {
+    impl->scheduler.Record([src_buffer, dst_buffers = std::move(impl->buffers_to_upload_to),
+                            vk_copies = std::move(impl->copies_setup)](vk::CommandBuffer cmdbuf) {
         size_t size = dst_buffers.size();
         for (size_t i = 0; i < size; i++) {
             cmdbuf.CopyBuffer(src_buffer, dst_buffers[i].first, vk_copies[i]);

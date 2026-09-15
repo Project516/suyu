@@ -150,8 +150,8 @@ Result ILibraryAppletAccessor::PushInData(SharedPointer<IStorage> storage) {
         auto impl = storage->GetImpl();
         const s64 size = impl->GetSize();
 
-        const bool is_ui_settings = size == sizeof(Frontend::UiSettings) ||
-                                    size == sizeof(Frontend::UiSettingsV1);
+        const bool is_ui_settings =
+            size == sizeof(Frontend::UiSettings) || size == sizeof(Frontend::UiSettingsV1);
         if (is_ui_settings) {
             EnableSingleUserPlay(impl);
         }

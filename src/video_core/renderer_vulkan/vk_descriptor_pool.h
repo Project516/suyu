@@ -71,9 +71,13 @@ public:
     DescriptorPool& operator=(const DescriptorPool&) = delete;
     DescriptorPool(const DescriptorPool&) = delete;
 
-    DescriptorAllocator Allocator(const Device& device, Scheduler& scheduler, VkDescriptorSetLayout layout, std::span<const Shader::Info> infos);
-    DescriptorAllocator Allocator(const Device& device, Scheduler& scheduler, VkDescriptorSetLayout layout, const Shader::Info& info);
-    DescriptorAllocator Allocator(const Device& device, Scheduler& scheduler, VkDescriptorSetLayout layout, const DescriptorBankInfo& info);
+    DescriptorAllocator Allocator(const Device& device, Scheduler& scheduler,
+                                  VkDescriptorSetLayout layout,
+                                  std::span<const Shader::Info> infos);
+    DescriptorAllocator Allocator(const Device& device, Scheduler& scheduler,
+                                  VkDescriptorSetLayout layout, const Shader::Info& info);
+    DescriptorAllocator Allocator(const Device& device, Scheduler& scheduler,
+                                  VkDescriptorSetLayout layout, const DescriptorBankInfo& info);
 
 private:
     DescriptorBank& Bank(const Device& device, const DescriptorBankInfo& reqs);

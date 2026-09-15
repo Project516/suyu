@@ -14,7 +14,7 @@
 namespace Kernel {
 class KReadableEvent;
 class KEvent;
-}
+} // namespace Kernel
 
 namespace Service::OLSC {
 

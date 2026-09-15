@@ -6,20 +6,20 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <mutex>
 #include <map>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "common/fs/path_util.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
-#include "common/fs/path_util.h"
+#include "core/arm/debug.h"
 #include "core/arm/recomp/arm_recomp.h"
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hle/kernel/k_thread.h"
-#include "core/arm/debug.h"
 #ifndef SUYU_NO_JIT
 #include "core/arm/dynarmic/arm_dynarmic_64.h"
 #include "core/arm/dynarmic/dynarmic_exclusive_monitor.h"
@@ -215,9 +215,9 @@ struct RecompCounters {
     // Guarded rather than atomic: these are touched only on a transition, which
     // is by definition already the slow path.
     std::mutex hist_lock;
-    std::map<u32, u64> unhandled_insn;  ///< guest encoding -> times it forced a fallback
-    std::map<u64, u64> miss_pc;         ///< PC with no block -> times it forced a fallback
-    std::map<u32, u64> svc_numbers;     ///< SVC imm -> times the guest issued it
+    std::map<u32, u64> unhandled_insn; ///< guest encoding -> times it forced a fallback
+    std::map<u64, u64> miss_pc;        ///< PC with no block -> times it forced a fallback
+    std::map<u32, u64> svc_numbers;    ///< SVC imm -> times the guest issued it
     /// Load address -> module name, so a PC in this report can be resolved to
     /// module+offset. Without it the addresses mean nothing except beside the
     /// matching boot log, and a report read against another run's log resolves
@@ -307,7 +307,7 @@ std::string FormatRecompCoverage() {
     const u64 transitions = miss + unh;
 
     if (blocks == 0 && transitions == 0) {
-        return {};  // backend never ran; saying nothing is better than printing zeros
+        return {}; // backend never ran; saying nothing is better than printing zeros
     }
 
     std::string o = "=== RECOMP EXECUTION COVERAGE ===\n";
@@ -476,11 +476,16 @@ struct ArmRecomp::Impl {
         }
         const auto core = self->core_index;
         switch (size) {
-        case 1: return self->exclusive_monitor->ExclusiveRead8(core, va);
-        case 2: return self->exclusive_monitor->ExclusiveRead16(core, va);
-        case 4: return self->exclusive_monitor->ExclusiveRead32(core, va);
-        case 8: return self->exclusive_monitor->ExclusiveRead64(core, va);
-        default: return HostLoad(user, va, size);
+        case 1:
+            return self->exclusive_monitor->ExclusiveRead8(core, va);
+        case 2:
+            return self->exclusive_monitor->ExclusiveRead16(core, va);
+        case 4:
+            return self->exclusive_monitor->ExclusiveRead32(core, va);
+        case 8:
+            return self->exclusive_monitor->ExclusiveRead64(core, va);
+        default:
+            return HostLoad(user, va, size);
         }
     }
 
@@ -495,11 +500,21 @@ struct ArmRecomp::Impl {
         const auto core = self->core_index;
         bool ok = false;
         switch (size) {
-        case 1: ok = self->exclusive_monitor->ExclusiveWrite8(core, va, static_cast<u8>(value)); break;
-        case 2: ok = self->exclusive_monitor->ExclusiveWrite16(core, va, static_cast<u16>(value)); break;
-        case 4: ok = self->exclusive_monitor->ExclusiveWrite32(core, va, static_cast<u32>(value)); break;
-        case 8: ok = self->exclusive_monitor->ExclusiveWrite64(core, va, value); break;
-        default: HostStore(user, va, size, value); return 0;
+        case 1:
+            ok = self->exclusive_monitor->ExclusiveWrite8(core, va, static_cast<u8>(value));
+            break;
+        case 2:
+            ok = self->exclusive_monitor->ExclusiveWrite16(core, va, static_cast<u16>(value));
+            break;
+        case 4:
+            ok = self->exclusive_monitor->ExclusiveWrite32(core, va, static_cast<u32>(value));
+            break;
+        case 8:
+            ok = self->exclusive_monitor->ExclusiveWrite64(core, va, value);
+            break;
+        default:
+            HostStore(user, va, size, value);
+            return 0;
         }
         return ok ? 0u : 1u;
     }
@@ -576,20 +591,32 @@ struct ArmRecomp::Impl {
     static u64 HostLoad(void* user, u64 va, u32 size) {
         auto& memory = static_cast<Impl*>(user)->system.ApplicationMemory();
         switch (size) {
-        case 1: return memory.Read8(va);
-        case 2: return memory.Read16(va);
-        case 4: return memory.Read32(va);
-        default: return memory.Read64(va);
+        case 1:
+            return memory.Read8(va);
+        case 2:
+            return memory.Read16(va);
+        case 4:
+            return memory.Read32(va);
+        default:
+            return memory.Read64(va);
         }
     }
 
     static void HostStore(void* user, u64 va, u32 size, u64 value) {
         auto& memory = static_cast<Impl*>(user)->system.ApplicationMemory();
         switch (size) {
-        case 1: memory.Write8(va, static_cast<u8>(value)); break;
-        case 2: memory.Write16(va, static_cast<u16>(value)); break;
-        case 4: memory.Write32(va, static_cast<u32>(value)); break;
-        default: memory.Write64(va, value); break;
+        case 1:
+            memory.Write8(va, static_cast<u8>(value));
+            break;
+        case 2:
+            memory.Write16(va, static_cast<u16>(value));
+            break;
+        case 4:
+            memory.Write32(va, static_cast<u32>(value));
+            break;
+        default:
+            memory.Write64(va, value);
+            break;
         }
     }
 
@@ -655,7 +682,8 @@ struct ArmRecomp::Impl {
         for (u64 off = 0; off < kScanLimit; off += 4) {
             const u32 insn = mem.Read32(mod_base + off);
             if (insn == kRet) {
-                if (!bare_ret) bare_ret = mod_base + off;
+                if (!bare_ret)
+                    bare_ret = mod_base + off;
             } else if (insn == kMovX0Zero && mem.Read32(mod_base + off + 4) == kRet) {
                 return mod_base + off;
             }
@@ -677,7 +705,8 @@ struct ArmRecomp::Impl {
                 break;
             }
         }
-        if (!mod0_va) return false;
+        if (!mod0_va)
+            return false;
 
         // MOD0 layout: magic(4), dyn_offset(4), bss_start(4), bss_end(4)
         // dyn_offset is relative to the MOD0 header itself.
@@ -685,23 +714,37 @@ struct ArmRecomp::Impl {
         const u64 dyn_va = mod0_va + dyn_rel_off;
 
         constexpr u32 DT_NULL = 0, DT_PLTRELSZ = 2, DT_STRTAB = 5, DT_SYMTAB = 6, DT_RELA = 7,
-                       DT_RELASZ = 8, DT_RELAENT = 9, DT_PLTREL = 20, DT_JMPREL = 23,
-                       DT_REL_TAG = 17;
+                      DT_RELASZ = 8, DT_RELAENT = 9, DT_PLTREL = 20, DT_JMPREL = 23,
+                      DT_REL_TAG = 17;
         out.mod_base = mod_base;
         u64 pltrel_kind = DT_RELA; // default per AArch64 ABI (RELA, not REL)
-        for (u64 p = dyn_va; ; p += 16) {
+        for (u64 p = dyn_va;; p += 16) {
             const u64 tag = mem.Read64(p);
             const u64 val = mem.Read64(p + 8);
-            if (tag == DT_NULL) break;
-            if (tag == DT_RELA)     out.rela_va    = mod_base + val;
-            if (tag == DT_RELASZ)   { out.rela_sz = val; out.rela_sz_va = p + 8; }
-            if (tag == DT_RELAENT)  out.rela_ent   = val;
-            if (tag == DT_JMPREL)   out.jmprel_va  = mod_base + val;
-            if (tag == DT_PLTRELSZ) { out.jmprel_sz = val; out.jmprel_sz_va = p + 8; }
-            if (tag == DT_PLTREL)   pltrel_kind    = val;
-            if (tag == DT_SYMTAB)   out.symtab_va  = mod_base + val;
-            if (tag == DT_STRTAB)   out.strtab_va  = mod_base + val;
-            if (p - dyn_va > 0x1000) break; // safety
+            if (tag == DT_NULL)
+                break;
+            if (tag == DT_RELA)
+                out.rela_va = mod_base + val;
+            if (tag == DT_RELASZ) {
+                out.rela_sz = val;
+                out.rela_sz_va = p + 8;
+            }
+            if (tag == DT_RELAENT)
+                out.rela_ent = val;
+            if (tag == DT_JMPREL)
+                out.jmprel_va = mod_base + val;
+            if (tag == DT_PLTRELSZ) {
+                out.jmprel_sz = val;
+                out.jmprel_sz_va = p + 8;
+            }
+            if (tag == DT_PLTREL)
+                pltrel_kind = val;
+            if (tag == DT_SYMTAB)
+                out.symtab_va = mod_base + val;
+            if (tag == DT_STRTAB)
+                out.strtab_va = mod_base + val;
+            if (p - dyn_va > 0x1000)
+                break; // safety
         }
         // DT_PLTREL says whether JMPREL uses 16-byte REL entries (no addend)
         // instead of 24-byte RELA - vanishingly rare on AArch64, but assuming
@@ -723,7 +766,8 @@ struct ArmRecomp::Impl {
     SymInfo ReadSymbol(const DynInfo& d, u32 index) {
         auto& mem = system.ApplicationMemory();
         SymInfo s;
-        if (!d.symtab_va) return s;
+        if (!d.symtab_va)
+            return s;
         const u64 sym_va = d.symtab_va + static_cast<u64>(index) * 24;
         const u32 name_off = mem.Read32(sym_va);
         // st_shndx is a 2-byte field at offset 6 (st_name(4) st_info(1)
@@ -738,7 +782,8 @@ struct ArmRecomp::Impl {
             std::string name;
             for (u64 i = 0; i < 512; ++i) {
                 const u8 c = static_cast<u8>(mem.Read8(d.strtab_va + name_off + i));
-                if (!c) break;
+                if (!c)
+                    break;
                 name.push_back(static_cast<char>(c));
             }
             s.name = std::move(name);
@@ -753,7 +798,8 @@ struct ArmRecomp::Impl {
     // actually writes anything - a relocation processed before its target
     // module's exports are indexed would silently resolve to nothing.
     void IndexExports(const DynInfo& d, std::unordered_map<std::string, u64>& out) {
-        if (!d.symtab_va || !d.strtab_va) return;
+        if (!d.symtab_va || !d.strtab_va)
+            return;
         // No count is stored in .dynamic for a plain DT_SYMTAB (that's normally
         // DT_HASH/DT_GNU_HASH territory), but .dynsym and .dynstr are laid out
         // back to back in every Switch module observed so far, so the gap
@@ -775,18 +821,18 @@ struct ArmRecomp::Impl {
     }
 
     void ApplyRelocTable(const DynInfo& d, u64 table_va, u64 table_sz, u64 entry_sz,
-                          const std::unordered_map<std::string, u64>& exports, u32& applied,
-                          u32& unresolved) {
+                         const std::unordered_map<std::string, u64>& exports, u32& applied,
+                         u32& unresolved) {
         auto& mem = system.ApplicationMemory();
         constexpr u32 R_AARCH64_ABS64 = 0x101, R_AARCH64_RELATIVE = 0x403,
-                       R_AARCH64_GLOB_DAT = 0x401, R_AARCH64_JUMP_SLOT = 0x402,
-                       R_AARCH64_IRELATIVE = 0x408;
+                      R_AARCH64_GLOB_DAT = 0x401, R_AARCH64_JUMP_SLOT = 0x402,
+                      R_AARCH64_IRELATIVE = 0x408;
         for (u64 p = table_va; p < table_va + table_sz; p += entry_sz) {
             const u64 r_offset = mem.Read64(p);
-            const u64 r_info   = mem.Read64(p + 8);
+            const u64 r_info = mem.Read64(p + 8);
             const u64 r_addend = mem.Read64(p + 16);
             const u32 r_type = static_cast<u32>(r_info & 0xFFFFFFFF);
-            const u32 r_sym  = static_cast<u32>(r_info >> 32);
+            const u32 r_sym = static_cast<u32>(r_info >> 32);
             if (r_type == R_AARCH64_RELATIVE) {
                 mem.Write64(d.mod_base + r_offset, d.mod_base + r_addend);
                 ++applied;
@@ -868,12 +914,14 @@ struct ArmRecomp::Impl {
                 } else {
                     ++unresolved;
                     if (unresolved <= 30) {
-                        LOG_ERROR(Core_ARM, "recomp: unresolved GOT/PLT symbol '{}' for module base={:#x}",
+                        LOG_ERROR(Core_ARM,
+                                  "recomp: unresolved GOT/PLT symbol '{}' for module base={:#x}",
                                   sym.name.empty() ? "<no name>" : sym.name, d.mod_base);
                     }
                     // Patch to the trap sentinel rather than leaving the slot
                     // as whatever the raw file had - see kUnresolvedImportTrap.
-                    mem.Write64(d.mod_base + r_offset, d.trap_va ? d.trap_va : kUnresolvedImportTrap);
+                    mem.Write64(d.mod_base + r_offset,
+                                d.trap_va ? d.trap_va : kUnresolvedImportTrap);
                 }
             }
         }
@@ -908,7 +956,7 @@ struct ArmRecomp::Impl {
             }
             if (d.jmprel_va && d.jmprel_sz) {
                 ApplyRelocTable(d, d.jmprel_va, d.jmprel_sz, d.jmprel_ent, exports, applied,
-                                 unresolved);
+                                unresolved);
             }
             // Zero DT_RELASZ/DT_PLTRELSZ so rtld's own self-relocator sees
             // nothing left to do and skips both tables - it runs its own
@@ -917,8 +965,10 @@ struct ArmRecomp::Impl {
             // finding them already resolved by us trips that check and it
             // calls svcBreak, which is what was hanging every recompiled
             // game at boot despite relocations succeeding.
-            if (d.rela_sz_va) mem.Write64(d.rela_sz_va, 0);
-            if (d.jmprel_sz_va) mem.Write64(d.jmprel_sz_va, 0);
+            if (d.rela_sz_va)
+                mem.Write64(d.rela_sz_va, 0);
+            if (d.jmprel_sz_va)
+                mem.Write64(d.jmprel_sz_va, 0);
             LOG_INFO(Core_ARM,
                      "recomp: pre-applied {} relocations ({} unresolved external symbols) for "
                      "module base={:#x}",
@@ -1142,7 +1192,8 @@ HaltReason ArmRecomp::RunThread(Kernel::KThread* thread) {
             static std::atomic<int> trap_count{0};
             if (trap_count.fetch_add(1, std::memory_order_relaxed) < 16) {
                 g_counters.unresolved_import_traps.fetch_add(1, std::memory_order_relaxed);
-                LOG_ERROR(Core_ARM, "recomp: called through unresolved import (returning to caller {:#x})",
+                LOG_ERROR(Core_ARM,
+                          "recomp: called through unresolved import (returning to caller {:#x})",
                           impl->ctx.x[30]);
             }
             impl->ctx.x[0] = 0;
@@ -1192,9 +1243,11 @@ HaltReason ArmRecomp::RunThread(Kernel::KThread* thread) {
             // in some register the previous block computed, and guessing which
             // one to print in advance costs a rebuild per guess.
             for (size_t r = 0; r < 32; r += 4) {
-                LOG_ERROR(Core_ARM, "recomp regs x{:<2}={:#018x} x{:<2}={:#018x} x{:<2}={:#018x} x{:<2}={:#018x}",
-                          r, impl->ctx.x[r], r + 1, impl->ctx.x[r + 1], r + 2, impl->ctx.x[r + 2],
-                          r + 3, impl->ctx.x[r + 3]);
+                LOG_ERROR(
+                    Core_ARM,
+                    "recomp regs x{:<2}={:#018x} x{:<2}={:#018x} x{:<2}={:#018x} x{:<2}={:#018x}",
+                    r, impl->ctx.x[r], r + 1, impl->ctx.x[r + 1], r + 2, impl->ctx.x[r + 2], r + 3,
+                    impl->ctx.x[r + 3]);
             }
             // Dump guest memory around the registers that look like pointers.
             // A miss caused by a bad *value* and one caused by the wrong data
@@ -1220,14 +1273,16 @@ HaltReason ArmRecomp::RunThread(Kernel::KThread* thread) {
                 for (u64 w = 0x3c00; w < 0x3d80; w += 0x40) {
                     std::string dump;
                     for (u64 i = 0; i < 0x40; i += 4) {
-                        dump += fmt::format("{:08x} ", (u32)Impl::HostLoad(impl.get(), mbase + w + i, 4));
+                        dump += fmt::format("{:08x} ",
+                                            (u32)Impl::HostLoad(impl.get(), mbase + w + i, 4));
                     }
                     LOG_ERROR(Core_ARM, "recomp rodata mod+{:#x}: {}", w, dump);
                 }
                 for (u64 seg : {0x0ULL, 0x2000ULL, 0x3000ULL}) {
                     std::string dump;
                     for (u64 i = 0; i < 0x40; i += 4) {
-                        dump += fmt::format("{:08x} ", Impl::HostLoad(impl.get(), mbase + seg + i, 4));
+                        dump +=
+                            fmt::format("{:08x} ", Impl::HostLoad(impl.get(), mbase + seg + i, 4));
                     }
                     LOG_ERROR(Core_ARM, "recomp mem mod+{:#x} (base {:#x}): {}", seg, mbase, dump);
                 }
@@ -1364,10 +1419,8 @@ void ArmRecomp::GetContext(Kernel::Svc::ThreadContext& ctx) const {
     ctx.lr = impl->ctx.x[30];
     ctx.sp = impl->ctx.x[31];
     ctx.pc = impl->ctx.pc;
-    ctx.pstate = (static_cast<u32>(impl->ctx.n) << 31) |
-                 (static_cast<u32>(impl->ctx.z) << 30) |
-                 (static_cast<u32>(impl->ctx.c) << 29) |
-                 (static_cast<u32>(impl->ctx.v) << 28);
+    ctx.pstate = (static_cast<u32>(impl->ctx.n) << 31) | (static_cast<u32>(impl->ctx.z) << 30) |
+                 (static_cast<u32>(impl->ctx.c) << 29) | (static_cast<u32>(impl->ctx.v) << 28);
     // u128 here is a pair of 64-bit halves, matching how the generated
     // context stores each vector register.
     for (size_t i = 0; i < 32; ++i) {

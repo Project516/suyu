@@ -15,8 +15,7 @@
 namespace Service::HID {
 
 NpadAbstractPropertiesHandler::NpadAbstractPropertiesHandler(Kernel::KernelCore& kernel_)
-    : kernel{kernel_}
-{}
+    : kernel{kernel_} {}
 
 NpadAbstractPropertiesHandler::~NpadAbstractPropertiesHandler() = default;
 

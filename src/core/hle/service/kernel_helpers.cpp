@@ -17,15 +17,15 @@
 namespace Service::KernelHelpers {
 
 ServiceContext::ServiceContext(Core::System& system_, std::string name_)
-    : kernel(system_.Kernel())
-{
+    : kernel(system_.Kernel()) {
     if (process = Kernel::GetCurrentProcessPointer(kernel); process != nullptr) {
         return;
     }
 
     // Create the process.
     process = Kernel::KProcess::Create(kernel);
-    ASSERT(R_SUCCEEDED(process->Initialize(kernel, Kernel::Svc::CreateProcessParameter{}, kernel.GetSystemResourceLimit(), false)));
+    ASSERT(R_SUCCEEDED(process->Initialize(kernel, Kernel::Svc::CreateProcessParameter{},
+                                           kernel.GetSystemResourceLimit(), false)));
 
     // Register the process.
     Kernel::KProcess::Register(kernel, process);

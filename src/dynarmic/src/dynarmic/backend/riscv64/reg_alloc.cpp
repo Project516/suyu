@@ -13,7 +13,6 @@
 
 #include "common/assert.h"
 #include "common/common_types.h"
-
 #include "dynarmic/common/always_false.h"
 
 namespace Dynarmic::Backend::RV64 {
@@ -191,7 +190,7 @@ u32 RegAlloc::RealizeReadImpl(const IR::Value& value) {
 
         switch (current_location->kind) {
         case HostLoc::Kind::Gpr:
-            UNREACHABLE(); //logic error
+            UNREACHABLE();  // logic error
         case HostLoc::Kind::Fpr:
             as.FMV_X_D(biscuit::GPR(new_location_index), biscuit::FPR{current_location->index});
             // ASSERT size fits
@@ -213,7 +212,7 @@ u32 RegAlloc::RealizeReadImpl(const IR::Value& value) {
             as.FMV_D_X(biscuit::FPR{new_location_index}, biscuit::GPR(current_location->index));
             break;
         case HostLoc::Kind::Fpr:
-            UNREACHABLE(); //logic error
+            UNREACHABLE();  // logic error
         case HostLoc::Kind::Spill:
             as.FLD(biscuit::FPR{new_location_index}, spill_offset + current_location->index * spill_slot_size, biscuit::sp);
             break;

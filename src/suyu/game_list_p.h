@@ -13,9 +13,9 @@
 #include <QCoreApplication>
 #include <QFileInfo>
 #include <QGuiApplication>
+#include <QObject>
 #include <QPainter>
 #include <QPainterPath>
-#include <QObject>
 #include <QScreen>
 #include <QStandardItem>
 #include <QString>
@@ -61,8 +61,9 @@ static QPixmap PrepareGameArtwork(const QPixmap& source, u32 size) {
     // (Windows 125-200% scaling). Without this the icon is generated at 1x and then upscaled by
     // the view, which is what made the launcher artwork look compressed/low-res. The Switch
     // control icon source is 256x256, so there is plenty of detail to downscale from.
-    const qreal dpr =
-        QGuiApplication::primaryScreen() ? QGuiApplication::primaryScreen()->devicePixelRatio() : 1.0;
+    const qreal dpr = QGuiApplication::primaryScreen()
+                          ? QGuiApplication::primaryScreen()->devicePixelRatio()
+                          : 1.0;
     const int px = std::max(1, static_cast<int>(std::lround(static_cast<double>(size) * dpr)));
 
     const QPixmap scaled =
@@ -85,8 +86,8 @@ static QPixmap PrepareGameArtwork(const QPixmap& source, u32 size) {
     painter.drawRoundedRect(QRectF(0.5, 0.5, px - 1.0, px - 1.0), radius, radius);
     painter.end();
 
-    // Tag the pixmap with its DPR so Qt treats it as a `size`-logical-pixel image rendered at native
-    // resolution, rather than upscaling a 1x bitmap.
+    // Tag the pixmap with its DPR so Qt treats it as a `size`-logical-pixel image rendered at
+    // native resolution, rather than upscaling a 1x bitmap.
     icon.setDevicePixelRatio(dpr);
     return icon;
 }
@@ -130,7 +131,7 @@ public:
         setData(game_type, FileTypeRole);
         setData(QByteArray(reinterpret_cast<const char*>(picture_data.data()),
                            static_cast<int>(picture_data.size())),
-               RawIconRole);
+                RawIconRole);
 
         const u32 size = UISettings::values.game_icon_size.GetValue();
 

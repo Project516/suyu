@@ -14,17 +14,17 @@
 #include <utility>
 #include <vector>
 
+#include <ankerl/unordered_dense.h>
 #include <biscuit/assembler.hpp>
 #include <biscuit/registers.hpp>
+
 #include "common/assert.h"
 #include "common/common_types.h"
-#include "dynarmic/mcl/is_instance_of_template.hpp"
-#include <ankerl/unordered_dense.h>
-
 #include "dynarmic/backend/riscv64/stack_layout.h"
 #include "dynarmic/ir/cond.h"
 #include "dynarmic/ir/microinstruction.h"
 #include "dynarmic/ir/value.h"
+#include "dynarmic/mcl/is_instance_of_template.hpp"
 
 namespace Dynarmic::Backend::RV64 {
 

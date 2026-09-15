@@ -11,9 +11,9 @@
 #include <fmt/ranges.h>
 
 #include "common/common_types.h"
+#include "common/cpu_features.h"
 #include "common/intrusive_list.h"
 #include "common/uuid.h"
-#include "common/cpu_features.h"
 #include "core/hle/kernel/k_event.h"
 #include "core/hle/service/kernel_helpers.h"
 #include "core/hle/service/psc/time/errors.h"
@@ -210,8 +210,8 @@ struct fmt::formatter<Service::PSC::Time::CalendarTime> : fmt::formatter<fmt::st
     template <typename FormatContext>
     auto format(const Service::PSC::Time::CalendarTime& calendar, FormatContext& ctx) const {
         return fmt::format_to(ctx.out(), "[{:02}/{:02}/{:04} {:02}:{:02}:{:02}]", u8(calendar.day),
-                              u8(calendar.month), u16(calendar.year), u8(calendar.hour), u8(calendar.minute),
-                              u8(calendar.second));
+                              u8(calendar.month), u16(calendar.year), u8(calendar.hour),
+                              u8(calendar.minute), u8(calendar.second));
     }
 };
 

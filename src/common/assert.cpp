@@ -17,13 +17,13 @@ void AssertFailSoftImpl() {
     if (Settings::values.use_debug_asserts) {
         Common::Log::Stop();
 #ifndef _MSC_VER
-#   if defined(ARCHITECTURE_x86_64)
+#if defined(ARCHITECTURE_x86_64)
         __asm__ __volatile__("int $3");
-#   elif defined(ARCHITECTURE_arm64)
+#elif defined(ARCHITECTURE_arm64)
         __asm__ __volatile__("brk #0");
-#   else
+#else
         exit(1);
-#   endif
+#endif
 #else // POSIX ^^^ _MSC_VER vvv
         DebugBreak();
 #endif

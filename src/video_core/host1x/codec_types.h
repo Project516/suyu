@@ -470,7 +470,8 @@ struct RefPoolElement {
     bool refresh{};
 };
 
-#define ASSERT_POSITION(field_name, position) static_assert(offsetof(Vp9EntropyProbs, field_name) == position)
+#define ASSERT_POSITION(field_name, position)                                                      \
+    static_assert(offsetof(Vp9EntropyProbs, field_name) == position)
 ASSERT_POSITION(partition_prob, 0x0024);
 ASSERT_POSITION(switchable_interp_prob, 0x0724);
 ASSERT_POSITION(sign, 0x0772);
@@ -478,7 +479,8 @@ ASSERT_POSITION(class_0_fr, 0x079E);
 ASSERT_POSITION(high_precision, 0x07B2);
 #undef ASSERT_POSITION
 
-#define ASSERT_POSITION(field_name, position) static_assert(offsetof(PictureInfo, field_name) == position)
+#define ASSERT_POSITION(field_name, position)                                                      \
+    static_assert(offsetof(PictureInfo, field_name) == position)
 ASSERT_POSITION(bitstream_size, 0x30);
 ASSERT_POSITION(last_frame_size, 0x48);
 ASSERT_POSITION(first_level, 0x70);
@@ -486,7 +488,8 @@ ASSERT_POSITION(segmentation, 0x80);
 ASSERT_POSITION(loop_filter, 0xE4);
 #undef ASSERT_POSITION
 
-#define ASSERT_POSITION(field_name, position) static_assert(offsetof(EntropyProbs, field_name) == position)
+#define ASSERT_POSITION(field_name, position)                                                      \
+    static_assert(offsetof(EntropyProbs, field_name) == position)
 
 ASSERT_POSITION(inter_mode_prob, 0x400);
 ASSERT_POSITION(tx_8x8_prob, 0x470);

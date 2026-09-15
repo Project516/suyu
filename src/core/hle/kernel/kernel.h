@@ -11,8 +11,8 @@
 #include <list>
 #include <memory>
 #include <string>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 
 #include "common/polyfill_thread.h"
 #include "core/hardware_properties.h"

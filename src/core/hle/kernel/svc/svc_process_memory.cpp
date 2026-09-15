@@ -47,8 +47,9 @@ Result SetProcessMemoryPermission(Core::System& system, Handle process_handle, u
     R_UNLESS(IsValidProcessMemoryPermission(perm), ResultInvalidNewMemoryPermission);
 
     // Get the process from its handle.
-    KScopedAutoObject process =
-        GetCurrentProcess(system.Kernel()).GetHandleTable().GetObject<KProcess>(system.Kernel(), process_handle);
+    KScopedAutoObject process = GetCurrentProcess(system.Kernel())
+                                    .GetHandleTable()
+                                    .GetObject<KProcess>(system.Kernel(), process_handle);
     R_UNLESS(process.IsNotNull(), ResultInvalidHandle);
 
     // Validate that the address is in range.
@@ -76,7 +77,8 @@ Result MapProcessMemory(Core::System& system, u64 dst_address, Handle process_ha
     // Get the processes.
     KProcess* dst_process = GetCurrentProcessPointer(system.Kernel());
     KScopedAutoObject src_process =
-        dst_process->GetHandleTable().GetObjectWithoutPseudoHandle<KProcess>(system.Kernel(), process_handle);
+        dst_process->GetHandleTable().GetObjectWithoutPseudoHandle<KProcess>(system.Kernel(),
+                                                                             process_handle);
     R_UNLESS(src_process.IsNotNull(), ResultInvalidHandle);
 
     // Get the page tables.
@@ -117,7 +119,8 @@ Result UnmapProcessMemory(Core::System& system, u64 dst_address, Handle process_
     // Get the processes.
     KProcess* dst_process = GetCurrentProcessPointer(system.Kernel());
     KScopedAutoObject src_process =
-        dst_process->GetHandleTable().GetObjectWithoutPseudoHandle<KProcess>(system.Kernel(), process_handle);
+        dst_process->GetHandleTable().GetObjectWithoutPseudoHandle<KProcess>(system.Kernel(),
+                                                                             process_handle);
     R_UNLESS(src_process.IsNotNull(), ResultInvalidHandle);
 
     // Get the page tables.
@@ -190,7 +193,8 @@ Result MapProcessCodeMemory(Core::System& system, Handle process_handle, u64 dst
         R_THROW(ResultInvalidCurrentMemory);
     }
 
-    R_UNLESS(page_table.CanContain(dst_address, size, KMemoryState::AliasCode), ResultInvalidCurrentMemory);
+    R_UNLESS(page_table.CanContain(dst_address, size, KMemoryState::AliasCode),
+             ResultInvalidCurrentMemory);
     R_RETURN(page_table.MapCodeMemory(dst_address, src_address, size));
 }
 
@@ -251,7 +255,8 @@ Result UnmapProcessCodeMemory(Core::System& system, Handle process_handle, u64 d
         R_THROW(ResultInvalidCurrentMemory);
     }
 
-    R_UNLESS(page_table.CanContain(dst_address, size, KMemoryState::AliasCode), ResultInvalidCurrentMemory);
+    R_UNLESS(page_table.CanContain(dst_address, size, KMemoryState::AliasCode),
+             ResultInvalidCurrentMemory);
     R_RETURN(page_table.UnmapCodeMemory(dst_address, src_address, size));
 }
 

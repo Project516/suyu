@@ -40,7 +40,8 @@ public:
     [[nodiscard]] virtual std::string_view GetCurrentCodecName() const = 0;
 
 protected:
-    explicit Decoder(Host1x::Host1x& host1x, s32 id, const Host1x::NvdecCommon::NvdecRegisters& regs);
+    explicit Decoder(Host1x::Host1x& host1x, s32 id,
+                     const Host1x::NvdecCommon::NvdecRegisters& regs);
 
     virtual std::span<const u8> ComposeFrame() = 0;
     virtual std::tuple<u64, u64> GetProgressiveOffsets() = 0;

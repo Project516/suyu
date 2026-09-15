@@ -11,10 +11,9 @@
 #include <optional>
 
 #include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
-
 #include "dynarmic/common/fp/rounding_mode.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::FP {
 

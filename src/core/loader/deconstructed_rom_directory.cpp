@@ -71,10 +71,9 @@ struct PatchCollection {
     std::array<s32, 13> module_patcher_indices{};
 };
 
-AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileSys::VirtualFile file_, bool override_update_)
-    : AppLoader(std::move(file_))
-    , override_update(override_update_)
-{
+AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileSys::VirtualFile file_,
+                                                                         bool override_update_)
+    : AppLoader(std::move(file_)), override_update(override_update_) {
     const auto file_dir = file->GetContainingDirectory();
 
     // Title ID
@@ -126,10 +125,8 @@ AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(FileSys
 
 AppLoader_DeconstructedRomDirectory::AppLoader_DeconstructedRomDirectory(
     FileSys::VirtualDir directory, bool override_update_)
-    : AppLoader(directory->GetFile("main"))
-    , dir(std::move(directory))
-    , override_update(override_update_)
-{}
+    : AppLoader(directory->GetFile("main")), dir(std::move(directory)),
+      override_update(override_update_) {}
 
 FileType AppLoader_DeconstructedRomDirectory::IdentifyType(const FileSys::VirtualFile& dir_file) {
     if (FileSys::IsDirectoryExeFS(dir_file->GetContainingDirectory())) {
@@ -231,11 +228,15 @@ AppLoader_DeconstructedRomDirectory::LoadResult AppLoader_DeconstructedRomDirect
     code_size += patch_ctx.GetTotalPatchSize();
 
     // TODO: this is bad form of ASLR, it sucks
-    std::uintptr_t aslr_offset = ((::Settings::values.rng_seed_enabled.GetValue()
-        ? ::Settings::values.rng_seed.GetValue() : Common::Random::Random64(0)) << 12) & 0xfff000;
+    std::uintptr_t aslr_offset =
+        ((::Settings::values.rng_seed_enabled.GetValue() ? ::Settings::values.rng_seed.GetValue()
+                                                         : Common::Random::Random64(0))
+         << 12) &
+        0xfff000;
 
     // Setup the process code layout
-    if (process.LoadFromMetadata(system.Kernel(), metadata, code_size, fastmem_base, aslr_offset).IsError()) {
+    if (process.LoadFromMetadata(system.Kernel(), metadata, code_size, fastmem_base, aslr_offset)
+            .IsError()) {
         return {ResultStatus::ErrorUnableToParseKernelMetadata, {}};
     }
 

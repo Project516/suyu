@@ -11,8 +11,8 @@
 #include <mutex>
 #include <stdexcept>
 #include <thread>
-#include <ankerl/unordered_dense.h>
 #include <vector>
+#include <ankerl/unordered_dense.h>
 
 #include <catch2/catch_test_macros.hpp>
 

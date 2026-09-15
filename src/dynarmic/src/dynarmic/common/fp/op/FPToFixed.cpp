@@ -9,10 +9,9 @@
 #include "dynarmic/common/fp/op/FPToFixed.h"
 
 #include <fmt/format.h>
-#include "common/assert.h"
-#include "dynarmic/mcl/bit.hpp"
-#include "common/common_types.h"
 
+#include "common/assert.h"
+#include "common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/fp/mantissa_util.h"
@@ -20,6 +19,7 @@
 #include "dynarmic/common/fp/rounding_mode.h"
 #include "dynarmic/common/fp/unpacked.h"
 #include "dynarmic/common/safe_ops.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::FP {
 

@@ -16,12 +16,8 @@
 namespace Tegra {
 
 Codec::Codec(Host1x::Host1x& host1x_, const Host1x::NvdecCommon::NvdecRegisters& regs)
-    : host1x(host1x_)
-    , state{regs}
-    , h264_decoder(host1x_)
-    , vp8_decoder(host1x_)
-    , vp9_decoder(host1x_)
-{}
+    : host1x(host1x_), state{regs}, h264_decoder(host1x_), vp8_decoder(host1x_),
+      vp9_decoder(host1x_) {}
 
 Codec::~Codec() = default;
 

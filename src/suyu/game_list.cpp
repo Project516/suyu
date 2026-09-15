@@ -4,6 +4,7 @@
 // Modified by palfaiate on <2024/03/07>
 // Reverted palfaiate's changes on <2024/03/25> -Nine-Ball
 
+#include <vector>
 #include <QApplication>
 #include <QDir>
 #include <QFileDialog>
@@ -17,7 +18,6 @@
 #include <QMessageBox>
 #include <QThreadPool>
 #include <QToolButton>
-#include <vector>
 #include <fmt/format.h>
 #include "common/common_types.h"
 #include "common/logging/log.h"
@@ -30,9 +30,9 @@
 #include "suyu/game_list_p.h"
 #include "suyu/game_list_worker.h"
 #include "suyu/main.h"
+#include "suyu/nintendo_account.h"
 #include "suyu/uisettings.h"
 #include "suyu/util/controller_navigation.h"
-#include "suyu/nintendo_account.h"
 
 GameListSearchField::KeyReleaseEater::KeyReleaseEater(GameList* gamelist_, QObject* parent)
     : QObject(parent), gamelist{gamelist_} {}
@@ -126,7 +126,7 @@ QString GameList::GetSelectedGamePath() const {
 
     const auto* item = item_model->itemFromIndex(selected.first());
     if (!item || item->data(GameListItemPath::TypeRole).toInt() !=
-                      static_cast<int>(GameListItemType::Game)) {
+                     static_cast<int>(GameListItemType::Game)) {
         return {};
     }
 
@@ -141,7 +141,7 @@ u64 GameList::GetSelectedProgramId() const {
 
     const auto* item = item_model->itemFromIndex(selected.first());
     if (!item || item->data(GameListItemPath::TypeRole).toInt() !=
-                      static_cast<int>(GameListItemType::Game)) {
+                     static_cast<int>(GameListItemType::Game)) {
         return 0;
     }
 
@@ -479,7 +479,7 @@ void GameList::AddNintendoLibraryEntries() {
         const QString owned_path = QStringLiteral("owned://%1").arg(owned_game.title);
         QList<QStandardItem*> row;
         row.append(new GameListItemPath(owned_path, std::vector<u8>(), owned_game.title,
-                                       QStringLiteral("Nintendo Digital"), 0));
+                                        QStringLiteral("Nintendo Digital"), 0));
         row.append(new GameListItem); // Compatibility
         row.append(new GameListItem(owned_game.purchase_date));
         row.append(new GameListItem(QStringLiteral("Nintendo Digital")));
@@ -509,8 +509,7 @@ void GameList::ValidateEntry(const QModelIndex& item) {
             // rather than reinventing that machinery for owned:// entries.
             const QString rom_path = QFileDialog::getOpenFileName(
                 this, tr("Locate ROM for %1").arg(selected.data(Qt::DisplayRole).toString()),
-                QString(),
-                tr("Switch ROM (*.nsp *.xci *.nca);;All Files (*)"));
+                QString(), tr("Switch ROM (*.nsp *.xci *.nca);;All Files (*)"));
             if (rom_path.isEmpty()) {
                 return;
             }
@@ -705,7 +704,8 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     context_menu.addSeparator();
     QAction* properties = context_menu.addAction(tr("Properties"));
 
-    const bool is_owned_placeholder = QString::fromStdString(path).startsWith(QStringLiteral("owned://"));
+    const bool is_owned_placeholder =
+        QString::fromStdString(path).startsWith(QStringLiteral("owned://"));
 #if !defined(__APPLE__)
     create_desktop_shortcut->setVisible(program_id != 0 && !is_owned_placeholder);
     create_applications_menu_shortcut->setVisible(program_id != 0 && !is_owned_placeholder);
@@ -724,7 +724,8 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     remove_shader_cache->setVisible(program_id != 0 && !is_owned_placeholder);
     remove_all_content->setVisible(program_id != 0 && !is_owned_placeholder);
     auto it = FindMatchingCompatibilityEntry(compatibility_list, program_id);
-    navigate_to_gamedb_entry->setVisible(it != compatibility_list.end() && program_id != 0 && !is_owned_placeholder);
+    navigate_to_gamedb_entry->setVisible(it != compatibility_list.end() && program_id != 0 &&
+                                         !is_owned_placeholder);
     verify_integrity->setVisible(!is_owned_placeholder);
     copy_tid->setVisible(program_id != 0 && !is_owned_placeholder);
     properties->setVisible(program_id != 0 && !is_owned_placeholder);
@@ -733,10 +734,11 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
         start_game_global->setVisible(false);
         QAction* add_rom = context_menu.addAction(tr("Add ROM or decrypted folder..."));
         connect(add_rom, &QAction::triggered, this, [this]() {
-            QMessageBox::information(
-                this, tr("Nintendo Digital Library"),
-                tr("This title is owned on your linked Nintendo account, but no local game file was found. "
-                   "Add the decrypted ROM or folder to your library directories and rescan to play it."));
+            QMessageBox::information(this, tr("Nintendo Digital Library"),
+                                     tr("This title is owned on your linked Nintendo account, but "
+                                        "no local game file was found. "
+                                        "Add the decrypted ROM or folder to your library "
+                                        "directories and rescan to play it."));
         });
     }
 
@@ -804,16 +806,13 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
     });
 #endif
     add_to_steam->setVisible(program_id != 0 && !is_owned_placeholder);
-    connect(add_to_steam, &QAction::triggered, [this, program_id, path]() {
-        emit CreateSteamShortcut(program_id, path);
-    });
+    connect(add_to_steam, &QAction::triggered,
+            [this, program_id, path]() { emit CreateSteamShortcut(program_id, path); });
     recompile->setVisible(program_id != 0 && !is_owned_placeholder);
-    connect(recompile, &QAction::triggered,
-            [this, path]() { emit RecompileGameRequested(path); });
+    connect(recompile, &QAction::triggered, [this, path]() { emit RecompileGameRequested(path); });
     if (launch_recompiled != nullptr) {
-        connect(launch_recompiled, &QAction::triggered, [this, game_name, path]() {
-            emit LaunchRecompiledRequested(game_name, path);
-        });
+        connect(launch_recompiled, &QAction::triggered,
+                [this, game_name, path]() { emit LaunchRecompiledRequested(game_name, path); });
     }
     connect(properties, &QAction::triggered,
             [this, path]() { emit OpenPerGameGeneralRequested(path); });
@@ -1008,14 +1007,15 @@ void GameList::PopulateAsync(QVector<UISettings::GameDir>& game_dirs) {
 
     // Get events from the worker as data becomes available
     auto* worker = current_worker.get();
-    connect(worker, &GameListWorker::DataAvailable, this,
-            [this, worker] {
-                if (current_worker.get() != worker) {
-                    return;
-                }
-                worker->ProcessEvents(this);
-            },
-            Qt::QueuedConnection);
+    connect(
+        worker, &GameListWorker::DataAvailable, this,
+        [this, worker] {
+            if (current_worker.get() != worker) {
+                return;
+            }
+            worker->ProcessEvents(this);
+        },
+        Qt::QueuedConnection);
 
     QThreadPool::globalInstance()->start(current_worker.get());
 }

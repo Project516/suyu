@@ -3,8 +3,8 @@
 
 #include "dynarmic/backend/loongarch64/a32_jitstate.h"
 
-#include "dynarmic/mcl/bit.hpp"
 #include "common/common_types.h"
+#include "dynarmic/mcl/bit.hpp"
 
 namespace Dynarmic::Backend::LoongArch64 {
 

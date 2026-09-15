@@ -70,7 +70,8 @@ Result IBcatService::RequestSyncDeliveryCache(
     LOG_DEBUG(Service_BCAT, "called");
 
     auto& progress_backend{GetProgressBackend(SyncType::Normal)};
-    backend.Synchronize(system.Kernel(), {system.GetApplicationProcessProgramID(),
+    backend.Synchronize(system.Kernel(),
+                        {system.GetApplicationProcessProgramID(),
                          GetCurrentBuildID(system.GetApplicationProcessBuildID())},
                         GetProgressBackend(SyncType::Normal));
 
@@ -86,7 +87,8 @@ Result IBcatService::RequestSyncDeliveryCacheWithDirectoryName(
     LOG_DEBUG(Service_BCAT, "called, name={}", name);
 
     auto& progress_backend{GetProgressBackend(SyncType::Directory)};
-    backend.SynchronizeDirectory(system.Kernel(), {system.GetApplicationProcessProgramID(),
+    backend.SynchronizeDirectory(system.Kernel(),
+                                 {system.GetApplicationProcessProgramID(),
                                   GetCurrentBuildID(system.GetApplicationProcessBuildID())},
                                  name, progress_backend);
 

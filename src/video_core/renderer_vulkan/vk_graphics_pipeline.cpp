@@ -15,6 +15,8 @@
 #include "video_core/renderer_vulkan/pipeline_helper.h"
 
 #include "common/bit_field.h"
+#include "common/settings.h"
+#include "video_core/gpu_logging/gpu_logging.h"
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
 #include "video_core/renderer_vulkan/pipeline_statistics.h"
 #include "video_core/renderer_vulkan/vk_buffer_cache.h"
@@ -26,8 +28,6 @@
 #include "video_core/shader_notify.h"
 #include "video_core/texture_cache/texture_cache.h"
 #include "video_core/vulkan_common/vulkan_device.h"
-#include "video_core/gpu_logging/gpu_logging.h"
-#include "common/settings.h"
 
 #if defined(_MSC_VER) && defined(NDEBUG)
 #define LAMBDA_FORCEINLINE [[msvc::forceinline]]
@@ -277,7 +277,8 @@ GraphicsPipeline::GraphicsPipeline(
         descriptor_set_layout = builder.CreateDescriptorSetLayout(uses_push_descriptor);
 
         if (!uses_push_descriptor) {
-            descriptor_allocator = descriptor_pool.Allocator(device, scheduler, *descriptor_set_layout, stage_infos);
+            descriptor_allocator =
+                descriptor_pool.Allocator(device, scheduler, *descriptor_set_layout, stage_infos);
         }
 
         const VkDescriptorSetLayout set_layout{*descriptor_set_layout};
@@ -362,11 +363,7 @@ bool GraphicsPipeline::ConfigureImpl(bool is_indexed) {
         const auto add_image{[&](const auto& desc, bool blacklist) LAMBDA_FORCEINLINE {
             for (u32 index = 0; index < desc.count; ++index) {
                 const auto handle{read_handle(desc, index)};
-                views.push_back({
-                    .index = handle.first,
-                    .blacklist = blacklist,
-                    .id = {}
-                });
+                views.push_back({.index = handle.first, .blacklist = blacklist, .id = {}});
             }
         }};
         if constexpr (Spec::has_texture_buffers) {
@@ -433,8 +430,8 @@ bool GraphicsPipeline::ConfigureImpl(bool is_indexed) {
                     }
                 }
                 buffer_cache.BindGraphicsTextureBuffer(stage, index, image_view.GpuAddr(),
-                                                       image_view.BufferSize(), format,
-                                                       is_written, is_image);
+                                                       image_view.BufferSize(), format, is_written,
+                                                       is_image);
                 ++index;
                 ++texture_buffer_it;
             }
@@ -517,8 +514,8 @@ bool GraphicsPipeline::ConfigureImpl(bool is_indexed) {
         buffer_cache.any_buffer_uploaded = false;
     }
     texture_cache.UpdateRenderTargets(false);
-    texture_cache.CheckFeedbackLoop(std::span<const VideoCommon::ImageViewInOut>{views.data(),
-                                                                                 views.size()});
+    texture_cache.CheckFeedbackLoop(
+        std::span<const VideoCommon::ImageViewInOut>{views.data(), views.size()});
     ConfigureDraw(rescaling, render_area);
 
     return true;
@@ -668,16 +665,17 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .flags = 0,
         .topology = input_assembly_topology,
         .primitiveRestartEnable =
-        // MoltenVK/Metal always has primitive restart enabled and cannot disable it
-        device.IsMoltenVK() ? VK_TRUE :
-        (dynamic.primitive_restart_enable != 0 &&
-                ((input_assembly_topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST &&
-                  device.IsTopologyListPrimitiveRestartSupported()) ||
-                 SupportsPrimitiveRestart(input_assembly_topology) ||
-                 (input_assembly_topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST &&
-                  device.IsPatchListPrimitiveRestartSupported()))
+            // MoltenVK/Metal always has primitive restart enabled and cannot disable it
+        device.IsMoltenVK()
             ? VK_TRUE
-            : VK_FALSE),
+            : (dynamic.primitive_restart_enable != 0 &&
+                       ((input_assembly_topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST &&
+                         device.IsTopologyListPrimitiveRestartSupported()) ||
+                        SupportsPrimitiveRestart(input_assembly_topology) ||
+                        (input_assembly_topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST &&
+                         device.IsPatchListPrimitiveRestartSupported()))
+                   ? VK_TRUE
+                   : VK_FALSE),
     };
     const VkPipelineTessellationStateCreateInfo tessellation_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
@@ -720,11 +718,11 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .pNext = nullptr,
         .flags = 0,
         .depthClampEnable =
-        static_cast<VkBool32>(dynamic.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE),
+            static_cast<VkBool32>(dynamic.depth_clamp_disabled == 0 ? VK_TRUE : VK_FALSE),
         .rasterizerDiscardEnable =
-        static_cast<VkBool32>(dynamic.rasterize_enable == 0 ? VK_TRUE : VK_FALSE),
+            static_cast<VkBool32>(dynamic.rasterize_enable == 0 ? VK_TRUE : VK_FALSE),
         .polygonMode =
-        MaxwellToVK::PolygonMode(FixedPipelineState::UnpackPolygonMode(key.state.polygon_mode)),
+            MaxwellToVK::PolygonMode(FixedPipelineState::UnpackPolygonMode(key.state.polygon_mode)),
         .cullMode = static_cast<VkCullModeFlags>(
             dynamic.cull_enable ? MaxwellToVK::CullFace(dynamic.CullFace()) : VK_CULL_MODE_NONE),
         .frontFace = MaxwellToVK::FrontFace(dynamic.FrontFace()),
@@ -796,8 +794,10 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .pSampleMask = nullptr,
         .alphaToCoverageEnable =
             supports_alpha_output && key.state.alpha_to_coverage_enabled != 0 ? VK_TRUE : VK_FALSE,
-        .alphaToOneEnable = supports_alpha_output && alpha_to_one_supported &&
-                           key.state.alpha_to_one_enabled != 0 ? VK_TRUE : VK_FALSE,
+        .alphaToOneEnable =
+            supports_alpha_output && alpha_to_one_supported && key.state.alpha_to_one_enabled != 0
+                ? VK_TRUE
+                : VK_FALSE,
     };
     const VkPipelineDepthStencilStateCreateInfo depth_stencil_ci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
@@ -852,8 +852,7 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         .logicOp = static_cast<VkLogicOp>(dynamic.logic_op.Value()),
         .attachmentCount = static_cast<u32>(cb_attachments.size()),
         .pAttachments = cb_attachments.data(),
-        .blendConstants = {}
-    };
+        .blendConstants = {}};
     static_vector<VkDynamicState, 34> dynamic_states{
         VK_DYNAMIC_STATE_VIEWPORT,           VK_DYNAMIC_STATE_SCISSOR,
         VK_DYNAMIC_STATE_DEPTH_BIAS,         VK_DYNAMIC_STATE_BLEND_CONSTANTS,
@@ -863,14 +862,10 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
     };
     if (key.state.extended_dynamic_state) {
         static constexpr std::array extended{
-            VK_DYNAMIC_STATE_CULL_MODE_EXT,
-            VK_DYNAMIC_STATE_FRONT_FACE_EXT,
-            VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT,
-            VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT,
-            VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT,
-            VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT,
-            VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT,
-            VK_DYNAMIC_STATE_STENCIL_OP_EXT,
+            VK_DYNAMIC_STATE_CULL_MODE_EXT,           VK_DYNAMIC_STATE_FRONT_FACE_EXT,
+            VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT,   VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT,
+            VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT,    VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT,
+            VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT, VK_DYNAMIC_STATE_STENCIL_OP_EXT,
             VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT,
         };
         dynamic_states.insert(dynamic_states.end(), extended.begin(), extended.end());
@@ -911,7 +906,8 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
         dynamic_states.insert(dynamic_states.end(), extended3.begin(), extended3.end());
     }
 
-    // VK_EXT_color_write_enable fallback for fully on/off render targets when EDS3 blending is not available.
+    // VK_EXT_color_write_enable fallback for fully on/off render targets when EDS3 blending is not
+    // available.
     if (!key.state.extended_dynamic_state_3_blend && key.state.color_write_enable_dynamic) {
         dynamic_states.push_back(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
     }
@@ -970,39 +966,40 @@ void GraphicsPipeline::MakePipeline(VkRenderPass render_pass) {
             });
     }
     VkPipelineCreateFlags flags{};
-    if (device.IsKhrPipelineExecutablePropertiesEnabled() && Settings::values.renderer_debug.GetValue()) {
+    if (device.IsKhrPipelineExecutablePropertiesEnabled() &&
+        Settings::values.renderer_debug.GetValue()) {
         flags |= VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR;
     }
 
-    pipeline = device.GetLogical().CreateGraphicsPipeline({
-        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = flags,
-        .stageCount = static_cast<u32>(shader_stages.size()),
-        .pStages = shader_stages.data(),
-        .pVertexInputState = &vertex_input_ci,
-        .pInputAssemblyState = &input_assembly_ci,
-        .pTessellationState = &tessellation_ci,
-        .pViewportState = &viewport_ci,
-        .pRasterizationState = &rasterization_ci,
-        .pMultisampleState = &multisample_ci,
-        .pDepthStencilState = &depth_stencil_ci,
-        .pColorBlendState = &color_blend_ci,
-        .pDynamicState = &dynamic_state_ci,
-        .layout = *pipeline_layout,
-        .renderPass = render_pass,
-        .subpass = 0,
-        .basePipelineHandle = nullptr,
-        .basePipelineIndex = 0,
-    }, *pipeline_cache);
+    pipeline = device.GetLogical().CreateGraphicsPipeline(
+        {
+            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = flags,
+            .stageCount = static_cast<u32>(shader_stages.size()),
+            .pStages = shader_stages.data(),
+            .pVertexInputState = &vertex_input_ci,
+            .pInputAssemblyState = &input_assembly_ci,
+            .pTessellationState = &tessellation_ci,
+            .pViewportState = &viewport_ci,
+            .pRasterizationState = &rasterization_ci,
+            .pMultisampleState = &multisample_ci,
+            .pDepthStencilState = &depth_stencil_ci,
+            .pColorBlendState = &color_blend_ci,
+            .pDynamicState = &dynamic_state_ci,
+            .layout = *pipeline_layout,
+            .renderPass = render_pass,
+            .subpass = 0,
+            .basePipelineHandle = nullptr,
+            .basePipelineIndex = 0,
+        },
+        *pipeline_cache);
 
     // Log graphics pipeline creation
     if (GPU::Logging::IsActive()) {
-        const std::string pipeline_info = fmt::format(
-            "GraphicsPipeline created: stages={}, attachments={}",
-            shader_stages.size(),
-            color_blend_ci.attachmentCount
-        );
+        const std::string pipeline_info =
+            fmt::format("GraphicsPipeline created: stages={}, attachments={}", shader_stages.size(),
+                        color_blend_ci.attachmentCount);
         GPU::Logging::GPULogger::GetInstance().LogPipelineStateChange(pipeline_info);
     }
 }

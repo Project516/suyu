@@ -220,7 +220,7 @@ public:
             }
         }
 
-        template<size_t N>
+        template <size_t N>
         constexpr size_t GetNextSet(std::bitset<N> const& bit, size_t n) const {
             for (size_t i = n + 1; i < bit.size(); i++)
                 if (bit[i])

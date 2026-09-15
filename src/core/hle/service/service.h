@@ -53,8 +53,8 @@ public:
         return service_name;
     }
 
-    /// @brief Returns the maximum number of sessions that can be connected to this service at the same
-    /// time.
+    /// @brief Returns the maximum number of sessions that can be connected to this service at the
+    /// same time.
     u32 GetMaxSessions() const noexcept {
         return max_sessions;
     }
@@ -77,6 +77,7 @@ protected:
     [[nodiscard]] virtual std::unique_lock<std::mutex> LockService() noexcept {
         return std::unique_lock{lock_service};
     }
+
 private:
     template <typename T>
     friend class ServiceFramework;
@@ -153,11 +154,14 @@ protected:
         // which MSVC gets right.
 
         /// @brief Constructs a FunctionInfo for a function.
-        /// @param expected_header_ request header in the command buffer which will trigger dispatch to this handler
-        /// @param handler_callback_ member function in this service which will be called to handle the request
+        /// @param expected_header_ request header in the command buffer which will trigger dispatch
+        /// to this handler
+        /// @param handler_callback_ member function in this service which will be called to handle
+        /// the request
         /// @param name_ human-friendly name for the request. Used mostly for logging purposes.
         FunctionInfoTyped(u32 expected_header_, HandlerFnP<T> handler_callback_, const char* name_)
-            : FunctionInfoBase{expected_header_, HandlerFnP<ServiceFrameworkBase>(handler_callback_), name_} {}
+            : FunctionInfoBase{expected_header_,
+                               HandlerFnP<ServiceFrameworkBase>(handler_callback_), name_} {}
     };
     using FunctionInfo = FunctionInfoTyped<Self>;
 
@@ -169,7 +173,8 @@ protected:
      * @param max_sessions_ Maximum number of sessions that can be connected to this service at the
      * same time.
      */
-    explicit ServiceFramework(Core::System& system_, const char* service_name_, u32 max_sessions_ = ServerSessionCountMax)
+    explicit ServiceFramework(Core::System& system_, const char* service_name_,
+                              u32 max_sessions_ = ServerSessionCountMax)
         : ServiceFrameworkBase(system_, service_name_, max_sessions_, Invoker) {}
 
     /// Registers handlers in the service.

@@ -128,7 +128,8 @@ Result KClientPort::CreateLightSession(KernelCore& kernel, KLightClientSession**
     KLightSession* session{};
 
     // Reserve a new session from the resource limit.
-    KScopedResourceReservation session_reservation(kernel, GetCurrentProcessPointer(kernel), Svc::LimitableResource::SessionCountMax);
+    KScopedResourceReservation session_reservation(kernel, GetCurrentProcessPointer(kernel),
+                                                   Svc::LimitableResource::SessionCountMax);
     R_UNLESS(session_reservation.Succeeded(), ResultLimitReached);
 
     // Allocate a session normally.

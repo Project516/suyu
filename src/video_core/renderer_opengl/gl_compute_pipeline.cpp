@@ -4,8 +4,8 @@
 // SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <cstring>
 #include <bit>
+#include <cstring>
 #include <numeric>
 #include "common/cityhash.h"
 #include "common/settings.h"
@@ -50,7 +50,8 @@ ComputePipeline::ComputePipeline(const Device& device, TextureCache& texture_cac
     default:
         UNREACHABLE();
     }
-    std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(), uniform_buffer_sizes.begin());
+    std::copy_n(info.constant_buffer_used_sizes.begin(), uniform_buffer_sizes.size(),
+                uniform_buffer_sizes.begin());
 
     num_texture_buffers = Shader::NumDescriptors(info.texture_buffer_descriptors);
     num_image_buffers = Shader::NumDescriptors(info.image_buffer_descriptors);

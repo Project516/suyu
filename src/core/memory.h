@@ -137,8 +137,8 @@ public:
     /// a null pointer in the entry) still goes through the callback, so
     /// rasterizer invalidation is not bypassed.
     struct PageTableView {
-        const void* entries;   ///< PageEntryData[], null if there is no table yet
-        u64 entry_stride;      ///< sizeof(PageEntryData)
+        const void* entries; ///< PageEntryData[], null if there is no table yet
+        u64 entry_stride;    ///< sizeof(PageEntryData)
         u64 page_bits;
         u64 pointer_mask;      ///< PageInfo::ExtractPointer's mask
         u64 address_space_max; ///< 1 << address space bits

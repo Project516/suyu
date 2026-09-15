@@ -17,7 +17,7 @@ namespace Shader {
 struct HostTranslateInfo {
     static constexpr u32 DEFAULT_DESCRIPTOR_LIMIT = 1024;
 
-    u64 min_ssbo_alignment{};            ///< Minimum alignment supported by the device for SSBOs
+    u64 min_ssbo_alignment{}; ///< Minimum alignment supported by the device for SSBOs
     u32 max_per_stage_descriptor_sampled_images{}; ///< maximum sampled descriptors per stage
     u32 max_per_stage_resources{};                 ///< maximum resources per stage
     u32 max_descriptor_set_samplers{};

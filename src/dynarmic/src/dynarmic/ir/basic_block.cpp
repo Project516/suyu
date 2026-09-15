@@ -14,6 +14,7 @@
 #include <string>
 
 #include <fmt/format.h>
+
 #include "common/assert.h"
 #include "dynarmic/frontend/A32/a32_types.h"
 #include "dynarmic/frontend/A64/a64_types.h"
@@ -23,9 +24,8 @@
 namespace Dynarmic::IR {
 
 Block::Block(LocationDescriptor location) noexcept
-    : location{location}
-    , end_location{location}
-{}
+        : location{location}
+        , end_location{location} {}
 
 /// Prepends a new instruction to this basic block before the insertion point,
 /// handling any allocations necessary to do so.
@@ -107,8 +107,8 @@ static std::string TerminalToString(const Terminal& terminal_variant) noexcept {
 
 std::string DumpBlock(const IR::Block& block) noexcept {
     std::string ret = fmt::format("Block: location={}-{}\n", block.Location(), block.EndLocation())
-        + fmt::format("cycles={}", block.CycleCount())
-        + fmt::format(", entry_cond={}", A64::CondToString(block.GetCondition()));
+                    + fmt::format("cycles={}", block.CycleCount())
+                    + fmt::format(", entry_cond={}", A64::CondToString(block.GetCondition()));
     if (block.GetCondition() != Cond::AL)
         ret += fmt::format(", cond_fail={}", block.ConditionFailedLocation());
     ret += '\n';
@@ -122,22 +122,38 @@ std::string DumpBlock(const IR::Block& block) noexcept {
             return fmt::format("%<unnamed inst {:016x}>", u64(arg.GetInst()));
         }
         switch (arg.GetType()) {
-        case Type::U1: return fmt::format("#{}", arg.GetU1() ? '1' : '0');
-        case Type::U8: return fmt::format("#{}", arg.GetU8());
-        case Type::U16: return fmt::format("#{:#x}", arg.GetU16());
-        case Type::U32: return fmt::format("#{:#x}", arg.GetU32());
-        case Type::U64: return fmt::format("#{:#x}", arg.GetU64());
-        case Type::U128: return fmt::format("#<u128 imm>");
-        case Type::A32Reg: return A32::RegToString(arg.GetA32RegRef());
-        case Type::A32ExtReg: return A32::ExtRegToString(arg.GetA32ExtRegRef());
-        case Type::A64Reg: return A64::RegToString(arg.GetA64RegRef());
-        case Type::A64Vec: return A64::VecToString(arg.GetA64VecRef());
-        case Type::CoprocInfo: return fmt::format("$coproc{}", arg.GetCoprocInfo()[0]);
-        case Type::NZCVFlags: return fmt::format("$nzcv");
-        case Type::Cond: return fmt::format("$cond={}", A32::CondToString(arg.GetCond()));
-        case Type::Table: return fmt::format("$table");
-        case Type::AccType: return fmt::format("$acc-type={}", u32(arg.GetAccType()));
-        default: return fmt::format("<unknown immediate type {}>", arg.GetType());
+        case Type::U1:
+            return fmt::format("#{}", arg.GetU1() ? '1' : '0');
+        case Type::U8:
+            return fmt::format("#{}", arg.GetU8());
+        case Type::U16:
+            return fmt::format("#{:#x}", arg.GetU16());
+        case Type::U32:
+            return fmt::format("#{:#x}", arg.GetU32());
+        case Type::U64:
+            return fmt::format("#{:#x}", arg.GetU64());
+        case Type::U128:
+            return fmt::format("#<u128 imm>");
+        case Type::A32Reg:
+            return A32::RegToString(arg.GetA32RegRef());
+        case Type::A32ExtReg:
+            return A32::ExtRegToString(arg.GetA32ExtRegRef());
+        case Type::A64Reg:
+            return A64::RegToString(arg.GetA64RegRef());
+        case Type::A64Vec:
+            return A64::VecToString(arg.GetA64VecRef());
+        case Type::CoprocInfo:
+            return fmt::format("$coproc{}", arg.GetCoprocInfo()[0]);
+        case Type::NZCVFlags:
+            return fmt::format("$nzcv");
+        case Type::Cond:
+            return fmt::format("$cond={}", A32::CondToString(arg.GetCond()));
+        case Type::Table:
+            return fmt::format("$table");
+        case Type::AccType:
+            return fmt::format("$acc-type={}", u32(arg.GetAccType()));
+        default:
+            return fmt::format("<unknown immediate type {}>", arg.GetType());
         }
     };
 

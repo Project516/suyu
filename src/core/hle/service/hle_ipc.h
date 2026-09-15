@@ -185,7 +185,8 @@ private:
  */
 class HLERequestContext {
 public:
-    explicit HLERequestContext(Kernel::KernelCore& kernel, Core::Memory::Memory& memory, Kernel::KServerSession* session, Kernel::KThread* thread);
+    explicit HLERequestContext(Kernel::KernelCore& kernel, Core::Memory::Memory& memory,
+                               Kernel::KServerSession* session, Kernel::KThread* thread);
     ~HLERequestContext();
 
     /// Returns a pointer to the IPC command buffer for this request.
@@ -236,19 +237,23 @@ public:
         return data_payload_offset;
     }
 
-    [[nodiscard]] const boost::container::static_vector<IPC::BufferDescriptorX, 16>& BufferDescriptorX() const {
+    [[nodiscard]] const boost::container::static_vector<IPC::BufferDescriptorX, 16>&
+    BufferDescriptorX() const {
         return buffer_x_descriptors;
     }
 
-    [[nodiscard]] const boost::container::static_vector<IPC::BufferDescriptorABW, 16>& BufferDescriptorA() const {
+    [[nodiscard]] const boost::container::static_vector<IPC::BufferDescriptorABW, 16>&
+    BufferDescriptorA() const {
         return buffer_a_descriptors;
     }
 
-    [[nodiscard]] const boost::container::static_vector<IPC::BufferDescriptorABW, 16>& BufferDescriptorB() const {
+    [[nodiscard]] const boost::container::static_vector<IPC::BufferDescriptorABW, 16>&
+    BufferDescriptorB() const {
         return buffer_b_descriptors;
     }
 
-    [[nodiscard]] const boost::container::static_vector<IPC::BufferDescriptorC, 16>& BufferDescriptorC() const {
+    [[nodiscard]] const boost::container::static_vector<IPC::BufferDescriptorC, 16>&
+    BufferDescriptorC() const {
         return buffer_c_descriptors;
     }
 
@@ -401,16 +406,24 @@ private:
     Kernel::KHandleTable* client_handle_table{};
     Kernel::KThread* thread{};
 
-    boost::container::static_vector<IPC::BufferDescriptorX, IPC::MAX_BUFFER_DESCRIPTORS> buffer_x_descriptors;
-    boost::container::static_vector<IPC::BufferDescriptorABW, IPC::MAX_BUFFER_DESCRIPTORS> buffer_a_descriptors;
-    boost::container::static_vector<IPC::BufferDescriptorABW, IPC::MAX_BUFFER_DESCRIPTORS> buffer_b_descriptors;
-    boost::container::static_vector<IPC::BufferDescriptorABW, IPC::MAX_BUFFER_DESCRIPTORS> buffer_w_descriptors;
-    boost::container::static_vector<IPC::BufferDescriptorC, IPC::MAX_BUFFER_DESCRIPTORS> buffer_c_descriptors;
+    boost::container::static_vector<IPC::BufferDescriptorX, IPC::MAX_BUFFER_DESCRIPTORS>
+        buffer_x_descriptors;
+    boost::container::static_vector<IPC::BufferDescriptorABW, IPC::MAX_BUFFER_DESCRIPTORS>
+        buffer_a_descriptors;
+    boost::container::static_vector<IPC::BufferDescriptorABW, IPC::MAX_BUFFER_DESCRIPTORS>
+        buffer_b_descriptors;
+    boost::container::static_vector<IPC::BufferDescriptorABW, IPC::MAX_BUFFER_DESCRIPTORS>
+        buffer_w_descriptors;
+    boost::container::static_vector<IPC::BufferDescriptorC, IPC::MAX_BUFFER_DESCRIPTORS>
+        buffer_c_descriptors;
     boost::container::static_vector<Handle, IPC::MAX_INCOMING_MOVE_HANDLERS> incoming_move_handles;
     boost::container::static_vector<Handle, IPC::MAX_INCOMING_COPY_HANDLERS> incoming_copy_handles;
-    boost::container::static_vector<Kernel::KAutoObject*, IPC::MAX_OUTGOING_MOVE_OBJECTS> outgoing_move_objects;
-    boost::container::static_vector<Kernel::KAutoObject*, IPC::MAX_OUTGOING_COPY_OBJECTS> outgoing_copy_objects;
-    boost::container::static_vector<SessionRequestHandlerPtr, IPC::MAX_OUTGOING_DOMAIN_OBJECTS> outgoing_domain_objects;
+    boost::container::static_vector<Kernel::KAutoObject*, IPC::MAX_OUTGOING_MOVE_OBJECTS>
+        outgoing_move_objects;
+    boost::container::static_vector<Kernel::KAutoObject*, IPC::MAX_OUTGOING_COPY_OBJECTS>
+        outgoing_copy_objects;
+    boost::container::static_vector<SessionRequestHandlerPtr, IPC::MAX_OUTGOING_DOMAIN_OBJECTS>
+        outgoing_domain_objects;
 
     mutable std::array<Common::ScratchBuffer<u8>, 3> read_buffer_data_a{};
     mutable std::array<Common::ScratchBuffer<u8>, 3> read_buffer_data_x{};

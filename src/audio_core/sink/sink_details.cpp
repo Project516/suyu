@@ -130,7 +130,7 @@ const SinkDetails& GetOutputSinkDetails(Settings::AudioEngine sink_id) {
 #if defined(HAVE_CUBEB) && defined(HAVE_SDL3)
         iter = find_backend(Settings::AudioEngine::Cubeb);
         if (iter->latency() > TargetSampleCount * 3) {
-        iter = find_backend(Settings::AudioEngine::Sdl3);
+            iter = find_backend(Settings::AudioEngine::Sdl3);
         }
 #else
         iter = std::begin(sink_details);
@@ -138,13 +138,13 @@ const SinkDetails& GetOutputSinkDetails(Settings::AudioEngine sink_id) {
         // END REINTRODUCED SECTION FROM 3833 - DIABLO 3 FIX
         LOG_INFO(Service_Audio, "Auto-selecting the {} backend",
                  Settings::CanonicalizeEnum(iter->id));
-    /* BEGIN REMOVED - REVERTING BACK TO 3833, this didn't exist at all. - DIABLO 3 FIX
-    } else {
-        if (iter != std::end(sink_details) && !iter->is_suitable()) {
-            LOG_ERROR(Service_Audio, "Selected backend {} is not suitable, falling back to null",
-                      Settings::CanonicalizeEnum(iter->id));
-            iter = find_backend(Settings::AudioEngine::Null);
-        } */ // END REMOVED REVERT - DIABLO 3 FIX
+        /* BEGIN REMOVED - REVERTING BACK TO 3833, this didn't exist at all. - DIABLO 3 FIX
+        } else {
+            if (iter != std::end(sink_details) && !iter->is_suitable()) {
+                LOG_ERROR(Service_Audio, "Selected backend {} is not suitable, falling back to
+        null", Settings::CanonicalizeEnum(iter->id)); iter =
+        find_backend(Settings::AudioEngine::Null);
+            } */ // END REMOVED REVERT - DIABLO 3 FIX
     }
 
     if (iter == std::end(sink_details)) {

@@ -7,11 +7,11 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
-#include "common/common_types.h"
 
+#include "common/common_types.h"
+#include "dynarmic/interface/A32/a32.h"
 #include "dynarmic/tests/A32/testenv.h"
 #include "dynarmic/tests/native/testenv.h"
-#include "dynarmic/interface/A32/a32.h"
 
 static Dynarmic::A32::UserConfig GetUserConfig(ThumbTestEnv* testenv) {
     Dynarmic::A32::UserConfig user_config;

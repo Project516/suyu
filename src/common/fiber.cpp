@@ -4,8 +4,8 @@
 // SPDX-FileCopyrightText: Copyright 2020 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <thread>
 #include <mutex>
+#include <thread>
 
 #include "common/assert.h"
 #include "common/fiber.h"
@@ -53,17 +53,19 @@ Fiber::Fiber(std::function<void()>&& entry_point_func) : impl{std::make_unique<F
     impl->stack_limit = impl->stack.data();
     impl->rewind_stack_limit = impl->rewind_stack.data();
     u8* stack_base = impl->stack_limit + DEFAULT_STACK_SIZE;
-    impl->context = boost::context::detail::make_fcontext(stack_base, impl->stack.size(), [](boost::context::detail::transfer_t transfer) -> void {
-        auto* fiber = static_cast<Fiber*>(transfer.data);
-        ASSERT(fiber && fiber->impl && fiber->impl->previous_fiber && fiber->impl->previous_fiber->impl);
-        ASSERT(fiber->impl->canary_1 == CANARY_VALUE);
-        ASSERT(fiber->impl->canary_2 == CANARY_VALUE);
-        fiber->impl->previous_fiber->impl->context = transfer.fctx;
-        fiber->impl->previous_fiber->impl->guard.unlock();
-        fiber->impl->previous_fiber.reset();
-        fiber->impl->entry_point();
-        UNREACHABLE();
-    });
+    impl->context = boost::context::detail::make_fcontext(
+        stack_base, impl->stack.size(), [](boost::context::detail::transfer_t transfer) -> void {
+            auto* fiber = static_cast<Fiber*>(transfer.data);
+            ASSERT(fiber && fiber->impl && fiber->impl->previous_fiber &&
+                   fiber->impl->previous_fiber->impl);
+            ASSERT(fiber->impl->canary_1 == CANARY_VALUE);
+            ASSERT(fiber->impl->canary_2 == CANARY_VALUE);
+            fiber->impl->previous_fiber->impl->context = transfer.fctx;
+            fiber->impl->previous_fiber->impl->guard.unlock();
+            fiber->impl->previous_fiber.reset();
+            fiber->impl->entry_point();
+            UNREACHABLE();
+        });
 }
 
 Fiber::Fiber() : impl{std::make_unique<FiberImpl>()} {}

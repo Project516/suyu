@@ -36,7 +36,7 @@ public:
 
     bool WaitFor(const std::chrono::nanoseconds time);
 
-    template<class Clock, class Duration>
+    template <class Clock, class Duration>
     bool WaitUntil(const std::chrono::time_point<Clock, Duration> time) {
         std::unique_lock lk{mutex};
         if (!condvar.wait_until(lk, time, [this] { return is_set.load(); }))
@@ -78,7 +78,7 @@ public:
             return true;
         } else {
             condvar.wait(lk, token,
-                        [this, current_generation] { return current_generation != generation; });
+                         [this, current_generation] { return current_generation != generation; });
             return !token.stop_requested();
         }
     }

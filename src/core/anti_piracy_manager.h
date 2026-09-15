@@ -5,10 +5,10 @@
 
 #include <functional>
 #include <memory>
-#include <string>
-#include <vector>
-#include <unordered_map>
 #include <optional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "common/common_types.h"
 #include "core/file_sys/vfs/vfs.h"
@@ -26,14 +26,14 @@ class System;
  * Anti-piracy validation results
  */
 enum class ValidationResult {
-    Valid,                    // ROM is verified as legitimate
-    ValidNintendoLibrary,    // ROM matches Nintendo purchase history
-    ValidLegitimateRip,      // ROM appears to be legitimately dumped
-    Unknown,                 // Cannot determine legitimacy (not necessarily invalid)
-    Suspicious,              // ROM has characteristics suggesting piracy
-    Invalid,                 // ROM is clearly pirated or corrupted
-    NetworkError,            // Could not verify due to network issues
-    NotAuthenticated         // User not authenticated with Nintendo account
+    Valid,                // ROM is verified as legitimate
+    ValidNintendoLibrary, // ROM matches Nintendo purchase history
+    ValidLegitimateRip,   // ROM appears to be legitimately dumped
+    Unknown,              // Cannot determine legitimacy (not necessarily invalid)
+    Suspicious,           // ROM has characteristics suggesting piracy
+    Invalid,              // ROM is clearly pirated or corrupted
+    NetworkError,         // Could not verify due to network issues
+    NotAuthenticated      // User not authenticated with Nintendo account
 };
 
 /**

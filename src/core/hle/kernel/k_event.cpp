@@ -11,9 +11,7 @@
 namespace Kernel {
 
 KEvent::KEvent(KernelCore& kernel)
-    : KAutoObjectWithSlabHeapAndContainer{kernel}
-    , m_readable_event{kernel}
-{}
+    : KAutoObjectWithSlabHeapAndContainer{kernel}, m_readable_event{kernel} {}
 
 KEvent::~KEvent() = default;
 

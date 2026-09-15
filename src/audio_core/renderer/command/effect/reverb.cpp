@@ -7,9 +7,9 @@
 #include <numbers>
 #include <ranges>
 
+#include <ranges>
 #include "audio_core/adsp/apps/audio_renderer/command_list_processor.h"
 #include "audio_core/renderer/command/effect/reverb.h"
-#include <ranges>
 
 namespace AudioCore::Renderer {
 
@@ -93,23 +93,31 @@ static void UpdateReverbEffectParameter(const ReverbInfo::ParameterVersion2& par
     static Common::FixedPoint<50, 14> unk_value{};
 
     auto sample_rate = Common::FixedPoint<50, 14>::from_base(params.sample_rate);
-    if (sample_rate.to_float() < 1.0f) sample_rate = Common::FixedPoint<50, 14>(1.0f);
+    if (sample_rate.to_float() < 1.0f)
+        sample_rate = Common::FixedPoint<50, 14>(1.0f);
 
     auto pre_delay_time = Common::FixedPoint<50, 14>::from_base(params.pre_delay);
-    if (pre_delay_time.to_float() < 0.0f) pre_delay_time = Common::FixedPoint<50, 14>(0.0f);
+    if (pre_delay_time.to_float() < 0.0f)
+        pre_delay_time = Common::FixedPoint<50, 14>(0.0f);
 
     for (u32 i = 0; i < ReverbInfo::MaxDelayTaps; i++) {
-        int target_delay = ((pre_delay_time + EarlyDelayTimes[params.early_mode][i]) * sample_rate).to_int();
-        if (target_delay < 0) target_delay = 0;
-        if (target_delay > state.pre_delay_line.sample_count_max) target_delay = state.pre_delay_line.sample_count_max;
+        int target_delay =
+            ((pre_delay_time + EarlyDelayTimes[params.early_mode][i]) * sample_rate).to_int();
+        if (target_delay < 0)
+            target_delay = 0;
+        if (target_delay > state.pre_delay_line.sample_count_max)
+            target_delay = state.pre_delay_line.sample_count_max;
 
         int old_delay = state.early_delay_times[i] - 1;
         int smooth_delay = old_delay + (target_delay - old_delay) / 4;
         state.early_delay_times[i] = smooth_delay + 1;
 
-        auto target_gain = Common::FixedPoint<50, 14>::from_base(params.early_gain) * EarlyDelayGains[params.early_mode][i];
-        if (target_gain.to_float() < 0.0f) target_gain = Common::FixedPoint<50, 14>(0.0f);
-        if (target_gain.to_float() > 1.0f) target_gain = Common::FixedPoint<50, 14>(1.0f);
+        auto target_gain = Common::FixedPoint<50, 14>::from_base(params.early_gain) *
+                           EarlyDelayGains[params.early_mode][i];
+        if (target_gain.to_float() < 0.0f)
+            target_gain = Common::FixedPoint<50, 14>(0.0f);
+        if (target_gain.to_float() > 1.0f)
+            target_gain = Common::FixedPoint<50, 14>(1.0f);
 
         state.early_gains[i] = state.early_gains[i] + (target_gain - state.early_gains[i]) / 4;
     }
@@ -119,9 +127,12 @@ static void UpdateReverbEffectParameter(const ReverbInfo::ParameterVersion2& par
         state.early_gains[5] *= Common::FixedPoint<50, 14>(0.5f);
     }
 
-    int target_pre_time = ((pre_delay_time + EarlyDelayTimes[params.early_mode][10]) * sample_rate).to_int();
-    if (target_pre_time < 0) target_pre_time = 0;
-    if (target_pre_time > state.pre_delay_line.sample_count_max) target_pre_time = state.pre_delay_line.sample_count_max;
+    int target_pre_time =
+        ((pre_delay_time + EarlyDelayTimes[params.early_mode][10]) * sample_rate).to_int();
+    if (target_pre_time < 0)
+        target_pre_time = 0;
+    if (target_pre_time > state.pre_delay_line.sample_count_max)
+        target_pre_time = state.pre_delay_line.sample_count_max;
 
     int old_pre_time = state.pre_delay_time;
     state.pre_delay_time = old_pre_time + (target_pre_time - old_pre_time) / 4;
@@ -133,53 +144,73 @@ static void UpdateReverbEffectParameter(const ReverbInfo::ParameterVersion2& par
 
     for (u32 i = 0; i < ReverbInfo::MaxDelayLines; i++) {
         int target_fdn_delay = (FdnDelayTimes[params.late_mode][i] * sample_rate).to_int();
-        if (target_fdn_delay < 0) target_fdn_delay = 0;
-        if (target_fdn_delay > state.fdn_delay_lines[i].sample_count_max) target_fdn_delay = state.fdn_delay_lines[i].sample_count_max;
+        if (target_fdn_delay < 0)
+            target_fdn_delay = 0;
+        if (target_fdn_delay > state.fdn_delay_lines[i].sample_count_max)
+            target_fdn_delay = state.fdn_delay_lines[i].sample_count_max;
 
         int old_fdn = state.fdn_delay_lines[i].sample_count;
         state.fdn_delay_lines[i].sample_count = old_fdn + (target_fdn_delay - old_fdn) / 4;
-        state.fdn_delay_lines[i].buffer_end = &state.fdn_delay_lines[i].buffer[state.fdn_delay_lines[i].sample_count - 1];
+        state.fdn_delay_lines[i].buffer_end =
+            &state.fdn_delay_lines[i].buffer[state.fdn_delay_lines[i].sample_count - 1];
 
         int target_decay_delay = (DecayDelayTimes[params.late_mode][i] * sample_rate).to_int();
-        if (target_decay_delay < 0) target_decay_delay = 0;
-        if (target_decay_delay > state.decay_delay_lines[i].sample_count_max) target_decay_delay = state.decay_delay_lines[i].sample_count_max;
+        if (target_decay_delay < 0)
+            target_decay_delay = 0;
+        if (target_decay_delay > state.decay_delay_lines[i].sample_count_max)
+            target_decay_delay = state.decay_delay_lines[i].sample_count_max;
 
         int old_decay = state.decay_delay_lines[i].sample_count;
         state.decay_delay_lines[i].sample_count = old_decay + (target_decay_delay - old_decay) / 4;
-        state.decay_delay_lines[i].buffer_end = &state.decay_delay_lines[i].buffer[state.decay_delay_lines[i].sample_count - 1];
+        state.decay_delay_lines[i].buffer_end =
+            &state.decay_delay_lines[i].buffer[state.decay_delay_lines[i].sample_count - 1];
 
         auto colouration = Common::FixedPoint<50, 14>::from_base(params.colouration);
-        if (colouration.to_float() < 0.0f) colouration = Common::FixedPoint<50, 14>(0.0f);
-        if (colouration.to_float() > 1.0f) colouration = Common::FixedPoint<50, 14>(1.0f);
+        if (colouration.to_float() < 0.0f)
+            colouration = Common::FixedPoint<50, 14>(0.0f);
+        if (colouration.to_float() > 1.0f)
+            colouration = Common::FixedPoint<50, 14>(1.0f);
 
-        state.decay_delay_lines[i].decay = state.decay_delay_lines[i].decay + (0.5999755859375f * (1.0f - colouration) - state.decay_delay_lines[i].decay) / 4;
+        state.decay_delay_lines[i].decay =
+            state.decay_delay_lines[i].decay +
+            (0.5999755859375f * (1.0f - colouration) - state.decay_delay_lines[i].decay) / 4;
 
         auto decay_time_fp = Common::FixedPoint<50, 14>::from_base(params.decay_time);
-        if (decay_time_fp.to_float() <= 0.0f) decay_time_fp = Common::FixedPoint<50, 14>(0.0001f);
+        if (decay_time_fp.to_float() <= 0.0f)
+            decay_time_fp = Common::FixedPoint<50, 14>(0.0001f);
 
-        auto a = (Common::FixedPoint<50, 14>(state.fdn_delay_lines[i].sample_count_max) + state.decay_delay_lines[i].sample_count_max) * -3;
+        auto a = (Common::FixedPoint<50, 14>(state.fdn_delay_lines[i].sample_count_max) +
+                  state.decay_delay_lines[i].sample_count_max) *
+                 -3;
         auto b = a / (decay_time_fp * sample_rate);
 
         auto hf_decay_ratio = Common::FixedPoint<50, 14>::from_base(params.high_freq_decay_ratio);
-        if (hf_decay_ratio.to_float() < 0.001f) hf_decay_ratio = Common::FixedPoint<50, 14>(0.001f);
-        if (hf_decay_ratio.to_float() > 0.999f) hf_decay_ratio = Common::FixedPoint<50, 14>(0.999f);
+        if (hf_decay_ratio.to_float() < 0.001f)
+            hf_decay_ratio = Common::FixedPoint<50, 14>(0.001f);
+        if (hf_decay_ratio.to_float() > 0.999f)
+            hf_decay_ratio = Common::FixedPoint<50, 14>(0.999f);
 
         Common::FixedPoint<50, 14> c{0.0f}, d{0.0f};
         if (hf_decay_ratio.to_float() > 0.9949f) {
             c = 0.0f;
             d = 1.0f;
         } else {
-            auto e = pow_10(((((1.0f / hf_decay_ratio.to_float()) - 1.0f) * 2) / 100 * (b / 10)).to_float());
-            if (e < 0.0001f) e = 0.0001f;
-            if (e > 1.0f) e = 1.0f;
+            auto e = pow_10(
+                ((((1.0f / hf_decay_ratio.to_float()) - 1.0f) * 2) / 100 * (b / 10)).to_float());
+            if (e < 0.0001f)
+                e = 0.0001f;
+            if (e > 1.0f)
+                e = 1.0f;
 
             auto f = 1.0f - e;
-            if (f < 0.0001f) f = 0.0001f;
+            if (f < 0.0001f)
+                f = 0.0001f;
 
             auto g = 2.0f - (unk_value.to_float() * e * 2);
 
             auto h_sq = g * g - f * f * 4;
-            if (h_sq < 0.0f) h_sq = 0.0f;
+            if (h_sq < 0.0f)
+                h_sq = 0.0f;
 
             auto h = std::sqrt(h_sq);
 
@@ -187,8 +218,11 @@ static void UpdateReverbEffectParameter(const ReverbInfo::ParameterVersion2& par
             d = 1.0f - c;
         }
 
-        state.hf_decay_prev_gain[i] = state.hf_decay_prev_gain[i] + (c - state.hf_decay_prev_gain[i]) / 4;
-        state.hf_decay_gain[i] = state.hf_decay_gain[i] + (pow_10((b / 1000).to_float()) * d * 0.70709228515625f - state.hf_decay_gain[i]) / 4;
+        state.hf_decay_prev_gain[i] =
+            state.hf_decay_prev_gain[i] + (c - state.hf_decay_prev_gain[i]) / 4;
+        state.hf_decay_gain[i] =
+            state.hf_decay_gain[i] +
+            (pow_10((b / 1000).to_float()) * d * 0.70709228515625f - state.hf_decay_gain[i]) / 4;
 
         state.prev_feedback_output[i] = 0;
     }

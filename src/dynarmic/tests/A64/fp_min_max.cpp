@@ -9,8 +9,8 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
-#include "common/common_types.h"
 
+#include "common/common_types.h"
 #include "dynarmic/tests/A64/testenv.h"
 #include "dynarmic/tests/native/testenv.h"
 

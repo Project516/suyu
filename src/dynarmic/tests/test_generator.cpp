@@ -16,13 +16,9 @@
 #include <tuple>
 #include <vector>
 
-#include "dynarmic/mcl/bit.hpp"
-#include "common/common_types.h"
-
 #include "./A32/testenv.h"
 #include "./A64/testenv.h"
-#include "dynarmic/tests/fuzz_util.h"
-#include "dynarmic/tests/rand_int.h"
+#include "common/common_types.h"
 #include "dynarmic/common/fp/fpcr.h"
 #include "dynarmic/common/fp/fpsr.h"
 #include "dynarmic/common/llvm_disassemble.h"
@@ -38,6 +34,9 @@
 #include "dynarmic/ir/basic_block.h"
 #include "dynarmic/ir/location_descriptor.h"
 #include "dynarmic/ir/opcodes.h"
+#include "dynarmic/mcl/bit.hpp"
+#include "dynarmic/tests/fuzz_util.h"
+#include "dynarmic/tests/rand_int.h"
 
 // Must be declared last for all necessary operator<< to be declared prior to this.
 #include <fmt/format.h>
@@ -301,7 +300,7 @@ std::vector<u16> GenRandomThumbInst(u32 pc, bool is_last_inst, A32::ITState it_s
             } else if (bitstring.substr(0, 8) == "11110100") {
                 bitstring.replace(0, 8, "11111001");
             } else {
-                UNREACHABLE(); // "Unhandled ASIMD instruction: {} {}", fn, bs);
+                UNREACHABLE();  // "Unhandled ASIMD instruction: {} {}", fn, bs);
             }
             if (std::find(do_not_test.begin(), do_not_test.end(), fn) != do_not_test.end()) {
                 invalid.emplace_back(InstructionGenerator{bitstring.c_str()});
@@ -395,14 +394,14 @@ Dynarmic::A32::UserConfig GetA32UserConfig(TestEnv& testenv, bool noopt) {
 
 template<size_t num_jit_reruns = 1, typename TestEnv>
 void RunTestInstance(Dynarmic::A32::Jit& jit,
-                    TestEnv& jit_env,
-                    const std::array<u32, 16>& regs,
-                    const std::array<u32, 64>& vecs,
-                    const std::vector<typename TestEnv::InstructionType>& instructions,
-                    const u32 cpsr,
-                    const u32 fpscr,
-                    const size_t ticks_left,
-                    const bool show_disas) {
+                     TestEnv& jit_env,
+                     const std::array<u32, 16>& regs,
+                     const std::array<u32, 64>& vecs,
+                     const std::vector<typename TestEnv::InstructionType>& instructions,
+                     const u32 cpsr,
+                     const u32 fpscr,
+                     const size_t ticks_left,
+                     const bool show_disas) {
     const u32 initial_pc = regs[15];
     const u32 num_words = initial_pc / sizeof(typename TestEnv::InstructionType);
     const u32 code_mem_size = num_words + static_cast<u32>(instructions.size());
@@ -493,16 +492,16 @@ Dynarmic::A64::UserConfig GetA64UserConfig(A64TestEnv& jit_env, bool noopt) {
 
 template<size_t num_jit_reruns = 2>
 void RunTestInstance(Dynarmic::A64::Jit& jit,
-                    A64TestEnv& jit_env,
-                    const std::array<u64, 31>& regs,
-                    const std::array<std::array<u64, 2>, 32>& vecs,
-                    const std::vector<u32>& instructions,
-                    const u32 pstate,
-                    const u32 fpcr,
-                    const u64 initial_sp,
-                    const u64 start_address,
-                    const size_t ticks_left,
-                    const bool show_disas) {
+                     A64TestEnv& jit_env,
+                     const std::array<u64, 31>& regs,
+                     const std::array<std::array<u64, 2>, 32>& vecs,
+                     const std::vector<u32>& instructions,
+                     const u32 pstate,
+                     const u32 fpcr,
+                     const u64 initial_sp,
+                     const u64 start_address,
+                     const size_t ticks_left,
+                     const bool show_disas) {
     jit.ClearCache();
 
     for (size_t jit_rerun_count = 0; jit_rerun_count < num_jit_reruns; ++jit_rerun_count) {
