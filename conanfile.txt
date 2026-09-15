@@ -1,6 +1,6 @@
 [requires]
 # Boost components - using single Boost package with options
-boost/1.84.0
+boost/1.91.0
 
 # Core dependencies from vcpkg.json
 fmt/10.2.1
